@@ -1,14 +1,40 @@
 # Modelo de dominio
 
-Modelo conceptual. Los nombres pueden evolucionar mediante ADR; deben permanecer coherentes con [terminology.md](terminology.md).
+Modelo conceptual (Fase 0.1). Los nombres pueden evolucionar mediante ADR; deben permanecer coherentes con [terminology.md](terminology.md).
 
 ## Capas
 
 | Capa | Pregunta que responde | Ejemplos |
 |------|----------------------|----------|
-| Observado | ¿Qué se vio, sin reinterpretar? | `ObservedWorkbook`, `ObservedField` |
-| Inferido | ¿Qué proponemos y con qué evidencia? | `InferredEntity`, `CandidateKey` |
+| Observado | ¿Qué se vio, sin reinterpretar? | `ObservedWorkbook`, `ObservedField`, `AssetSnapshot` |
+| Inferido | ¿Qué proponemos y con qué evidencia? | `InferredEntity`, `CandidateKey`, `CandidateRelationship` |
 | Canónico | ¿Qué se aprobó como estructura corporativa? | `CanonicalEntity`, `Mapping` |
+
+El **Information Graph** es la vista relacional de estas capas: existe como modelo conceptual desde el inicio. Su materialización consultable/visual es una fase de implementación posterior, no el momento en que “aparece” el grafo.
+
+## Estados ortogonales: presencia y accesibilidad
+
+No se mezclan.
+
+| Dimensión | Pregunta | Valores conceptuales (indicativos) |
+|-----------|----------|--------------------------------------|
+| **Presencia** | ¿El activo se ha visto en el origen respecto al inventario? | `present`, `not_observed`, `potentially_removed` |
+| **Accesibilidad** | ¿Pudo el conector leer metadatos/contenido cuando lo intentó? | `accessible`, `locked`, `permission_denied`, `not_found`, `transient_error`, `unsupported`, `unknown` |
+
+Un activo puede estar **presente** en el listado y ser **inaccesible** a la lectura (p. ej. bloqueado). Puede dejar de observarse en una run (`not_observed` / `potentially_removed`) sin borrarse del inventario. La desaparición no implica eliminación inmediata del registro.
+
+## Ejecuciones
+
+Además de `DiscoveryRun`, el análisis tiene ejecuciones propias:
+
+| Ejecución | Produce principalmente |
+|-----------|------------------------|
+| `DiscoveryRun` | observaciones de inventario / presencia |
+| `InspectionRun` | modelo observado (`ObservedWorkbook`, …) |
+| `ProfilingRun` | `Profile` |
+| `InferenceRun` | entidades, claves, relaciones candidatas |
+
+Cada ejecución registra inicio/fin, estado, errores, versión del componente y referencias a entradas/salidas. Discovery y análisis no comparten un único “run” genérico ambiguo.
 
 ## Mapa de relaciones (vista compacta)
 
@@ -19,23 +45,30 @@ erDiagram
   DiscoverySource ||--o{ DiscoveredAsset : discovers
   DiscoveryRun ||--o{ DiscoveryObservation : records
   DiscoveredAsset ||--o{ DiscoveryObservation : observed_as
-  DiscoveredAsset ||--o| ObservedWorkbook : described_by
+  DiscoveredAsset ||--o{ AssetSnapshot : snapshots
+  DiscoveryObservation }o--o| AssetSnapshot : may_capture
+  AssetSnapshot ||--o{ InspectionRun : inspected_by
+  InspectionRun ||--o| ObservedWorkbook : produces
   ObservedWorkbook ||--o{ ObservedWorksheet : contains
   ObservedWorksheet ||--o{ ObservedRegion : contains
   ObservedRegion ||--o{ ObservedField : contains
-  ObservedField ||--o| Profile : profiled_by
+  ObservedField ||--o{ ProfilingRun : profiled_in
+  ProfilingRun ||--o{ Profile : produces
+  InferenceRun }o--o{ AssetSnapshot : uses
+  InferenceRun ||--o{ InferredEntity : produces
   InferredEntity ||--o{ InferredField : has
   InferredEntity ||--o{ CandidateKey : proposes
-  InferredEntity ||--o{ CandidateRelationship : relates
-  InferredField ||--o{ Evidence : supported_by
-  CandidateKey ||--o{ Evidence : supported_by
-  CandidateRelationship ||--o{ Evidence : supported_by
+  CandidateRelationship }o--|| RelationshipEndpoint : from
+  CandidateRelationship }o--|| RelationshipEndpoint : to
+  EvidenceItem }o--o| ReviewableSubject : about
+  ConfidenceAssessment }o--|| ReviewableSubject : scores
+  ConfidenceAssessment }o--o{ EvidenceItem : based_on
+  ReviewDecision }o--|| ReviewableSubject : decides
   CanonicalEntity ||--o{ CanonicalField : has
   Mapping }o--|| CanonicalEntity : targets
-  Mapping }o--o| InferredEntity : from_inference
-  ReviewDecision ||--o{ Mapping : decides
-  Evidence }o--|| ConfidenceScore : scored_with
 ```
+
+`ReviewableSubject` y `RelationshipEndpoint` son roles conceptuales (polimórficos), no necesariamente tablas físicas.
 
 ## Entidades conceptuales
 
@@ -65,35 +98,58 @@ Declaración de lo que un conector puede hacer (listar, leer contenido, metadato
 
 ### DiscoveredAsset
 
-Archivo o documento observado en un origen.
+Identidad durable de un archivo o documento en el inventario.
 
 **Distingue:**
 
 - identidad interna EXCELER;
 - identificador externo estable (si el origen lo ofrece);
-- ruta/ubicación visible;
-- metadatos observados;
-- estado de accesibilidad;
-- huella/hash;
-- historial de observaciones.
+- ubicación visible actual o última conocida;
+- **estado de presencia** agregado (derivado de observaciones);
+- **última accesibilidad conocida** (derivada de intentos de lectura; ortogonal a presencia);
+- historial de observaciones y snapshots.
 
-**Relaciones:** pertenece a un `DiscoverySource`; acumula `DiscoveryObservation`; puede asociarse a un `ObservedWorkbook` (u otro inspector futuro).
+**No confunde** “no listado en la última run” con “no legible”, ni borra el activo al dejar de observarse.
+
+**Relaciones:** pertenece a un `DiscoverySource`; acumula `DiscoveryObservation` y `AssetSnapshot`.
 
 ### DiscoveryRun
 
-Ejecución concreta de exploración sobre un origen.
+Ejecución de exploración/listado sobre un origen.
 
-**Recoge:** inicio/fin, estado, contadores (encontrados, nuevos, modificados, no encontrados, omitidos), errores, volumen leído, versión del conector.
+**Recoge:** inicio/fin, estado, contadores (encontrados, nuevos, modificados, no observados, omitidos), errores, volumen enumerado/leído según política, versión del conector.
 
 ### DiscoveryObservation
 
-Hecho de haber observado un activo en una ejecución.
+Hecho de inventario en una run: el activo se listó, se intentó leer metadatos, o se constató su ausencia respecto a la expectativa.
 
-**Responsabilidad:** historial fino; permite marcar “no observado en esta run” sin borrar el activo del inventario.
+**Incluye, de forma separada:**
+
+- resultado de **presencia** en esa run;
+- resultado de **accesibilidad** si hubo intento de lectura;
+- metadatos ligeros observados (tamaño, mtime, etag, …) cuando existan.
+
+**Responsabilidad:** historial fino sin forzar borrado del activo.
+
+### AssetSnapshot
+
+Captura puntual del activo usada como entrada estable para inspección, perfilado e inferencia.
+
+**Responsabilidad:** congelar *qué contenido/metadatos se analizaron*, frente a la identidad mutable del `DiscoveredAsset`.
+
+**Atributos conceptuales típicos:** enlace al activo; opcionalmente a la observación que motivó la captura; instante; huella/hash; tamaño; indicador de accesibilidad en el momento de captura; referencia a bytes o materialización temporal (con política de retención/limpieza); versión del conector que leyó.
+
+Sin snapshot no debería afirmarse un `ObservedWorkbook` reproducible: el modelo observado cuelga del snapshot, no solo del activo vivo.
+
+### InspectionRun
+
+Ejecución del Workbook Inspector (u otro inspector de documento) sobre uno o más `AssetSnapshot`.
+
+**Produce:** `ObservedWorkbook` y estructura asociada; registra versión del inspector, errores y cobertura.
 
 ### ObservedWorkbook
 
-Descripción factual de un libro Excel.
+Descripción factual de un libro Excel derivada de un `AssetSnapshot` vía `InspectionRun`.
 
 **Conserva lo observado:** formato, hojas, dimensiones, tablas, rangos, nombres definidos, fórmulas, celdas combinadas, validaciones, vínculos externos, consultas, macros detectadas, propiedades, características.
 
@@ -107,87 +163,127 @@ Hoja observada dentro de un libro.
 
 Región o área tabular candidata dentro de una hoja (tabla Excel, rango usado, bloque detectado, etc.).
 
-**Responsabilidad:** delimitar el perímetro factual sobre el que se perfila e infiere.
-
 ### ObservedField
 
 Columna o campo observado dentro de una región (encabezado aparente, posición, muestras estructurales).
 
+### ProfilingRun
+
+Ejecución del Profiling Engine sobre regiones/campos observados (anclados a un snapshot/inspección).
+
+**Produce:** uno o más `Profile`; registra versión, muestreo aplicado y errores.
+
 ### Profile
 
-Resultado de perfilado de un campo o región: tipos aparentes, nulos, unicidad, cardinalidad, patrones, distribuciones, anomalías.
+Resultado de perfilado: tipos aparentes, nulos, unicidad, cardinalidad, patrones, distribuciones, anomalías.
+
+### InferenceRun
+
+Ejecución del Inference Engine.
+
+**Consume:** estructura observada, perfiles y, cuando proceda, contexto inter-libro.
+
+**Produce:** `InferredEntity`, `InferredField`, `CandidateKey`, `CandidateRelationship`, `EvidenceItem` asociados; registra versión del motor.
 
 ### InferredEntity
 
 Entidad de negocio candidata.
 
-**Siempre** acompañada de evidencias, confianza, advertencias/conflictos y estado de revisión.
+Sujeto revisable. No incrusta “la” confianza como atributo opaco único: la confianza se modela con `ConfidenceAssessment` sobre evidencias.
 
 ### InferredField
 
-Campo candidato perteneciente a una entidad inferida, con tipo candidato y linaje hacia `ObservedField` / región / hoja / libro.
+Campo candidato perteneciente a una entidad inferida, con tipo candidato y linaje hacia `ObservedField` / región / hoja / libro / snapshot.
 
 ### CandidateKey
 
-Propuesta de clave (natural, compuesta, surrogate aparente) con evidencia de unicidad/estabilidad.
+Propuesta de clave (natural, compuesta, surrogate aparente) con evidencias de unicidad/estabilidad. Sujeto revisable.
 
 ### CandidateRelationship
 
-Propuesta de relación entre entidades o campos (dentro de un libro o entre libros), con cardinalidad candidata y evidencia.
+Propuesta de relación con **extremos explícitos**.
 
-### Evidence
+Cada extremo (`RelationshipEndpoint`) declara:
 
-Hecho o conjunto de hechos que sustentan una inferencia (p. ej. unicidad observada, coincidencia de nombres, solapamiento de valores, vínculo externo).
+- sujeto (entidad inferida o campo inferido);
+- rol opcional (p. ej. padre/hijo, lookup/fact);
+- cardinalidad candidata en ese extremo.
 
-### ConfidenceScore
+La relación incluye tipo candidato (asociación, dependencia, copia, linaje probable, …), evidencias y es sujeto revisable.
 
-Nivel de confianza asociado a una inferencia o evidencia agregada.
+**No es válido** una relación “sueltas” sin extremos identificables.
 
-No es una verdad: es una señal para priorizar revisión.
+### EvidenceItem
 
-### CanonicalEntity
+Hecho unitario que sostiene (o debilita) una afirmación.
 
-Entidad aprobada del modelo corporativo consolidado.
+**Incluye conceptualmente:**
 
-Separada de las inferencias que la motivaron.
+- tipo de evidencia (unicidad, solapamiento de valores, coincidencia de nombres, vínculo externo, …);
+- sujeto o afirmación a la que aplica;
+- referencias a orígenes factuales (campo observado, perfil, snapshot, …);
+- resumen o payload minimizado (sin retener PII de más);
+- ejecución que la produjo (`ProfilingRun` / `InferenceRun` / …);
+- instante.
 
-### CanonicalField
+Las evidencias **no** son puntuaciones: son hechos o mediciones.
 
-Campo aprobado dentro de una entidad canónica.
+### ConfidenceAssessment
+
+Juicio de confianza **separado** de la evidencia.
+
+**Incluye conceptualmente:**
+
+- sujeto revisable evaluado (entidad, clave, relación, campo, …);
+- conjunto de `EvidenceItem` considerados;
+- método o política de puntuación y su versión;
+- valor o banda de confianza;
+- instante y componente que la calculó.
+
+Puede haber varias evaluaciones en el tiempo para el mismo sujeto. Una puntuación alta **no** equivale a aprobación.
+
+### CanonicalEntity / CanonicalField
+
+Elementos aprobados del modelo corporativo consolidado. Separados de las inferencias que los motivaron.
 
 ### Mapping
 
-Correspondencia entre elementos observados/inferidos y elementos canónicos.
-
-**Responsabilidad:** preservar trazabilidad de consolidación.
+Correspondencia entre elementos observados/inferidos y elementos canónicos. Sujeto revisable.
 
 ### ReviewDecision
 
-Decisión humana (o flujo de aprobación) sobre una inferencia, mapping o propuesta de consolidación: aprobar, rechazar, diferir, pedir más evidencia.
+Decisión de revisión **generalizada** sobre cualquier sujeto revisable.
 
-**Debe registrar:** actor, momento, objeto decidido, resultado y comentario.
+**Sujetos típicos:** `InferredEntity`, `InferredField`, `CandidateKey`, `CandidateRelationship`, `Mapping`, propuestas de `CanonicalEntity` / `CanonicalField`, y otros que el gobierno defina.
+
+**Resultados típicos:** aprobar, rechazar, diferir, pedir más evidencia, solicitar enmienda.
+
+**Registra:** sujeto, resultado, actor, instante, comentario, decisión previa opcional, y vínculos a evidencias/evaluaciones consultadas.
+
+No está limitada a mappings ni a un único tipo de inferencia.
 
 ## Responsabilidades por capa (resumen)
 
 | Capa | Puede afirmar | No debe afirmar |
 |------|---------------|-----------------|
-| Observado | “La hoja X tiene una tabla en A1:D200” | “Es la entidad Cliente” |
-| Inferido | “Hay evidencia de entidad Cliente con confianza 0.72” | “Este es el modelo oficial” |
+| Observado | “En el snapshot S, la hoja X tiene una tabla en A1:D200” | “Es la entidad Cliente” |
+| Inferido | “Hay evidencia de entidad Cliente; evaluación de confianza 0.72 (método M v1)” | “Este es el modelo oficial” |
 | Canónico | “Cliente.Codigo es clave aprobada” | “El archivo origen ya está migrado” |
 
 ## Ciclo de vida simplificado
 
 1. Se configura un `DiscoverySource` con `CredentialReference`.
-2. Un `DiscoveryRun` enumera y observa activos.
-3. El inventario actualiza `DiscoveredAsset` + `DiscoveryObservation`.
-4. El inspector materializa `ObservedWorkbook` y estructura.
-5. El perfilado genera `Profile`.
-6. La inferencia propone entidades/claves/relaciones con `Evidence` y `ConfidenceScore`.
-7. La revisión produce `ReviewDecision` y eventualmente `CanonicalEntity` + `Mapping`.
-8. Audit/Lineage enlaza todo el recorrido.
+2. Un `DiscoveryRun` enumera activos y registra `DiscoveryObservation` (presencia ≠ accesibilidad).
+3. Cuando procede leer contenido, se materializa un `AssetSnapshot`.
+4. Un `InspectionRun` produce `ObservedWorkbook` desde el snapshot.
+5. Un `ProfilingRun` produce `Profile`.
+6. Un `InferenceRun` propone entidades/claves/relaciones, emite `EvidenceItem` y `ConfidenceAssessment`.
+7. `ReviewDecision` actúa sobre sujetos revisables; eventualmente existen `CanonicalEntity` + `Mapping`.
+8. Audit/Lineage y el Information Graph (conceptual) enlazan el recorrido.
 
 ## Relacionados
 
 - Arquitectura: [architecture.md](architecture.md)
 - Terminología: [terminology.md](terminology.md)
 - Seguridad: [security.md](security.md)
+- ADR Fase 0.1: [decisions/0001-phase-0-1-domain-and-execution-model.md](decisions/0001-phase-0-1-domain-and-execution-model.md)

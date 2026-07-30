@@ -55,9 +55,9 @@ Detalle en [docs/vision.md](docs/vision.md), [docs/scope.md](docs/scope.md) y [d
 
 ## Estado del proyecto
 
-El proyecto se encuentra en **fase de definición arquitectónica** (Fase 0).
+El proyecto ha cerrado documentalmente la **Fase 0.1** (corrección del modelo temporal y de ejecución). Siguiente paso: implementación a partir de la Fase 1.
 
-Todavía no hay implementación de conectores, inventarios ni analizadores. El repositorio contiene la visión, el dominio, la arquitectura conceptual y el roadmap incremental.
+Todavía no hay implementación de conectores, inventarios ni analizadores. El repositorio contiene la visión, el dominio, la arquitectura conceptual, el roadmap y el [ADR 0001](docs/decisions/0001-phase-0-1-domain-and-execution-model.md).
 
 ## Documentación
 
@@ -91,7 +91,7 @@ Todavía no hay implementación de conectores, inventarios ni analizadores. El r
 │   ├── security.md
 │   ├── roadmap.md
 │   ├── technology-selection.md
-│   └── decisions/
+│   └── decisions/   (ADR, incl. 0001)
 └── samples/
 ```
 

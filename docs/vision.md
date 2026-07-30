@@ -60,12 +60,13 @@ Eventualmente podrán existir CLI, servicio centralizado y agentes distribuidos.
 
 ## Límites actuales
 
-En la Fase 0:
+En las Fases 0 / 0.1:
 
 - no hay implementación ejecutable;
 - no hay conectores reales;
 - no hay interfaz de usuario;
 - no hay migración automática;
-- Excel es el primer tipo de documento previsto, no el único posible a largo plazo.
+- Excel es el primer tipo de documento previsto, no el único posible a largo plazo;
+- el Information Graph existe como modelo conceptual; su navegación operativa es posterior.
 
 Ver [scope.md](scope.md) y [roadmap.md](roadmap.md).

@@ -85,4 +85,6 @@ Enlaces a issues, PRs, docs de dominio/arquitectura, etc.
 
 ## Índice
 
-Todavía no hay ADR aceptados. El primer ADR se creará cuando exista una decisión real (p. ej. runtime o biblioteca Excel).
+| ADR | Título | Estado |
+|-----|--------|--------|
+| [0001](0001-phase-0-1-domain-and-execution-model.md) | Corrección del modelo temporal y de ejecución (Fase 0.1) | accepted |

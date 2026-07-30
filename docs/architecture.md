@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento conceptual. Describe responsabilidades y contratos entre subsistemas.
+Documento conceptual (Fase 0.1). Describe responsabilidades y contratos entre subsistemas.
 **No fija** lenguaje, framework, base de datos, colas, motor de grafos ni formato de configuración.
 
 ## Objetivo arquitectónico
@@ -8,33 +8,42 @@ Documento conceptual. Describe responsabilidades y contratos entre subsistemas.
 EXCELER se organiza para:
 
 1. descubrir e inventariar activos desde orígenes heterogéneos;
-2. inspeccionar y perfilar contenido (empezando por Excel) sin acoplar el acceso al análisis;
-3. inferir candidatos de modelo con evidencia y confianza;
-4. permitir revisión humana hacia un modelo canónico;
-5. planificar consolidación y, más adelante, generar esquemas;
-6. auditar linaje de extremo a extremo.
+2. capturar snapshots de solo lectura para análisis reproducible;
+3. inspeccionar y perfilar contenido (empezando por Excel) sin acoplar el acceso al análisis;
+4. inferir candidatos de modelo con evidencias y evaluaciones de confianza separadas;
+5. permitir revisión humana generalizada hacia un modelo canónico;
+6. planificar consolidación y, más adelante, generar esquemas;
+7. auditar linaje de extremo a extremo sobre el Information Graph conceptual.
 
 ## Capas de modelo
 
 Las tres capas son independientes:
 
 ```text
-Orígenes / Activos
+Orígenes / Activos / Snapshots
         │
         ▼
  Modelo observado   →  hechos estructurales y de contenido
         │
         ▼
- Modelo inferido    →  candidatos con evidencia y confianza
+ Modelo inferido    →  candidatos + EvidenceItem + ConfidenceAssessment
         │
         ▼
  Modelo canónico    →  estructura corporativa aprobada
 ```
 
-Un conector produce o facilita **activos y bytes/metadatos**.
-Un inspector produce **modelo observado**.
-Un motor de inferencia produce **modelo inferido**.
-La consolidación y revisión producen **modelo canónico** y **mappings**.
+Un conector produce o facilita **activos, observaciones y, cuando procede, snapshots**.
+Un inspector produce **modelo observado** en una `InspectionRun`.
+Un motor de inferencia produce **modelo inferido** en una `InferenceRun`.
+La consolidación y `ReviewDecision` producen **modelo canónico** y **mappings**.
+
+## Information Graph (desde el inicio)
+
+El grafo de información es una **vista conceptual permanente** de las relaciones entre orígenes, activos, snapshots, estructuras observadas, perfiles, inferencias, evidencias, decisiones y canónicos.
+
+- No espera a una “fase grafo” para existir como modelo.
+- Las fases posteriores materializan persistencia consultable, APIs de navegación o visualización.
+- La tecnología de grafos permanece abierta (ADR futuro).
 
 ## Vista de subsistemas
 
@@ -75,6 +84,9 @@ flowchart TB
   AI --> WI
   WI --> PE
   PE --> IE
+  AI -.-> IG
+  WI -.-> IG
+  PE -.-> IG
   IE --> IG
   IE --> CP
   CP --> SG
@@ -84,9 +96,12 @@ flowchart TB
   DC --> AL
   AI --> AL
   WI --> AL
+  PE --> AL
   IE --> AL
   CP --> AL
 ```
+
+Las flechas discontinuas hacia el Information Graph indican que inventario y análisis **alimentan el grafo conceptual** desde que existen, no solo tras la inferencia.
 
 ## Flujo de descubrimiento e inferencia
 
@@ -101,16 +116,20 @@ sequenceDiagram
   participant IE as Inference Engine
   participant AL as Audit and Lineage
 
-  Op->>DC: iniciar DiscoveryRun
+  Op->>DC: DiscoveryRun
   DC->>SC: enumerar / leer (solo lectura)
-  SC-->>DC: activos y metadatos
-  DC->>AI: registrar observaciones
-  AI->>WI: solicitar inspección de libro
+  SC-->>DC: presencia + accesibilidad + metadatos
+  DC->>AI: observaciones y AssetSnapshot si aplica
+  Op->>WI: InspectionRun(snapshot)
   WI-->>AI: ObservedWorkbook
-  WI->>PE: regiones / campos observados
-  PE-->>IE: perfiles
-  IE-->>AI: inferencias candidatas
-  DC->>AL: registrar eventos y versiones
+  Op->>PE: ProfilingRun
+  PE-->>IE: Profile + EvidenceItem
+  Op->>IE: InferenceRun
+  IE-->>AI: candidatos + EvidenceItem + ConfidenceAssessment
+  DC->>AL: eventos y versiones
+  WI->>AL: eventos y versiones
+  PE->>AL: eventos y versiones
+  IE->>AL: eventos y versiones
 ```
 
 ## Subsistemas
@@ -137,77 +156,77 @@ sequenceDiagram
 
 ### 3. Discovery Coordinator
 
-**Responsabilidad:** orquestar exploraciones.
+**Responsabilidad:** orquestar `DiscoveryRun`.
 
-**Incluye:** crear `DiscoveryRun`, seleccionar conector, aplicar políticas y límites, normalizar resultados de alto nivel, coordinar reintentos/errores de ejecución.
+**Incluye:** seleccionar conector, aplicar políticas y límites, distinguir resultados de presencia y accesibilidad, normalizar errores de ejecución.
 
-**No incluye:** interpretación de hojas, tablas o entidades.
+**No incluye:** inspección Excel, perfilado ni inferencia (esas tienen sus propias ejecuciones).
 
 **Contrato conceptual:** habla con Source Registry + Connectors + Asset Inventory + Audit.
 
 ### 4. Source Connectors
 
-**Responsabilidad:** adaptar tipos de origen (filesystem, SMB, SharePoint, etc.).
+**Responsabilidad:** adaptar tipos de origen (filesystem, SMB, SharePoint/OneDrive, etc.).
 
-**Incluye:** validar configuración, probar conectividad y permisos, enumerar activos, leer metadatos/contenido en solo lectura, declarar `ConnectorCapability`, normalizar errores.
+**Incluye:** validar configuración, probar conectividad y permisos, enumerar activos, leer metadatos/contenido en solo lectura, declarar `ConnectorCapability`, normalizar errores, contribuir a `AssetSnapshot` cuando se lee contenido.
 
 **No incluye:** semántica de Excel ni inferencia de modelos.
 
-**Contrato conceptual:** entrada = origen + credencial resuelta + política; salida = activos, streams/metadatos, capacidades, errores normalizados.
+**Contrato conceptual:** entrada = origen + credencial resuelta + política; salida = observaciones (presencia/accesibilidad), streams/metadatos, capacidades, errores normalizados.
 
 ### 5. Asset Inventory
 
-**Responsabilidad:** inventario histórico de archivos/documentos descubiertos.
+**Responsabilidad:** inventario histórico de activos, observaciones y snapshots.
 
-**Incluye:** `DiscoveredAsset`, observaciones, estados de accesibilidad, hashes, detección de nuevos/modificados/no observados.
+**Incluye:** `DiscoveredAsset`, `DiscoveryObservation`, `AssetSnapshot`, estados de presencia y accesibilidad separados, hashes, detección de nuevos/modificados/no observados.
 
-**No incluye:** borrar inmediatamente un activo solo porque dejó de verse en una ejecución.
+**No incluye:** borrar inmediatamente un activo solo porque dejó de verse; confundir ausencia con error de lectura.
 
-**Contrato conceptual:** consume resultados de discovery; suministra candidatos a inspección.
+**Contrato conceptual:** consume resultados de discovery; suministra snapshots a inspección/análisis.
 
 ### 6. Workbook Inspector
 
-**Responsabilidad:** análisis estructural factual de libros Excel.
+**Responsabilidad:** análisis estructural factual de libros Excel en una `InspectionRun`.
 
 **Incluye:** formato, hojas, dimensiones, tablas, rangos, nombres, fórmulas, combinaciones, validaciones, vínculos, consultas, detección de macros (sin ejecutarlas), propiedades.
 
 **No incluye:** conocer el protocolo de origen; proponer entidades canónicas.
 
-**Contrato conceptual:** entrada = contenido/metadatos de activo; salida = `ObservedWorkbook` y derivados observados.
+**Contrato conceptual:** entrada = `AssetSnapshot`; salida = `ObservedWorkbook` y derivados observados.
 
 ### 7. Profiling Engine
 
-**Responsabilidad:** perfilar columnas/valores.
+**Responsabilidad:** perfilar columnas/valores en una `ProfilingRun`.
 
-**Incluye:** tipos aparentes, nulos, unicidad, cardinalidad, patrones, distribuciones, anomalías.
+**Incluye:** tipos aparentes, nulos, unicidad, cardinalidad, patrones, distribuciones, anomalías; emisión de `EvidenceItem` factuales cuando proceda.
 
-**No incluye:** aprobación de modelo canónico.
+**No incluye:** aprobación de modelo canónico ni puntuación de confianza de negocio como único artefacto.
 
 **Contrato conceptual:** opera sobre regiones/campos observados; produce `Profile` y evidencias auxiliares.
 
 ### 8. Inference Engine
 
-**Responsabilidad:** proponer interpretación.
+**Responsabilidad:** proponer interpretación en una `InferenceRun`.
 
-**Incluye:** entidades, campos, tipos, claves, relaciones, catálogos, similitudes, reglas candidatas; siempre con evidencia y confianza.
+**Incluye:** entidades, campos, tipos, claves, relaciones con extremos explícitos, catálogos, similitudes, reglas candidatas; `EvidenceItem` + `ConfidenceAssessment`.
 
 **No incluye:** afirmar verdades absolutas ni escribir DDL productivo sin revisión.
 
-**Contrato conceptual:** lee observado + perfiles; escribe modelo inferido y enlaces de linaje.
+**Contrato conceptual:** lee observado + perfiles; escribe modelo inferido y enlaces de linaje/grafo.
 
 ### 9. Information Graph
 
-**Responsabilidad:** representar relaciones entre archivos, hojas, entidades, campos, usuarios/departamentos (cuando existan), orígenes, inferencias y modelos canónicos.
+**Responsabilidad:** representar y, más adelante, materializar la navegación del conocimiento.
 
-**Incluye:** modelo de relaciones consultable; no exige decidir motor de grafos todavía.
+**Incluye (conceptual desde el inicio):** relaciones entre archivos, hojas, entidades, campos, orígenes, snapshots, inferencias, evidencias, decisiones y modelos canónicos.
 
-**Contrato conceptual:** se alimenta de inventario, inferencias y decisiones; sirve a reporting y consolidación.
+**Incluye (implementación posterior):** motor de consulta, índices, visualización — tecnología por ADR.
 
 ### 10. Consolidation Planner
 
 **Responsabilidad:** proponer consolidación y mappings hacia el modelo canónico.
 
-**Incluye:** propuestas, conflictos, duplicidades, mappings origen→canónico, apoyo a revisión humana.
+**Incluye:** propuestas, conflictos, duplicidades, mappings origen→canónico, apoyo a `ReviewDecision`.
 
 **No incluye:** aplicar cambios en los archivos Excel origen.
 
@@ -229,7 +248,7 @@ sequenceDiagram
 
 **Responsabilidad:** trazabilidad, historial y procedencia.
 
-**Incluye:** quién/qué/cuándo; versión de conector/analizador; evidencias; decisiones de revisión; cadena origen→observado→inferido→canónico.
+**Incluye:** quién/qué/cuándo; versión de conector/inspector/perfilador/inferidor; evidencias; evaluaciones de confianza; decisiones de revisión; cadena origen→activo→snapshot→observado→inferido→canónico.
 
 ## Contratos transversales
 
@@ -238,15 +257,21 @@ sequenceDiagram
 | Solo lectura | Ningún componente de discovery/análisis escribe en el origen |
 | Desacoplo | Connector ↛ Excel semantics; Inspector ↛ protocol details |
 | Capas | Observed / Inferred / Canonical no se fusionan en un único registro ambiguo |
-| Evidencia | Toda inferencia referencia evidencias y puntuación de confianza |
+| Snapshot | El análisis reproducible se ancla a `AssetSnapshot`, no solo al activo vivo |
+| Ejecuciones | Discovery, inspección, perfilado e inferencia tienen runs distintas |
+| Presencia ≠ accesibilidad | Se modelan y reportan por separado |
+| Evidencia / confianza | `EvidenceItem` y `ConfidenceAssessment` son artefactos distintos |
+| Revisión | `ReviewDecision` aplica a cualquier sujeto revisable |
+| Relación | `CandidateRelationship` declara extremos from/to explícitos |
+| Grafo | El Information Graph conceptual se alimenta desde las primeras entidades |
 | Secretos | Solo `CredentialReference` en configuración persistida de orígenes |
-| Versiones | Cada análisis registra versión de componente |
+| Versiones | Cada ejecución registra versión de componente |
 
 ## Extensibilidad sin sobre-abstracción
 
 El diseño admite futuros tipos de documento (CSV, Access, SQLite, JSON, XML, DB, API) mediante:
 
-- activos genéricos en inventario;
+- activos y snapshots genéricos en inventario;
 - inspectores específicos por tipo de documento;
 - un núcleo de inferencia/consolidación orientado a entidades y campos, no a celdas Excel.
 
@@ -268,3 +293,4 @@ La forma de empaquetado se decidirá por ADR cuando existan requisitos de ejecuc
 - Seguridad: [security.md](security.md)
 - Criterios tecnológicos: [technology-selection.md](technology-selection.md)
 - Decisiones: [decisions/README.md](decisions/README.md)
+- ADR 0001: [decisions/0001-phase-0-1-domain-and-execution-model.md](decisions/0001-phase-0-1-domain-and-execution-model.md)

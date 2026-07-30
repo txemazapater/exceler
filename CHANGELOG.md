@@ -5,8 +5,16 @@ El versionado semántico se aplicará cuando exista software publicable.
 
 ## [Unreleased]
 
+### Changed
+
+- Fase 0.1: modelo temporal y de ejecución (`AssetSnapshot`, runs de inspección/perfilado/inferencia, extremos de relación, evidencia vs confianza, `ReviewDecision` generalizada, presencia vs accesibilidad).
+- Information Graph documentado como conceptual desde el inicio; fase posterior = navegación/materialización.
+- Roadmap: SMB y SharePoint/OneDrive adelantados (fases 4 y 5); renumeración de fases posteriores.
+- Rama por defecto del repositorio: `main` (antes `master`).
+
 ### Added
 
+- ADR 0001 — corrección del modelo temporal y de ejecución.
 - Licencia MIT.
 - Documentación fundacional de EXCELER (visión, alcance, arquitectura, dominio, terminología, seguridad, roadmap).
 - Criterios de selección tecnológica sin fijar stack.

@@ -1,17 +1,15 @@
 # Alcance
 
-## Alcance inicial (Fase 0)
+## Alcance inicial (Fases 0 / 0.1)
 
-Esta iteración se limita a:
+La definición arquitectónica incluye:
 
-- definir visión, principios y límites;
-- documentar el modelo de dominio;
-- describir subsistemas y contratos conceptuales;
-- establecer glosario y criterios de seguridad;
-- proponer roadmap incremental;
-- preparar el repositorio para implementación por fases;
-- definir cómo se documentarán decisiones (ADR);
-- definir cómo se construirán muestras sintéticas de prueba.
+- visión, principios y límites;
+- modelo de dominio (incl. corrección 0.1: snapshots, runs de análisis, evidencia/confianza, revisión generalizada);
+- subsistemas y contratos conceptuales;
+- glosario y criterios de seguridad;
+- roadmap incremental;
+- proceso ADR y muestras sintéticas documentadas.
 
 No incluye software ejecutable.
 
@@ -22,13 +20,13 @@ Por fases posteriores, según [roadmap.md](roadmap.md):
 | Área | Contenido previsto |
 |------|--------------------|
 | Orígenes | Registro, validación, capacidades, referencias de credenciales |
-| Conectores | Sistema de archivos local/montado; después SMB; más adelante SharePoint/OneDrive |
-| Inventario | Activos, observaciones, historial, ejecuciones de descubrimiento |
-| Excel | Inspección estructural sin modificar ni ejecutar macros |
-| Perfilado | Tipos aparentes, nulos, unicidad, patrones, anomalías |
-| Inferencia | Entidades, campos, claves y relaciones candidatas |
-| Grafo | Relaciones entre archivos, hojas, entidades, inferencias y modelos |
-| Consolidación | Propuestas, conflictos, mappings, revisión humana |
+| Conectores | Filesystem; SMB; SharePoint/OneDrive (adelantados tras el inventario inicial) |
+| Inventario | Activos, observaciones, snapshots, presencia vs accesibilidad, `DiscoveryRun` |
+| Excel | `InspectionRun`; estructura sin modificar ni ejecutar macros |
+| Perfilado | `ProfilingRun`; tipos aparentes, nulos, unicidad, patrones, anomalías |
+| Inferencia | `InferenceRun`; entidades, campos, claves y relaciones con extremos explícitos |
+| Grafo | Conceptual desde el inicio; navegación/materialización en fase dedicada |
+| Consolidación | Propuestas, conflictos, mappings, `ReviewDecision` generalizada |
 | Esquemas | Generación asistida hacia SQL Server, PostgreSQL, SQLite u otros |
 | Informes | Salidas técnicas y ejecutivas (p. ej. Markdown/HTML) |
 
