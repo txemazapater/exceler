@@ -156,7 +156,12 @@ REGION_SPECS: list[ScenarioSpec] = [
                         "regions": [
                             {
                                 "region_type": "table",
-                                "bbox": {"first_row": 1, "last_row": 5, "first_col": 1, "last_col": 3},
+                                "bbox": {
+                                    "first_row": 1,
+                                    "last_row": 5,
+                                    "first_col": 1,
+                                    "last_col": 3,
+                                },
                                 "has_footer": True,
                             }
                         ],
@@ -226,7 +231,12 @@ REGION_SPECS: list[ScenarioSpec] = [
                         "regions": [
                             {
                                 "region_type": "table",
-                                "bbox": {"first_row": 1, "last_row": 6, "first_col": 1, "last_col": 2},
+                                "bbox": {
+                                    "first_row": 1,
+                                    "last_row": 6,
+                                    "first_col": 1,
+                                    "last_col": 2,
+                                },
                             }
                         ],
                     }

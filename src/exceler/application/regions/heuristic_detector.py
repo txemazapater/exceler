@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from exceler.domain.regions.models import (
     BoundingBox,
@@ -440,13 +440,13 @@ def _classify(
     string_ratio = sum(1 for c in cells if c.kind is CellValueKind.STRING) / max(occupied, 1)
     if height <= 1 and string_ratio >= 0.5 and (below_dense or merge_wide):
         title_score += 0.3
-        evidence.append(
-            RegionEvidenceItem("single_row_string_band", 0.3, "Single-row string band")
-        )
+        evidence.append(RegionEvidenceItem("single_row_string_band", 0.3, "Single-row string band"))
     if width <= 2 and string_ratio >= 0.8 and not below_dense and not merge_wide:
         note_score += 0.45
         evidence.append(
-            RegionEvidenceItem("narrow_text_block", 0.45, "Narrow text block away from title context")
+            RegionEvidenceItem(
+                "narrow_text_block", 0.45, "Narrow text block away from title context"
+            )
         )
     if density < 0.35 and width <= 3:
         note_score += 0.35
@@ -548,16 +548,12 @@ def _seed_structured_tables(
             continue
         r1, r2, c1, c2 = parsed
         bbox = BoundingBox(first_row=r1, last_row=r2, first_col=c1, last_col=c2)
-        covered = [
-            facts[key] for key in facts if r1 <= key[0] <= r2 and c1 <= key[1] <= c2
-        ]
+        covered = [facts[key] for key in facts if r1 <= key[0] <= r2 and c1 <= key[1] <= c2]
         if options.include_cell_coordinates:
             if covered:
                 coords = tuple(sorted(c.coordinate for c in covered))
             else:
-                coords = tuple(
-                    _coord(r, c) for r in range(r1, r2 + 1) for c in range(c1, c2 + 1)
-                )
+                coords = tuple(_coord(r, c) for r in range(r1, r2 + 1) for c in range(c1, c2 + 1))
         else:
             coords = ()
         cells_for_stats = covered or [
@@ -639,9 +635,10 @@ def _apply_nesting(
             if gap > options.nest_max_gap_rows:
                 continue
             covers = tb.first_col <= ub.first_col and tb.last_col >= ub.last_col
-            near = abs(tb.first_col - ub.first_col) <= options.nest_column_tolerance and abs(
-                tb.last_col - ub.last_col
-            ) <= options.nest_column_tolerance
+            near = (
+                abs(tb.first_col - ub.first_col) <= options.nest_column_tolerance
+                and abs(tb.last_col - ub.last_col) <= options.nest_column_tolerance
+            )
             if not (covers or near):
                 continue
             if gap < best_gap:
@@ -710,9 +707,7 @@ def _detect_sheet(
         headers, footers = _header_footer_rows(cells, bbox, region_type)
         stats, profile = _stats_and_style(cells, bbox)
         coords = (
-            tuple(sorted(c.coordinate for c in cells))
-            if options.include_cell_coordinates
-            else ()
+            tuple(sorted(c.coordinate for c in cells)) if options.include_cell_coordinates else ()
         )
         regions.append(
             LogicalRegion(
@@ -750,9 +745,7 @@ class HeuristicRegionDetector:
         sheets = tuple(_detect_sheet(ws, opts) for ws in inspection.worksheets)
         warnings: list[str] = []
         if inspection.completion_status.value == "partial":
-            warnings.append(
-                "Inspection was partial; region detection used observed cells only."
-            )
+            warnings.append("Inspection was partial; region detection used observed cells only.")
         limitations = (
             "Region types are preliminary structural labels, not business semantics.",
             "Chart/image object geometry and pivot caches are out of scope for Phase 2B MVP.",

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class RegionType(str, Enum):
+class RegionType(StrEnum):
     UNKNOWN = "unknown"
     TABLE = "table"
     MATRIX = "matrix"

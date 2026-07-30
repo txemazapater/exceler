@@ -328,7 +328,7 @@ class OpenPyxlWorkbookReader:
             "Document core/custom properties are not required for Phase 2A.",
             "FileIdentity.content_hash is sha256 of the inspected payload bytes.",
             "Pathological declared dimensions use materialized-cell fallback (adapter-internal).",
-            "Cell styles expose factual presence signals (font/fill/alignment/borders) for Phase 2B.",
+            "Cell styles expose factual font/fill/alignment/border signals for Phase 2B.",
         ]
 
         if announced_size != actual_size:

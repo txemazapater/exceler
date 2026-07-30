@@ -8,9 +8,9 @@ from typing import Annotated
 
 import typer
 
-from exceler.application.workbook.serialization import inspection_to_dict
 from exceler.application.regions.heuristic_detector import HeuristicRegionDetector
 from exceler.application.regions.serialization import regions_to_dict
+from exceler.application.workbook.serialization import inspection_to_dict
 from exceler.domain.regions.models import RegionDetectionResult
 from exceler.domain.workbook.enums import InspectionCompletionStatus
 from exceler.domain.workbook.errors import (

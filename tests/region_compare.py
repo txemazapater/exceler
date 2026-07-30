@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from exceler.domain.regions.models import LogicalRegion, RegionDetectionResult, SheetRegions
 from tests.inspection_compare import ExpectationMismatchError
+
+from exceler.domain.regions.models import LogicalRegion, RegionDetectionResult, SheetRegions
 
 
 def _find_sheet(result: RegionDetectionResult, name: str | None) -> SheetRegions | None:
@@ -98,16 +99,17 @@ def compare_region_expectations(
                 r.children_ids for r in sheet.regions
             )
             if not linked:
-                raise ExpectationMismatchError(
-                    scenario_id, f"{path}.has_parent_child", True, False
-                )
+                raise ExpectationMismatchError(scenario_id, f"{path}.has_parent_child", True, False)
 
         for r_idx, region_exp in enumerate(sheet_exp.get("regions") or []):
             region = _find_region(sheet.regions, region_exp)
             rpath = f"{path}.regions[{r_idx}]"
             if region is None:
                 raise ExpectationMismatchError(scenario_id, rpath, region_exp, None)
-            if "region_type" in region_exp and region.region_type.value != region_exp["region_type"]:
+            if (
+                "region_type" in region_exp
+                and region.region_type.value != region_exp["region_type"]
+            ):
                 raise ExpectationMismatchError(
                     scenario_id,
                     f"{rpath}.region_type",
