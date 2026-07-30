@@ -1,0 +1,16 @@
+{
+  "scenario_id": "structured_tables_advanced",
+  "description": "Varias tablas estructuradas, una con totales y fuera de A1",
+  "workbook": "workbooks/structural/structured_tables_advanced.xlsx",
+  "generator": "inspection_scenarios.build_structured_tables_advanced",
+  "seed": 20260730,
+  "intentions": [
+    "OffsetInventory con totalsRowCount=1",
+    "RegionsTable"
+  ],
+  "features": [
+    "excel_table",
+    "totals_row"
+  ],
+  "versioned": true
+}

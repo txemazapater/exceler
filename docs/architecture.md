@@ -27,9 +27,10 @@ El Core es independiente del host: también se contemplan Native, Desktop y Agen
 - `GET /health/ready` — readiness (PostgreSQL + configuración básica).
 - `GET /health` — alias de compatibilidad de liveness.
 
-No hay workers, colas, SMB directo ni parser Excel en esta fase.
+No hay workers, colas ni SMB directo en esta fase.
+Fase 2A añade el **Workbook Inspector** (lectura factual XLSX/XLSM vía openpyxl en infraestructura).
 
-Ver [deployment.md](deployment.md), [ADR 0002](decisions/0002-runtime-and-deployment-strategy.md) y [ADR 0003](decisions/0003-initial-technology-stack.md).
+Ver [deployment.md](deployment.md), [workbook-inspection.md](workbook-inspection.md), [ADR 0002](decisions/0002-runtime-and-deployment-strategy.md) y [ADR 0003](decisions/0003-initial-technology-stack.md).
 
 ## Objetivo arquitectónico
 

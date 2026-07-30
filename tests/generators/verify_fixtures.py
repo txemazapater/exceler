@@ -8,7 +8,7 @@ from typing import Any
 
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from tests.generators.catalog import ALL_SPECS, get_builder
+from tests.generators.catalog import ALL_SPECS, get_builder, get_special_saver
 from tests.generators.workbook_factory import (
     EXPECTED_SCHEMA_VERSION,
     ScenarioSpec,
@@ -316,7 +316,13 @@ def verify_all(
             with tempfile.TemporaryDirectory(prefix="exceler-fixture-") as tmp:
                 tmp_root = Path(tmp)
                 tmp_path = tmp_root / wb_key
-                save_workbook(regenerated, tmp_path)
+                saver = None
+                if builders is None:
+                    saver = get_special_saver(spec.generator_name)
+                if saver is not None:
+                    saver(regenerated, tmp_path)
+                else:
+                    save_workbook(regenerated, tmp_path)
                 # Optional diagnostic only — binary hash must not fail verification.
                 _ = file_sha256(tmp_path)
                 _ = file_sha256(wb)

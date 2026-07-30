@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "scenario_id": "cross_sheet_formula",
+  "workbook": "workbooks/types/cross_sheet_formula.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "cells": [
+        {
+          "sheet": "Calc",
+          "coordinate": "B1",
+          "formula": "=Inputs!A2+Inputs!A3"
+        },
+        {
+          "sheet": "Calc",
+          "coordinate": "B2",
+          "formula": "=SUM(Inputs!A2:A3)"
+        }
+      ]
+    }
+  }
+}

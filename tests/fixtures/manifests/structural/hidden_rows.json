@@ -1,0 +1,14 @@
+{
+  "scenario_id": "hidden_rows",
+  "description": "Fila oculta con altura explícita",
+  "workbook": "workbooks/structural/hidden_rows.xlsx",
+  "generator": "inspection_scenarios.build_hidden_rows",
+  "seed": 20260730,
+  "intentions": [
+    "Fila 3 oculta"
+  ],
+  "features": [
+    "hidden_rows"
+  ],
+  "versioned": true
+}

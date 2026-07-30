@@ -3,5 +3,25 @@
   "scenario_id": "cell_errors",
   "workbook": "workbooks/types/cell_errors.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "cells": [
+        {
+          "sheet": "Errors",
+          "coordinate": "B2",
+          "formula": "=1/0"
+        },
+        {
+          "sheet": "Errors",
+          "coordinate": "B3",
+          "formula": "=Z99"
+        },
+        {
+          "sheet": "Errors",
+          "coordinate": "B4",
+          "formula": "=UNKNOWN()"
+        }
+      ]
+    }
+  }
 }

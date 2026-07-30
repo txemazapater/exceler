@@ -4,7 +4,24 @@
   "workbook": "workbooks/structural/hidden_sheet.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
-    "worksheets": 2,
-    "hidden_worksheets": 1
+    "inspection": {
+      "workbook": {
+        "format": "xlsx",
+        "has_vba_project": false,
+        "worksheet_count": 2
+      },
+      "worksheets": [
+        {
+          "name": "Visible",
+          "index": 0,
+          "visibility": "visible"
+        },
+        {
+          "name": "HiddenData",
+          "index": 1,
+          "visibility": "hidden"
+        }
+      ]
+    }
   }
 }

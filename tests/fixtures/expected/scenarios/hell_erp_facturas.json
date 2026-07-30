@@ -3,5 +3,16 @@
   "scenario_id": "hell_erp_facturas",
   "workbook": "workbooks/scenarios/hell_erp/facturas.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      },
+      "worksheets": [
+        {
+          "name": "Facturas"
+        }
+      ]
+    }
+  }
 }

@@ -3,5 +3,25 @@
   "scenario_id": "formulas",
   "workbook": "workbooks/types/formulas.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "cells": [
+        {
+          "sheet": "Calc",
+          "coordinate": "C2",
+          "formula": "=A2*B2"
+        },
+        {
+          "sheet": "Calc",
+          "coordinate": "C3",
+          "formula": "=A3*B3"
+        },
+        {
+          "sheet": "Calc",
+          "coordinate": "C4",
+          "formula": "=SUM(C2:C3)"
+        }
+      ]
+    }
+  }
 }

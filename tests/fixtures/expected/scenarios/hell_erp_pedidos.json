@@ -4,7 +4,18 @@
   "workbook": "workbooks/scenarios/hell_erp/pedidos.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      },
+      "worksheets": [
+        {
+          "name": "Pedidos"
+        }
+      ]
+    },
     "relationships": {
+      "reserved_for": "2E",
       "customer_column": "Cliente",
       "targets": [
         "hell_erp_clientes.CodCliente"

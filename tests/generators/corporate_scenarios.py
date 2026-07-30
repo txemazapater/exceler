@@ -127,8 +127,15 @@ CORPORATE_SPECS: list[ScenarioSpec] = [
             "whitespace",
         ],
         expected_skeleton={
-            "worksheets": 2,
+            "inspection": {
+                "workbook": {"format": "xlsx", "has_vba_project": False, "worksheet_count": 2},
+                "worksheets": [
+                    {"name": "Clientes", "index": 0, "visibility": "visible"},
+                    {"name": "Notas", "index": 1, "visibility": "visible"},
+                ],
+            },
             "relationships": {
+                "reserved_for": "2E",
                 "referenced_by": ["hell_erp_pedidos", "hell_erp_facturas"],
                 "key_concept": "customer_code",
             },
@@ -147,6 +154,12 @@ CORPORATE_SPECS: list[ScenarioSpec] = [
             "Precios numéricos",
         ],
         features=["null_key", "inactive_flag", "catalog"],
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"format": "xlsx", "worksheet_count": 1},
+                "worksheets": [{"name": "Articulos", "index": 0}],
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="hell_erp_pedidos",
@@ -163,10 +176,15 @@ CORPORATE_SPECS: list[ScenarioSpec] = [
         ],
         features=["fk_candidate", "missing_reference", "date_as_text", "whitespace_key"],
         expected_skeleton={
+            "inspection": {
+                "workbook": {"worksheet_count": 1},
+                "worksheets": [{"name": "Pedidos"}],
+            },
             "relationships": {
+                "reserved_for": "2E",
                 "customer_column": "Cliente",
                 "targets": ["hell_erp_clientes.CodCliente"],
-            }
+            },
         },
     ),
     ScenarioSpec(
@@ -182,6 +200,12 @@ CORPORATE_SPECS: list[ScenarioSpec] = [
             "Última fila es TOTAL no detalle",
         ],
         features=["fk_candidate", "totals_row", "line_items"],
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"worksheet_count": 1},
+                "worksheets": [{"name": "Lineas"}],
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="hell_erp_facturas",
@@ -196,6 +220,12 @@ CORPORATE_SPECS: list[ScenarioSpec] = [
             "Un total nulo permitido",
         ],
         features=["synonym_column", "fk_candidate", "nullable_amount"],
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"worksheet_count": 1},
+                "worksheets": [{"name": "Facturas"}],
+            }
+        },
     ),
 ]
 

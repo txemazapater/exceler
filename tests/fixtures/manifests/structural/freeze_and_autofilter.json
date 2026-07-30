@@ -1,0 +1,16 @@
+{
+  "scenario_id": "freeze_and_autofilter",
+  "description": "Freeze panes y autofiltro",
+  "workbook": "workbooks/structural/freeze_and_autofilter.xlsx",
+  "generator": "inspection_scenarios.build_freeze_and_autofilter",
+  "seed": 20260730,
+  "intentions": [
+    "freeze_panes=A2",
+    "auto_filter A1:C4"
+  ],
+  "features": [
+    "freeze_panes",
+    "auto_filter"
+  ],
+  "versioned": true
+}

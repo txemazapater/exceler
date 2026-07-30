@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "scenario_id": "cell_physical_types",
+  "workbook": "workbooks/types/cell_physical_types.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "format": "xlsx",
+        "has_vba_project": false
+      },
+      "cells": [
+        {
+          "sheet": "Types",
+          "coordinate": "B15",
+          "formula": "=1+1"
+        },
+        {
+          "sheet": "Types",
+          "coordinate": "B16",
+          "formula": "=1/0"
+        },
+        {
+          "sheet": "Types",
+          "coordinate": "B3",
+          "value_kind": "integer"
+        },
+        {
+          "sheet": "Types",
+          "coordinate": "B11",
+          "value_kind": "string",
+          "text": "00123"
+        },
+        {
+          "sheet": "Types",
+          "coordinate": "B17",
+          "has_comment": true
+        },
+        {
+          "sheet": "Types",
+          "coordinate": "B18",
+          "has_hyperlink": true
+        }
+      ]
+    }
+  }
+}

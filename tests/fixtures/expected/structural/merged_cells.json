@@ -3,5 +3,16 @@
   "scenario_id": "merged_cells",
   "workbook": "workbooks/structural/merged_cells.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "worksheets": [
+        {
+          "name": "Merged",
+          "merged_ranges": [
+            "A1:C1"
+          ]
+        }
+      ]
+    }
+  }
 }

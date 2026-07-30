@@ -3,5 +3,20 @@
   "scenario_id": "excel_structured_table",
   "workbook": "workbooks/structural/excel_structured_table.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "worksheets": [
+        {
+          "name": "TableSheet",
+          "tables": [
+            {
+              "name": "InventoryTable",
+              "ref": "A1:B4",
+              "totals_row_count": 0
+            }
+          ]
+        }
+      ]
+    }
+  }
 }

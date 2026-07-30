@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "scenario_id": "defined_names_variants",
+  "workbook": "workbooks/structural/defined_names_variants.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "defined_names": [
+        {
+          "name": "GlobalConst"
+        },
+        {
+          "name": "GlobalRange"
+        }
+      ]
+    }
+  }
+}

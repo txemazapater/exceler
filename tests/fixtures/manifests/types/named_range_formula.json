@@ -1,0 +1,15 @@
+{
+  "scenario_id": "named_range_formula",
+  "description": "Fórmula que usa un rango nombrado",
+  "workbook": "workbooks/types/named_range_formula.xlsx",
+  "generator": "inspection_scenarios.build_named_range_formula",
+  "seed": 20260730,
+  "intentions": [
+    "=SUM(Nums) sin evaluar"
+  ],
+  "features": [
+    "formulas",
+    "defined_names"
+  ],
+  "versioned": true
+}

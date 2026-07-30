@@ -6,13 +6,14 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 2.0 cerrada:** corpus sintético Excel endurecido (instantánea lógica, verify, CI).
-Siguiente: **2S** (inventario FS) y/o **2A** (inspección de workbook); aún **no** hay motor de análisis Excel.
+**Fase 2A en curso:** inspección factual de workbooks (`.xlsx`/`.xlsm`) sin interpretación.
+Fase 2.0 cerrada (corpus sintético). Aún **no** hay detección de tablas/tipos/claves/relaciones.
 
 CI: GitHub Actions (`quality` + unit + fixture verify, `integration` + Postgres, `docker` build + Compose smoke).
 Local sin Docker: `pytest -m "not integration and not docker"`.
 Staging manual: [docs/staging.md](docs/staging.md).
 Fixtures: `uv run exceler dev fixtures generate|verify`.
+Inspección: `uv run exceler workbook inspect path.xlsx [--format json]`.
 
 ## Arranque rápido (Docker Compose)
 
@@ -80,6 +81,8 @@ CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint
 | [docs/development.md](docs/development.md) | Desarrollo |
 | [docs/configuration.md](docs/configuration.md) | Configuración y secretos |
 | [docs/fixtures.md](docs/fixtures.md) | Corpus sintético Excel (Fase 2.0) |
+| [docs/workbook-inspection.md](docs/workbook-inspection.md) | Inspección factual (Fase 2A) |
+| [docs/limitations.md](docs/limitations.md) | Limitaciones conocidas |
 | [docs/staging.md](docs/staging.md) | Staging manual en SAPIENS |
 | [docs/decisions/](docs/decisions/README.md) | ADRs |
 
@@ -106,6 +109,10 @@ Crear/actualizar valida **configuración**. `validate` diagnostica **accesibilid
 exceler db upgrade
 exceler source list
 exceler source validate <id>
+exceler workbook inspect archivo.xlsx
+exceler workbook inspect archivo.xlsx --format json --pretty
+exceler dev fixtures generate
+exceler dev fixtures verify
 ```
 
 ## Licencia

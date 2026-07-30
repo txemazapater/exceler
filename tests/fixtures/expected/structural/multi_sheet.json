@@ -4,6 +4,25 @@
   "workbook": "workbooks/structural/multi_sheet.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
-    "worksheets": 3
+    "inspection": {
+      "workbook": {
+        "format": "xlsx",
+        "worksheet_count": 3
+      },
+      "worksheets": [
+        {
+          "name": "One",
+          "index": 0
+        },
+        {
+          "name": "Two",
+          "index": 1
+        },
+        {
+          "name": "Three",
+          "index": 2
+        }
+      ]
+    }
   }
 }

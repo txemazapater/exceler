@@ -3,5 +3,16 @@
   "scenario_id": "hidden_columns",
   "workbook": "workbooks/structural/hidden_columns.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "worksheets": [
+        {
+          "name": "Cols",
+          "hidden_columns": [
+            "B"
+          ]
+        }
+      ]
+    }
+  }
 }

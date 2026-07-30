@@ -1,0 +1,14 @@
+{
+  "scenario_id": "merged_variants",
+  "description": "Varios rangos combinados horizontales y verticales",
+  "workbook": "workbooks/structural/merged_variants.xlsx",
+  "generator": "inspection_scenarios.build_merged_variants",
+  "seed": 20260730,
+  "intentions": [
+    "Merges A1:C1, A3:A5, E1:F1, A7:B8"
+  ],
+  "features": [
+    "merged_cells"
+  ],
+  "versioned": true
+}

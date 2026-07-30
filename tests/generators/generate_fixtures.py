@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from openpyxl import load_workbook
-from tests.generators.catalog import ALL_SPECS, get_builder
+from tests.generators.catalog import ALL_SPECS, get_builder, get_special_saver
 from tests.generators.workbook_factory import (
     ScenarioSpec,
     save_workbook,
@@ -28,11 +28,15 @@ def generate_all(
             raise ValueError(f"{spec.scenario_id}: cannot generate without a seed")
         wb = builder(spec.seed)
         path = workbook_path(spec, root=root)
-        save_workbook(wb, path)
+        saver = get_special_saver(spec.generator_name)
+        if saver is not None:
+            saver(wb, path)
+        else:
+            save_workbook(wb, path)
         write_manifest(spec, root=root)
         write_expected_skeleton(spec, root=root)
         # Round-trip open validates the file is readable without macros/network.
-        load_workbook(path, read_only=True, data_only=False)
+        load_workbook(path, read_only=True, data_only=False, keep_vba=False)
         written.append(path)
     written.append(write_index(active_specs, root=root))
     return written

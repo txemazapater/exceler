@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "scenario_id": "xlsm_with_vba_stub",
+  "workbook": "workbooks/structural/xlsm_with_vba_stub.xlsm",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "format": "xlsm",
+        "has_vba_project": true,
+        "worksheet_count": 1
+      },
+      "warnings_contain": [
+        "VBA_PROJECT_PRESENT"
+      ]
+    }
+  }
+}

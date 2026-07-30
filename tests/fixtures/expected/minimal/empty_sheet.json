@@ -4,7 +4,23 @@
   "workbook": "workbooks/minimal/empty_sheet.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
-    "worksheets": 1,
-    "logical_tables": 0
+    "inspection": {
+      "workbook": {
+        "format": "xlsx",
+        "has_vba_project": false,
+        "worksheet_count": 1
+      },
+      "worksheets": [
+        {
+          "name": "Blank",
+          "index": 0,
+          "visibility": "visible"
+        }
+      ]
+    },
+    "regions": {
+      "reserved_for": "2B",
+      "logical_tables": 0
+    }
   }
 }

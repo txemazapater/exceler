@@ -1,0 +1,18 @@
+{
+  "scenario_id": "xlsm_with_vba_stub",
+  "description": "XLSM con stub vbaProject.bin inocuo (no ejecutable); solo detección de presencia",
+  "workbook": "workbooks/structural/xlsm_with_vba_stub.xlsm",
+  "generator": "inspection_scenarios.build_xlsm_with_vba_stub",
+  "seed": 20260730,
+  "intentions": [
+    "Contiene xl/vbaProject.bin",
+    "Nunca se ejecuta VBA ni se invoca Excel/COM",
+    "has_vba_project=true"
+  ],
+  "features": [
+    "xlsm",
+    "vba_project_present",
+    "no_macro_execution"
+  ],
+  "versioned": true
+}

@@ -5,6 +5,7 @@ from alembic import command
 from alembic.config import Config
 
 from exceler.application.sources.service import SourceService
+from exceler.cli.workbook import register_workbook_commands
 from exceler.config.settings import configure_logging, get_settings
 from exceler.infrastructure.db.models import SqlAlchemyAuditLogger, SqlAlchemySourceRepository
 from exceler.infrastructure.db.session import create_db_engine, create_session_factory
@@ -18,6 +19,7 @@ app.add_typer(db_app, name="db")
 app.add_typer(source_app, name="source")
 app.add_typer(dev_app, name="dev")
 dev_app.add_typer(fixtures_app, name="fixtures")
+register_workbook_commands(app)
 
 
 @fixtures_app.command("generate")

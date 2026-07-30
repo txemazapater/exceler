@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "scenario_id": "structured_tables_advanced",
+  "workbook": "workbooks/structural/structured_tables_advanced.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "worksheets": [
+        {
+          "name": "Tables",
+          "tables": [
+            {
+              "name": "OffsetInventory",
+              "ref": "B3:D7",
+              "totals_row_count": 1
+            },
+            {
+              "name": "RegionsTable",
+              "ref": "F3:G5",
+              "totals_row_count": 0
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

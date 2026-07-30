@@ -52,8 +52,10 @@ Sirve para aceptar de forma segura la extensión; no contiene macros ejecutables
 
 ## Cortes posteriores (nomenclatura B)
 
-Antes de cada corte se amplía el corpus: **2A** inspection → **2B** regions → **2C** profiling → **2D** keys → **2E** relationships.
+**2A** inspection (activa) → **2B** regions → **2C** profiling → **2D** keys → **2E** relationships.
 **2S** es inventario filesystem (paralelo). Ver [roadmap.md](roadmap.md).
+
+Durante 2A solo se valida `expectations.inspection`. Secciones `regions` / `relationships` / etc. pueden existir como reservadas.
 
 ## Restricción
 

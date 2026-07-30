@@ -4,7 +4,36 @@
   "workbook": "workbooks/minimal/simple_rectangular_table.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
-    "worksheets": 1,
-    "logical_tables": 1
+    "inspection": {
+      "workbook": {
+        "format": "xlsx",
+        "has_vba_project": false,
+        "worksheet_count": 1
+      },
+      "worksheets": [
+        {
+          "name": "Data",
+          "index": 0,
+          "visibility": "visible",
+          "min_observed_cells": 12
+        }
+      ],
+      "cells": [
+        {
+          "sheet": "Data",
+          "coordinate": "A1",
+          "text": "Id"
+        },
+        {
+          "sheet": "Data",
+          "coordinate": "A2",
+          "value_kind": "integer"
+        }
+      ]
+    },
+    "regions": {
+      "reserved_for": "2B",
+      "logical_tables": 1
+    }
   }
 }

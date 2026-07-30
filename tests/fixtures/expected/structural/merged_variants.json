@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "scenario_id": "merged_variants",
+  "workbook": "workbooks/structural/merged_variants.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "worksheets": [
+        {
+          "name": "Merges",
+          "merged_ranges": [
+            "A1:C1",
+            "A3:A5",
+            "A7:B8",
+            "E1:F1"
+          ]
+        }
+      ]
+    }
+  }
+}

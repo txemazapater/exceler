@@ -3,5 +3,18 @@
   "scenario_id": "xlsm_container",
   "workbook": "workbooks/structural/xlsm_container.xlsm",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "format": "xlsm",
+        "has_vba_project": false,
+        "worksheet_count": 1
+      },
+      "defined_names": [
+        {
+          "name": "FixtureFlag"
+        }
+      ]
+    }
+  }
 }

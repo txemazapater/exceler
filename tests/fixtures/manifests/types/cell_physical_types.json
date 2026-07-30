@@ -1,0 +1,17 @@
+{
+  "scenario_id": "cell_physical_types",
+  "description": "Tipos físicos de celda sin inferencia semántica",
+  "workbook": "workbooks/types/cell_physical_types.xlsx",
+  "generator": "inspection_scenarios.build_cell_physical_types",
+  "seed": 20260730,
+  "intentions": [
+    "Conservar value/data_type/number_format/formula/comentario/hipervínculo"
+  ],
+  "features": [
+    "cell_types",
+    "comments",
+    "hyperlinks",
+    "formulas"
+  ],
+  "versioned": true
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "scenario_id": "named_range_formula",
+  "workbook": "workbooks/types/named_range_formula.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "defined_names": [
+        {
+          "name": "Nums"
+        }
+      ],
+      "cells": [
+        {
+          "sheet": "Data",
+          "coordinate": "C1",
+          "formula": "=SUM(Nums)"
+        }
+      ]
+    }
+  }
+}

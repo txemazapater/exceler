@@ -1,0 +1,14 @@
+{
+  "scenario_id": "very_hidden_sheet",
+  "description": "Hoja veryHidden junto a una visible",
+  "workbook": "workbooks/structural/very_hidden_sheet.xlsx",
+  "generator": "inspection_scenarios.build_very_hidden_sheet",
+  "seed": 20260730,
+  "intentions": [
+    "Una hoja visible y una veryHidden"
+  ],
+  "features": [
+    "very_hidden_sheet"
+  ],
+  "versioned": true
+}

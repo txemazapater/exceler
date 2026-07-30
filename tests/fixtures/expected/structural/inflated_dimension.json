@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "scenario_id": "inflated_dimension",
+  "workbook": "workbooks/structural/inflated_dimension.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "worksheets": [
+        {
+          "name": "Inflated",
+          "declared_dimension_inflated": true,
+          "min_observed_cells": 3
+        }
+      ],
+      "warnings_contain": [
+        "DIMENSION_MAY_BE_INFLATED"
+      ]
+    }
+  }
+}

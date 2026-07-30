@@ -3,5 +3,11 @@
   "scenario_id": "title_above_header",
   "workbook": "workbooks/structural/title_above_header.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    }
+  }
 }

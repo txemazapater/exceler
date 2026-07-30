@@ -84,14 +84,20 @@ def test_catalog_has_minimum_coverage() -> None:
     assert "xlsm_container" in scenario_ids
 
 
-def test_generate_and_verify_roundtrip() -> None:
+def test_canonical_corpus_verify_only() -> None:
+    """Canonical tree integrity — does not rewrite versioned fixtures."""
+    errors = verify_all()
+    assert errors == []
+
+
+def test_canonical_corpus_regenerate_integrity() -> None:
+    """Explicit integrity check that regenerates the versioned corpus."""
     generate_all()
     errors = verify_all()
     assert errors == []
 
 
 def test_manifests_match_workbooks() -> None:
-    generate_all()
     for spec in ALL_SPECS:
         man = json.loads(manifest_path(spec).read_text(encoding="utf-8"))
         wb = workbook_path(spec)
@@ -104,13 +110,13 @@ def test_manifests_match_workbooks() -> None:
 
 
 def test_expected_skeletons_have_schema_version() -> None:
-    generate_all()
     for spec in ALL_SPECS:
         payload = json.loads(expected_path(spec).read_text(encoding="utf-8"))
         assert payload["schema_version"] == EXPECTED_SCHEMA_VERSION
         assert payload["scenario_id"] == spec.scenario_id
         assert payload["workbook"] == spec.relative_workbook.replace("\\", "/")
         assert isinstance(payload["expectations"], dict)
+        assert "inspection" in payload["expectations"] or payload["expectations"] == {}
 
 
 def test_fixtures_stay_under_fixtures_root() -> None:
@@ -122,7 +128,6 @@ def test_fixtures_stay_under_fixtures_root() -> None:
 
 
 def test_xlsm_container_has_no_vba_project() -> None:
-    generate_all()
     path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "xlsm_container"))
     with zipfile.ZipFile(path) as archive:
         names = [name.lower() for name in archive.namelist()]

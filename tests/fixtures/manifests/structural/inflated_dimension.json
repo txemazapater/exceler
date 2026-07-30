@@ -1,0 +1,15 @@
+{
+  "scenario_id": "inflated_dimension",
+  "description": "Dimensión declarada inflada por formato residual",
+  "workbook": "workbooks/structural/inflated_dimension.xlsx",
+  "generator": "inspection_scenarios.build_inflated_dimension",
+  "seed": 20260730,
+  "intentions": [
+    "declared_dimension supera las celdas con valor",
+    "No asumir max_row×max_column como datos reales"
+  ],
+  "features": [
+    "inflated_dimension"
+  ],
+  "versioned": true
+}

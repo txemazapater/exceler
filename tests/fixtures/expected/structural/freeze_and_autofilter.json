@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "scenario_id": "freeze_and_autofilter",
+  "workbook": "workbooks/structural/freeze_and_autofilter.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "worksheets": [
+        {
+          "name": "Frozen",
+          "freeze_panes": "A2",
+          "auto_filter": "A1:C4"
+        }
+      ]
+    }
+  }
+}

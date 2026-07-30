@@ -3,5 +3,16 @@
   "scenario_id": "hell_erp_lineas_pedido",
   "workbook": "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "expectations": {}
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      },
+      "worksheets": [
+        {
+          "name": "Lineas"
+        }
+      ]
+    }
+  }
 }

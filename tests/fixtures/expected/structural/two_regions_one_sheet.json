@@ -4,6 +4,14 @@
   "workbook": "workbooks/structural/two_regions_one_sheet.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
-    "logical_tables": 2
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "regions": {
+      "reserved_for": "2B",
+      "logical_tables": 2
+    }
   }
 }

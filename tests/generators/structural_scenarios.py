@@ -253,7 +253,13 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_empty_workbook",
         intentions=["Una hoja sin celdas con valor"],
         features=["empty"],
-        expected_skeleton={"worksheets": 1, "logical_tables": 0},
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"format": "xlsx", "has_vba_project": False, "worksheet_count": 1},
+                "worksheets": [{"name": "Empty", "index": 0, "visibility": "visible"}],
+            },
+            "regions": {"reserved_for": "2B", "logical_tables": 0},
+        },
     ),
     ScenarioSpec(
         scenario_id="empty_sheet",
@@ -263,7 +269,13 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_empty_sheet",
         intentions=["Hoja sin datos tabulares"],
         features=["empty_sheet"],
-        expected_skeleton={"worksheets": 1, "logical_tables": 0},
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"format": "xlsx", "has_vba_project": False, "worksheet_count": 1},
+                "worksheets": [{"name": "Blank", "index": 0, "visibility": "visible"}],
+            },
+            "regions": {"reserved_for": "2B", "logical_tables": 0},
+        },
     ),
     ScenarioSpec(
         scenario_id="simple_rectangular_table",
@@ -273,7 +285,24 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_simple_rectangular_table",
         intentions=["Cabecera en fila 1", "Tres filas de datos"],
         features=["header_row", "rectangular"],
-        expected_skeleton={"worksheets": 1, "logical_tables": 1},
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"format": "xlsx", "has_vba_project": False, "worksheet_count": 1},
+                "worksheets": [
+                    {
+                        "name": "Data",
+                        "index": 0,
+                        "visibility": "visible",
+                        "min_observed_cells": 12,
+                    }
+                ],
+                "cells": [
+                    {"sheet": "Data", "coordinate": "A1", "text": "Id"},
+                    {"sheet": "Data", "coordinate": "A2", "value_kind": "integer"},
+                ],
+            },
+            "regions": {"reserved_for": "2B", "logical_tables": 1},
+        },
     ),
     ScenarioSpec(
         scenario_id="multi_sheet",
@@ -283,7 +312,16 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_multi_sheet",
         intentions=["Exactamente tres hojas"],
         features=["multi_sheet"],
-        expected_skeleton={"worksheets": 3},
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"format": "xlsx", "worksheet_count": 3},
+                "worksheets": [
+                    {"name": "One", "index": 0},
+                    {"name": "Two", "index": 1},
+                    {"name": "Three", "index": 2},
+                ],
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="leading_trailing_blank_rows",
@@ -293,7 +331,10 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_leading_trailing_blank_rows",
         intentions=["La cabecera no está en la fila 1"],
         features=["offset_header", "blank_rows"],
-        expected_skeleton={"logical_tables": 1},
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 1}},
+            "regions": {"reserved_for": "2B", "logical_tables": 1},
+        },
     ),
     ScenarioSpec(
         scenario_id="interleaved_empty_columns",
@@ -303,6 +344,7 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_interleaved_empty_columns",
         intentions=["Existen columnas sin cabecera entre columnas con datos"],
         features=["empty_columns"],
+        expected_skeleton={"inspection": {"workbook": {"worksheet_count": 1}}},
     ),
     ScenarioSpec(
         scenario_id="title_above_header",
@@ -312,6 +354,7 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_title_above_header",
         intentions=["Fila 1 es título", "Cabecera en fila 3"],
         features=["title_row", "offset_header"],
+        expected_skeleton={"inspection": {"workbook": {"worksheet_count": 1}}},
     ),
     ScenarioSpec(
         scenario_id="two_regions_one_sheet",
@@ -321,7 +364,10 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_two_regions_one_sheet",
         intentions=["Dos bloques independientes en la misma hoja"],
         features=["multi_region"],
-        expected_skeleton={"logical_tables": 2},
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 1}},
+            "regions": {"reserved_for": "2B", "logical_tables": 2},
+        },
     ),
     ScenarioSpec(
         scenario_id="merged_cells",
@@ -331,6 +377,11 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_merged_cells",
         intentions=["Existe un rango combinado A1:C1"],
         features=["merged_cells"],
+        expected_skeleton={
+            "inspection": {
+                "worksheets": [{"name": "Merged", "merged_ranges": ["A1:C1"]}],
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="hidden_sheet",
@@ -340,7 +391,15 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_hidden_sheet",
         intentions=["Una hoja visible y una oculta"],
         features=["hidden_sheet"],
-        expected_skeleton={"worksheets": 2, "hidden_worksheets": 1},
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"format": "xlsx", "has_vba_project": False, "worksheet_count": 2},
+                "worksheets": [
+                    {"name": "Visible", "index": 0, "visibility": "visible"},
+                    {"name": "HiddenData", "index": 1, "visibility": "hidden"},
+                ],
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="hidden_columns",
@@ -350,6 +409,11 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_hidden_columns",
         intentions=["La columna B está oculta"],
         features=["hidden_columns"],
+        expected_skeleton={
+            "inspection": {
+                "worksheets": [{"name": "Cols", "hidden_columns": ["B"]}],
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="formulas",
@@ -359,6 +423,15 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_formulas",
         intentions=["C2/C3/C4 contienen fórmulas", "No se evalúan macros"],
         features=["formulas"],
+        expected_skeleton={
+            "inspection": {
+                "cells": [
+                    {"sheet": "Calc", "coordinate": "C2", "formula": "=A2*B2"},
+                    {"sheet": "Calc", "coordinate": "C3", "formula": "=A3*B3"},
+                    {"sheet": "Calc", "coordinate": "C4", "formula": "=SUM(C2:C3)"},
+                ]
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="cell_errors",
@@ -368,6 +441,15 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_cell_errors",
         intentions=["Incluye #DIV/0!, #REF! y #NAME? potenciales"],
         features=["cell_errors"],
+        expected_skeleton={
+            "inspection": {
+                "cells": [
+                    {"sheet": "Errors", "coordinate": "B2", "formula": "=1/0"},
+                    {"sheet": "Errors", "coordinate": "B3", "formula": "=Z99"},
+                    {"sheet": "Errors", "coordinate": "B4", "formula": "=UNKNOWN()"},
+                ]
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="excel_structured_table",
@@ -377,6 +459,22 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         generator_name="structural_scenarios.build_excel_structured_table",
         intentions=["Existe Table InventoryTable en A1:B4"],
         features=["excel_table"],
+        expected_skeleton={
+            "inspection": {
+                "worksheets": [
+                    {
+                        "name": "TableSheet",
+                        "tables": [
+                            {
+                                "name": "InventoryTable",
+                                "ref": "A1:B4",
+                                "totals_row_count": 0,
+                            }
+                        ],
+                    }
+                ]
+            }
+        },
     ),
     ScenarioSpec(
         scenario_id="xlsm_container",
@@ -394,6 +492,12 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
             "Incluye un nombre definido FixtureFlag para inspección estructural",
         ],
         features=["xlsm", "no_macro_execution", "no_vba_project", "defined_name"],
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"format": "xlsm", "has_vba_project": False, "worksheet_count": 1},
+                "defined_names": [{"name": "FixtureFlag"}],
+            }
+        },
     ),
 ]
 

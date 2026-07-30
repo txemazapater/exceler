@@ -1,0 +1,15 @@
+{
+  "scenario_id": "defined_names_variants",
+  "description": "Nombres definidos globales, locales y constantes",
+  "workbook": "workbooks/structural/defined_names_variants.xlsx",
+  "generator": "inspection_scenarios.build_defined_names_variants",
+  "seed": 20260730,
+  "intentions": [
+    "GlobalRange (rango)",
+    "GlobalConst (constante)"
+  ],
+  "features": [
+    "defined_names"
+  ],
+  "versioned": true
+}
