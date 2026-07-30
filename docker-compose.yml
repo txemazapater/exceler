@@ -3,7 +3,6 @@ name: exceler
 services:
   exceler-db:
     image: postgres:16-alpine
-    container_name: exceler-db
     environment:
       POSTGRES_DB: ${EXCELER_DB_NAME:-exceler}
       POSTGRES_USER: ${EXCELER_DB_USER:-exceler}
@@ -26,7 +25,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: exceler-app
     depends_on:
       exceler-db:
         condition: service_healthy

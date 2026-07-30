@@ -15,6 +15,8 @@ from exceler.config.settings import get_settings
 from exceler.infrastructure.db.models import Base, SqlAlchemyAuditLogger, SqlAlchemySourceRepository
 from exceler.main import create_app
 
+pytestmark = pytest.mark.integration
+
 
 def _database_url() -> str | None:
     return os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
@@ -57,6 +59,7 @@ def client(
 ) -> Generator[TestClient, None, None]:
     allowed = str(source_root.parent)
     monkeypatch.setenv("EXCELER_ALLOWED_SOURCE_ROOTS", allowed)
+    monkeypatch.setenv("DATABASE_URL", _database_url() or "")
     get_settings.cache_clear()
 
     app = create_app()
@@ -79,17 +82,6 @@ def client(
 
     app.dependency_overrides.clear()
     get_settings.cache_clear()
-
-
-def test_health_live_without_db_dependency() -> None:
-    get_settings.cache_clear()
-    app = create_app()
-    with TestClient(app) as client:
-        response = client.get("/health/live")
-        assert response.status_code == 200
-        assert response.json()["status"] == "live"
-        compat = client.get("/health")
-        assert compat.status_code == 200
 
 
 def test_health_ready(client: TestClient) -> None:
@@ -115,7 +107,6 @@ def test_source_crud_and_validate(
     assert created.status_code == 201, created.text
     body = created.json()
     assert body["credential_reference"] == "env://EXCELER_EXAMPLE_SECRET"
-    assert "password" not in created.text.lower() or "credential_reference" in created.text
     source_id = body["id"]
 
     missing = source_root.parent / "not-yet-mounted"

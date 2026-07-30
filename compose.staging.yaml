@@ -1,0 +1,33 @@
+# Staging overlay for SAPIENS / Traefik.
+# Usage:
+#   docker compose -p exceler -f docker-compose.yml -f compose.staging.yaml up -d
+#
+# Keep domain/network-specific values in environment variables — never hardcode
+# corporate hostnames in the repository.
+
+services:
+  exceler-app:
+    ports: !reset []
+    networks:
+      - exceler_internal
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${EXCELER_TRAEFIK_NETWORK:-traefik}"
+      - "traefik.http.routers.${EXCELER_TRAEFIK_ROUTER:-exceler}.rule=Host(`${EXCELER_PUBLIC_HOST:?set EXCELER_PUBLIC_HOST}`)"
+      - "traefik.http.routers.${EXCELER_TRAEFIK_ROUTER:-exceler}.entrypoints=${EXCELER_TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.${EXCELER_TRAEFIK_ROUTER:-exceler}.tls=${EXCELER_TRAEFIK_TLS:-true}"
+      - "traefik.http.services.${EXCELER_TRAEFIK_ROUTER:-exceler}.loadbalancer.server.port=8000"
+    volumes:
+      - ${EXCELER_SOURCES_HOST_PATH:-./samples/sources}:/sources/samples:ro
+      - ${EXCELER_WORK_HOST_PATH:-exceler_work}:/work
+      - ${EXCELER_TMP_HOST_PATH:-exceler_tmp}:/tmp/exceler
+
+  exceler-db:
+    networks:
+      - exceler_internal
+
+networks:
+  traefik_proxy:
+    external: true
+    name: ${EXCELER_TRAEFIK_NETWORK:-traefik}

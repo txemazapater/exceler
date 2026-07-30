@@ -10,7 +10,9 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 Todavía **no** hay enumeración completa de archivos, conectores SMB/SharePoint, ni inspección/perfilado/inferencia de Excel.
 
-CI: GitHub Actions (`quality`, `tests` con PostgreSQL, `docker-build`).
+CI: GitHub Actions (`quality` + unit, `integration` + Postgres, `docker` build + Compose smoke).
+Local sin Docker: `pytest -m "not integration and not docker"`.
+Staging manual: [docs/staging.md](docs/staging.md).
 
 ## Arranque rápido (Docker Compose)
 
@@ -23,15 +25,16 @@ curl http://127.0.0.1:8000/health/live
 curl http://127.0.0.1:8000/health/ready
 ```
 
-Desarrollo nativo con lock reproducible:
+Desarrollo nativo con lock reproducible (sin Docker local):
 
 ```bash
 uv sync --frozen --all-extras
+uv run pytest -m "not integration and not docker"
 ```
 
 OpenAPI: http://127.0.0.1:8000/docs
 
-Detalle: [docs/deployment.md](docs/deployment.md), [docs/development.md](docs/development.md), [docs/configuration.md](docs/configuration.md).
+Detalle: [docs/deployment.md](docs/deployment.md), [docs/development.md](docs/development.md), [docs/configuration.md](docs/configuration.md), [docs/staging.md](docs/staging.md).
 
 ## El problema
 
@@ -76,6 +79,7 @@ CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint
 | [docs/deployment.md](docs/deployment.md) | Despliegue Compose |
 | [docs/development.md](docs/development.md) | Desarrollo |
 | [docs/configuration.md](docs/configuration.md) | Configuración y secretos |
+| [docs/staging.md](docs/staging.md) | Staging manual en SAPIENS |
 | [docs/decisions/](docs/decisions/README.md) | ADRs |
 
 ## API (Fase 1)

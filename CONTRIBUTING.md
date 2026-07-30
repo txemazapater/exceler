@@ -12,16 +12,17 @@
 
 Ver [docs/development.md](docs/development.md).
 
-Antes de un PR de código:
+Antes de un PR de código (sin Docker local):
 
 ```bash
 uv run ruff format src tests
 uv run ruff check src tests
 uv run mypy
-uv run pytest
+uv run pytest -m "not integration and not docker"
 ```
 
 Mantén `uv.lock` actualizado si cambias dependencias (`uv lock`).
+PostgreSQL/Docker se validan en CI; staging manual en SAPIENS.
 
 ## Decisiones tecnológicas
 

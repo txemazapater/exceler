@@ -49,8 +49,13 @@ include = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+  "unit: unit/application tests without Docker or PostgreSQL",
+  "integration: persistence/API tests that require PostgreSQL",
+  "docker: tests that require Docker/Compose",
+]
 
 [tool.ruff]
 line-length = 100

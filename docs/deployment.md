@@ -54,6 +54,16 @@ docker compose down
 
 Montajes corporativos reales no se versionan. Usar `docker-compose.override.yml`.
 
+Preferir nombres de **servicio** (`exceler-app`, `exceler-db`) y un project name explícito:
+
+```bash
+docker compose -p exceler exec exceler-app exceler db upgrade
+```
+
+No hay `container_name` fijos: se pueden ejecutar varias copias aisladas (`-p exceler-ci`, `-p exceler`, etc.).
+
+Staging en SAPIENS (Traefik, sin publicar HTTP al host): [staging.md](staging.md) y `compose.staging.yaml`.
+
 ## Seguridad del contenedor `exceler-app`
 
 - usuario no root `exceler`;

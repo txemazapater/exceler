@@ -28,9 +28,11 @@ jobs:
         run: uv run ruff check src tests
       - name: Mypy
         run: uv run mypy
+      - name: Unit tests
+        run: uv run pytest -m "not integration and not docker"
 
-  tests:
-    name: tests
+  integration:
+    name: integration
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -48,6 +50,7 @@ jobs:
           --health-retries 20
     env:
       TEST_DATABASE_URL: postgresql+psycopg://exceler:exceler_ci@localhost:5432/exceler
+      DATABASE_URL: postgresql+psycopg://exceler:exceler_ci@localhost:5432/exceler
       EXCELER_ALLOWED_SOURCE_ROOTS: /tmp
     steps:
       - uses: actions/checkout@v4
@@ -57,13 +60,23 @@ jobs:
           python-version: "3.12"
       - name: Sync dependencies
         run: uv sync --frozen --all-extras
-      - name: Pytest
-        run: uv run pytest
+      - name: Integration tests
+        run: uv run pytest -m integration
 
-  docker-build:
-    name: docker-build
+  docker:
+    name: docker
     runs-on: ubuntu-latest
+    env:
+      EXCELER_HTTP_PORT: "8000"
+      COMPOSE_PROJECT_NAME: exceler-ci
     steps:
       - uses: actions/checkout@v4
       - name: Build image
         run: docker build -t exceler:ci .
+      - name: Compose smoke test
+        run: bash scripts/compose_smoke.sh
+      - name: Dump compose diagnostics on failure
+        if: failure()
+        run: |
+          docker compose -p exceler-ci ps || true
+          docker compose -p exceler-ci logs --no-color || true

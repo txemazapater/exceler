@@ -13,6 +13,8 @@ from exceler.domain.sources.validation import (
     validate_source_configuration,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def _source(**kwargs: object) -> DiscoverySource:
     base = {
