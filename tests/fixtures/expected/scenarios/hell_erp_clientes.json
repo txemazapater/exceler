@@ -1,0 +1,14 @@
+{
+  "scenario_id": "hell_erp_clientes",
+  "workbook": "clientes.xlsx",
+  "phase": "2.0",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "worksheets": 2,
+  "relationships": {
+    "referenced_by": [
+      "hell_erp_pedidos",
+      "hell_erp_facturas"
+    ],
+    "key_concept": "customer_code"
+  }
+}

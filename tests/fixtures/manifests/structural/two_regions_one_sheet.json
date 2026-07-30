@@ -1,0 +1,14 @@
+{
+  "scenario_id": "two_regions_one_sheet",
+  "description": "Dos regiones tabulares separadas en una hoja",
+  "workbook": "workbooks/structural/two_regions_one_sheet.xlsx",
+  "generator": "structural_scenarios.build_two_regions_one_sheet",
+  "seed": 20260730,
+  "intentions": [
+    "Dos bloques independientes en la misma hoja"
+  ],
+  "features": [
+    "multi_region"
+  ],
+  "versioned": true
+}

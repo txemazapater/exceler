@@ -1,0 +1,6 @@
+{
+  "scenario_id": "interleaved_empty_columns",
+  "workbook": "interleaved_empty_columns.xlsx",
+  "phase": "2.0",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis."
+}

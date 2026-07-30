@@ -1,0 +1,14 @@
+{
+  "scenario_id": "merged_cells",
+  "description": "Celdas combinadas sobre una tabla",
+  "workbook": "workbooks/structural/merged_cells.xlsx",
+  "generator": "structural_scenarios.build_merged_cells",
+  "seed": 20260730,
+  "intentions": [
+    "Existe un rango combinado A1:C1"
+  ],
+  "features": [
+    "merged_cells"
+  ],
+  "versioned": true
+}

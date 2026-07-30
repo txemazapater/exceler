@@ -12,8 +12,44 @@ from exceler.infrastructure.db.session import create_db_engine, create_session_f
 app = typer.Typer(help="EXCELER administrative CLI", no_args_is_help=True)
 db_app = typer.Typer(help="Database commands")
 source_app = typer.Typer(help="Discovery source commands")
+dev_app = typer.Typer(help="Development utilities (requires checkout with tests/)")
+fixtures_app = typer.Typer(help="Synthetic Excel fixtures")
 app.add_typer(db_app, name="db")
 app.add_typer(source_app, name="source")
+app.add_typer(dev_app, name="dev")
+dev_app.add_typer(fixtures_app, name="fixtures")
+
+
+@fixtures_app.command("generate")
+def fixtures_generate() -> None:
+    """Generate deterministic synthetic workbooks, manifests and expected skeletons."""
+    _ensure_tests_importable()
+    from tests.generators.generate_fixtures import main as generate_main
+
+    generate_main()
+
+
+@fixtures_app.command("verify")
+def fixtures_verify() -> None:
+    """Verify fixture catalog integrity and regeneration stability."""
+    _ensure_tests_importable()
+    from tests.generators.verify_fixtures import main as verify_main
+
+    verify_main()
+
+
+def _ensure_tests_importable() -> None:
+    import sys
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[3]
+    if not (repo / "tests" / "generators").is_dir():
+        raise RuntimeError(
+            "tests/generators not found. Run fixture commands from a full repository checkout."
+        )
+    repo_str = str(repo)
+    if repo_str not in sys.path:
+        sys.path.insert(0, repo_str)
 
 
 def _alembic_config() -> Config:

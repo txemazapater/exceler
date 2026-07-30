@@ -1,0 +1,7 @@
+{
+  "scenario_id": "multi_sheet",
+  "workbook": "multi_sheet.xlsx",
+  "phase": "2.0",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "worksheets": 3
+}

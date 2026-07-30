@@ -1,0 +1,12 @@
+{
+  "scenario_id": "hell_erp_pedidos",
+  "workbook": "pedidos.xlsx",
+  "phase": "2.0",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "relationships": {
+    "customer_column": "Cliente",
+    "targets": [
+      "hell_erp_clientes.CodCliente"
+    ]
+  }
+}

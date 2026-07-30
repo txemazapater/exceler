@@ -1,0 +1,15 @@
+{
+  "scenario_id": "formulas",
+  "description": "Fórmulas de producto y suma",
+  "workbook": "workbooks/types/formulas.xlsx",
+  "generator": "structural_scenarios.build_formulas",
+  "seed": 20260730,
+  "intentions": [
+    "C2/C3/C4 contienen fórmulas",
+    "No se evalúan macros"
+  ],
+  "features": [
+    "formulas"
+  ],
+  "versioned": true
+}

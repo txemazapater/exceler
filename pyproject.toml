@@ -29,6 +29,7 @@ dev = [
   "ruff>=0.8.0",
   "mypy>=1.13.0",
   "types-setuptools",
+  "openpyxl>=3.1.5",
 ]
 
 [project.scripts]
@@ -73,5 +74,5 @@ mypy_path = "src"
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ["alembic.*"]
+module = ["alembic.*", "openpyxl.*"]
 ignore_missing_imports = true

@@ -1,0 +1,14 @@
+{
+  "scenario_id": "hidden_columns",
+  "description": "Columna oculta entre columnas visibles",
+  "workbook": "workbooks/structural/hidden_columns.xlsx",
+  "generator": "structural_scenarios.build_hidden_columns",
+  "seed": 20260730,
+  "intentions": [
+    "La columna B está oculta"
+  ],
+  "features": [
+    "hidden_columns"
+  ],
+  "versioned": true
+}

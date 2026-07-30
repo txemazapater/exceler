@@ -1,0 +1,18 @@
+{
+  "scenario_id": "hell_erp_lineas_pedido",
+  "description": "Líneas de pedido con fila de totales",
+  "workbook": "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
+  "generator": "corporate_scenarios.build_lineas_pedido",
+  "seed": 20260730,
+  "intentions": [
+    "Pedido referencia NumPedido",
+    "Articulo referencia CodArticulo",
+    "Última fila es TOTAL no detalle"
+  ],
+  "features": [
+    "fk_candidate",
+    "totals_row",
+    "line_items"
+  ],
+  "versioned": true
+}

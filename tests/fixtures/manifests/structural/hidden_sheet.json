@@ -1,0 +1,14 @@
+{
+  "scenario_id": "hidden_sheet",
+  "description": "Hoja oculta junto a una visible",
+  "workbook": "workbooks/structural/hidden_sheet.xlsx",
+  "generator": "structural_scenarios.build_hidden_sheet",
+  "seed": 20260730,
+  "intentions": [
+    "Una hoja visible y una oculta"
+  ],
+  "features": [
+    "hidden_sheet"
+  ],
+  "versioned": true
+}

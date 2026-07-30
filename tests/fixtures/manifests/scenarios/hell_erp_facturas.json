@@ -1,0 +1,18 @@
+{
+  "scenario_id": "hell_erp_facturas",
+  "description": "Facturas con nombre de columna distinto para el mismo concepto de cliente",
+  "workbook": "workbooks/scenarios/hell_erp/facturas.xlsx",
+  "generator": "corporate_scenarios.build_facturas",
+  "seed": 20260730,
+  "intentions": [
+    "CodigoCliente equivale semánticamente a CodCliente/Cliente",
+    "Pedido referencia NumPedido",
+    "Un total nulo permitido"
+  ],
+  "features": [
+    "synonym_column",
+    "fk_candidate",
+    "nullable_amount"
+  ],
+  "versioned": true
+}

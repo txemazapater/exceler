@@ -1,0 +1,14 @@
+{
+  "scenario_id": "excel_structured_table",
+  "description": "Tabla estructurada de Excel",
+  "workbook": "workbooks/structural/excel_structured_table.xlsx",
+  "generator": "structural_scenarios.build_excel_structured_table",
+  "seed": 20260730,
+  "intentions": [
+    "Existe Table InventoryTable en A1:B4"
+  ],
+  "features": [
+    "excel_table"
+  ],
+  "versioned": true
+}

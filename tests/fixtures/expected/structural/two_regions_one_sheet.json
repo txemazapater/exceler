@@ -1,0 +1,7 @@
+{
+  "scenario_id": "two_regions_one_sheet",
+  "workbook": "two_regions_one_sheet.xlsx",
+  "phase": "2.0",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "logical_tables": 2
+}

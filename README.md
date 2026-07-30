@@ -6,13 +6,13 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 1 consolidada:** registro de orígenes con separación configuración/accesibilidad, health live/ready, lock `uv`, CI y hosts documentados.
+**Fase 2.0 lista:** corpus sintético de libros Excel (generadores, manifiestos, verify en CI).
+Siguiente: Fase 2 / 2A+ (aún **no** hay motor de inspección/inferencia Excel).
 
-Todavía **no** hay enumeración completa de archivos, conectores SMB/SharePoint, ni inspección/perfilado/inferencia de Excel.
-
-CI: GitHub Actions (`quality` + unit, `integration` + Postgres, `docker` build + Compose smoke).
+CI: GitHub Actions (`quality` + unit + fixture verify, `integration` + Postgres, `docker` build + Compose smoke).
 Local sin Docker: `pytest -m "not integration and not docker"`.
 Staging manual: [docs/staging.md](docs/staging.md).
+Fixtures: `uv run exceler dev fixtures generate|verify`.
 
 ## Arranque rápido (Docker Compose)
 
@@ -79,6 +79,7 @@ CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint
 | [docs/deployment.md](docs/deployment.md) | Despliegue Compose |
 | [docs/development.md](docs/development.md) | Desarrollo |
 | [docs/configuration.md](docs/configuration.md) | Configuración y secretos |
+| [docs/fixtures.md](docs/fixtures.md) | Corpus sintético Excel (Fase 2.0) |
 | [docs/staging.md](docs/staging.md) | Staging manual en SAPIENS |
 | [docs/decisions/](docs/decisions/README.md) | ADRs |
 

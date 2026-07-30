@@ -2,7 +2,8 @@
 
 Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un compromiso de calendario.
 
-Estado actual: **Fase 1 consolidada** (configuración vs accesibilidad, health, lock, CI, hosts). Siguiente: Fase 2 filesystem inventory.
+Estado actual: **Fase 2.0 completada** — laboratorio sintético operativo y verificado en CI.
+Fase 1 consolidada. La implementación funcional de inspección Excel (2A+) puede comenzar ampliando primero el corpus.
 
 ## Fase 0 — Fundamentos
 
@@ -41,7 +42,19 @@ Estado actual: **Fase 1 consolidada** (configuración vs accesibilidad, health, 
 
 **Salida:** orígenes configurables y validables sin enumeración completa de archivos ni análisis Excel.
 
+## Fase 2.0 — Corpus sintético y oráculo de pruebas
+
+- Generador determinista de libros Excel (`tests/generators/`).
+- Fixtures mínimos + escenario corporativo `hell_erp`.
+- Manifiestos y esqueletos `expected/`.
+- `exceler dev fixtures generate|verify`.
+- Verificación en CI.
+
+**Salida:** laboratorio reproducible antes de cualquier análisis Excel.
+
 ## Fase 2 — Conector de sistema de archivos
+
+*(Inventario filesystem; puede avanzar en paralelo documentalmente, pero el análisis Excel exige 2.0.)*
 
 - Rutas locales y montadas.
 - Enumeración y filtros include/exclude.
@@ -51,6 +64,10 @@ Estado actual: **Fase 1 consolidada** (configuración vs accesibilidad, health, 
 - Pruebas de no mutación del origen.
 
 **Salida:** primer conector útil en entornos controlados.
+
+## Fase 2A+ — Inspección / regiones / tipado / claves / relaciones
+
+Cada subfase amplía primero el corpus (ver `docs/fixtures.md`) antes de implementar heurísticas.
 
 ## Fase 3 — Inventario y ejecuciones de descubrimiento
 

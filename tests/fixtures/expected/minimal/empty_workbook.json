@@ -1,0 +1,8 @@
+{
+  "scenario_id": "empty_workbook",
+  "workbook": "empty_workbook.xlsx",
+  "phase": "2.0",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "worksheets": 1,
+  "logical_tables": 0
+}

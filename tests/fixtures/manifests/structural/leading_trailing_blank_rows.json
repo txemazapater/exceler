@@ -1,0 +1,15 @@
+{
+  "scenario_id": "leading_trailing_blank_rows",
+  "description": "Filas vacías antes y después de la tabla",
+  "workbook": "workbooks/structural/leading_trailing_blank_rows.xlsx",
+  "generator": "structural_scenarios.build_leading_trailing_blank_rows",
+  "seed": 20260730,
+  "intentions": [
+    "La cabecera no está en la fila 1"
+  ],
+  "features": [
+    "offset_header",
+    "blank_rows"
+  ],
+  "versioned": true
+}

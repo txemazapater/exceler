@@ -1,0 +1,22 @@
+{
+  "scenario_id": "hell_erp_clientes",
+  "description": "Maestro de clientes sintético con duplicado y ceros iniciales",
+  "workbook": "workbooks/scenarios/hell_erp/clientes.xlsx",
+  "generator": "corporate_scenarios.build_clientes",
+  "seed": 20260730,
+  "intentions": [
+    "CodCliente conserva ceros iniciales como texto",
+    "Existe un CodCliente duplicado (001)",
+    "Activo usa valores S/N",
+    "Existe hoja auxiliar no tabular",
+    "Nombre con espacios alrededor en un registro"
+  ],
+  "features": [
+    "text_code",
+    "boolean_candidate",
+    "duplicate_key",
+    "auxiliary_sheet",
+    "whitespace"
+  ],
+  "versioned": true
+}

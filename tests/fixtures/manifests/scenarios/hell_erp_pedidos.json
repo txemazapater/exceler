@@ -1,0 +1,20 @@
+{
+  "scenario_id": "hell_erp_pedidos",
+  "description": "Pedidos con cliente inexistente y fecha textual",
+  "workbook": "workbooks/scenarios/hell_erp/pedidos.xlsx",
+  "generator": "corporate_scenarios.build_pedidos",
+  "seed": 20260730,
+  "intentions": [
+    "Cliente referencia CodCliente de clientes",
+    "Una referencia de cliente inexistente (999)",
+    "Una fecha almacenada como texto dd/mm/yyyy",
+    "Un identificador de cliente con espacios"
+  ],
+  "features": [
+    "fk_candidate",
+    "missing_reference",
+    "date_as_text",
+    "whitespace_key"
+  ],
+  "versioned": true
+}

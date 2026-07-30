@@ -1,0 +1,16 @@
+{
+  "scenario_id": "simple_rectangular_table",
+  "description": "Tabla rectangular simple en A1",
+  "workbook": "workbooks/minimal/simple_rectangular_table.xlsx",
+  "generator": "structural_scenarios.build_simple_rectangular_table",
+  "seed": 20260730,
+  "intentions": [
+    "Cabecera en fila 1",
+    "Tres filas de datos"
+  ],
+  "features": [
+    "header_row",
+    "rectangular"
+  ],
+  "versioned": true
+}

@@ -1,0 +1,14 @@
+{
+  "scenario_id": "cell_errors",
+  "description": "Celdas con fórmulas que producen errores",
+  "workbook": "workbooks/types/cell_errors.xlsx",
+  "generator": "structural_scenarios.build_cell_errors",
+  "seed": 20260730,
+  "intentions": [
+    "Incluye #DIV/0!, #REF! y #NAME? potenciales"
+  ],
+  "features": [
+    "cell_errors"
+  ],
+  "versioned": true
+}

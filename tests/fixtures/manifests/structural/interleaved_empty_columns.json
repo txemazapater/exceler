@@ -1,0 +1,14 @@
+{
+  "scenario_id": "interleaved_empty_columns",
+  "description": "Columnas vacías intercaladas",
+  "workbook": "workbooks/structural/interleaved_empty_columns.xlsx",
+  "generator": "structural_scenarios.build_interleaved_empty_columns",
+  "seed": 20260730,
+  "intentions": [
+    "Existen columnas sin cabecera entre columnas con datos"
+  ],
+  "features": [
+    "empty_columns"
+  ],
+  "versioned": true
+}

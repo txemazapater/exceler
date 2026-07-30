@@ -1,0 +1,14 @@
+{
+  "scenario_id": "multi_sheet",
+  "description": "Tres hojas con una columna cada una",
+  "workbook": "workbooks/structural/multi_sheet.xlsx",
+  "generator": "structural_scenarios.build_multi_sheet",
+  "seed": 20260730,
+  "intentions": [
+    "Exactamente tres hojas"
+  ],
+  "features": [
+    "multi_sheet"
+  ],
+  "versioned": true
+}

@@ -1,0 +1,18 @@
+{
+  "scenario_id": "hell_erp_articulos",
+  "description": "Catálogo de artículos con nulo e inactivo",
+  "workbook": "workbooks/scenarios/hell_erp/articulos.xlsx",
+  "generator": "corporate_scenarios.build_articulos",
+  "seed": 20260730,
+  "intentions": [
+    "Un artículo inactivo",
+    "Una fila con CodArticulo nulo",
+    "Precios numéricos"
+  ],
+  "features": [
+    "null_key",
+    "inactive_flag",
+    "catalog"
+  ],
+  "versioned": true
+}

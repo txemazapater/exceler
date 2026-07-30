@@ -1,0 +1,14 @@
+{
+  "scenario_id": "empty_workbook",
+  "description": "Libro con una hoja vacía",
+  "workbook": "workbooks/minimal/empty_workbook.xlsx",
+  "generator": "structural_scenarios.build_empty_workbook",
+  "seed": 20260730,
+  "intentions": [
+    "Una hoja sin celdas con valor"
+  ],
+  "features": [
+    "empty"
+  ],
+  "versioned": true
+}

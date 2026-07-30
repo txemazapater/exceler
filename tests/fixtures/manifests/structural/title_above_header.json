@@ -1,0 +1,16 @@
+{
+  "scenario_id": "title_above_header",
+  "description": "Título encima de la cabecera tabular",
+  "workbook": "workbooks/structural/title_above_header.xlsx",
+  "generator": "structural_scenarios.build_title_above_header",
+  "seed": 20260730,
+  "intentions": [
+    "Fila 1 es título",
+    "Cabecera en fila 3"
+  ],
+  "features": [
+    "title_row",
+    "offset_header"
+  ],
+  "versioned": true
+}

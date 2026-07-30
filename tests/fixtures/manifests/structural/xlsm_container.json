@@ -1,0 +1,16 @@
+{
+  "scenario_id": "xlsm_container",
+  "description": "Contenedor XLSM sintético sin ejecución de macros",
+  "workbook": "workbooks/structural/xlsm_container.xlsm",
+  "generator": "structural_scenarios.build_xlsm_container",
+  "seed": 20260730,
+  "intentions": [
+    "Extensión xlsm",
+    "Sin ejecución de contenido activo en tests"
+  ],
+  "features": [
+    "xlsm",
+    "no_macro_execution"
+  ],
+  "versioned": true
+}

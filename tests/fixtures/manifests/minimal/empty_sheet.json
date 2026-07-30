@@ -1,0 +1,14 @@
+{
+  "scenario_id": "empty_sheet",
+  "description": "Hoja vacía con título explícito",
+  "workbook": "workbooks/minimal/empty_sheet.xlsx",
+  "generator": "structural_scenarios.build_empty_sheet",
+  "seed": 20260730,
+  "intentions": [
+    "Hoja sin datos tabulares"
+  ],
+  "features": [
+    "empty_sheet"
+  ],
+  "versioned": true
+}

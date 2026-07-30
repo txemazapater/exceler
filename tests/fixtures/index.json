@@ -1,0 +1,25 @@
+{
+  "scenarios": [
+    "empty_workbook",
+    "empty_sheet",
+    "simple_rectangular_table",
+    "multi_sheet",
+    "leading_trailing_blank_rows",
+    "interleaved_empty_columns",
+    "title_above_header",
+    "two_regions_one_sheet",
+    "merged_cells",
+    "hidden_sheet",
+    "hidden_columns",
+    "formulas",
+    "cell_errors",
+    "excel_structured_table",
+    "xlsm_container",
+    "hell_erp_clientes",
+    "hell_erp_articulos",
+    "hell_erp_pedidos",
+    "hell_erp_lineas_pedido",
+    "hell_erp_facturas"
+  ],
+  "count": 20
+}

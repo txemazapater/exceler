@@ -13,6 +13,9 @@ htmlcov/
 .venv/
 venv/
 
+# Fixture regen scratch
+tests/fixtures/.tmp_regen/
+
 # Secrets and local overrides
 .env
 .env.*
