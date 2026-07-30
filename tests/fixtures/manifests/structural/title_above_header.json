@@ -10,7 +10,8 @@
   ],
   "features": [
     "title_row",
-    "offset_header"
+    "offset_header",
+    "regions"
   ],
   "versioned": true
 }

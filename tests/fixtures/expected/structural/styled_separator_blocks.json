@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "scenario_id": "styled_separator_blocks",
+  "workbook": "workbooks/structural/styled_separator_blocks.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Styled",
+          "region_count": 2
+        }
+      ]
+    }
+  }
+}

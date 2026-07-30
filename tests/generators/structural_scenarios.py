@@ -353,8 +353,19 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         relative_workbook="workbooks/structural/title_above_header.xlsx",
         generator_name="structural_scenarios.build_title_above_header",
         intentions=["Fila 1 es título", "Cabecera en fila 3"],
-        features=["title_row", "offset_header"],
-        expected_skeleton={"inspection": {"workbook": {"worksheet_count": 1}}},
+        features=["title_row", "offset_header", "regions"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 1}},
+            "regions": {
+                "sheets": [
+                    {
+                        "name": "Titled",
+                        "region_count_min": 2,
+                        "contains_types": ["title", "table"],
+                    }
+                ]
+            },
+        },
     ),
     ScenarioSpec(
         scenario_id="two_regions_one_sheet",
@@ -363,10 +374,18 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
         relative_workbook="workbooks/structural/two_regions_one_sheet.xlsx",
         generator_name="structural_scenarios.build_two_regions_one_sheet",
         intentions=["Dos bloques independientes en la misma hoja"],
-        features=["multi_region"],
+        features=["multi_region", "regions"],
         expected_skeleton={
             "inspection": {"workbook": {"worksheet_count": 1}},
-            "regions": {"reserved_for": "2B", "logical_tables": 2},
+            "regions": {
+                "sheets": [
+                    {
+                        "name": "Regions",
+                        "region_count": 2,
+                        "contains_types": ["table"],
+                    }
+                ]
+            },
         },
     ),
     ScenarioSpec(

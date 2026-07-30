@@ -13,8 +13,8 @@ from exceler.domain.workbook.enums import (
     WorksheetVisibility,
 )
 
-INSPECTOR_VERSION = "2A.2"
-INSPECTION_SCHEMA_VERSION = 2
+INSPECTOR_VERSION = "2A.3"
+INSPECTION_SCHEMA_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -93,7 +93,18 @@ class HyperlinkInspection:
 
 @dataclass(frozen=True)
 class RelevantCellStyle:
+    """Factual style signals for continuity heuristics (Phase 2B input). Not semantics."""
+
+    font_name: str | None = None
+    font_size: float | None = None
     font_bold: bool = False
+    font_color: str | None = None
+    fill_color: str | None = None
+    horizontal_alignment: str | None = None
+    border_top: bool = False
+    border_right: bool = False
+    border_bottom: bool = False
+    border_left: bool = False
     number_format: str | None = None
 
 

@@ -12,3 +12,11 @@
 - **Dimensiones infladas:** `DIMENSION_MAY_BE_INFLATED` es heurística factual; el fallback patológico usa `worksheet._cells` **solo** dentro de `OpenPyxlWorkbookReader` (API interna de openpyxl encapsulada; ver ADR 0005 / workbook-inspection.md). No es detector de regiones.
 - **Identidad:** el hash de inspección es siempre `sha256(payload)` de la captura binaria única; `LocalWorkbookSource.content_hash()` existe como utilidad y **no** forma parte del protocolo ni se usa en `inspect`.
 - **openpyxl** es el único adaptador de lectura Excel en 2A (dependencia de producción).
+- **Estilos (schema 3):** se exponen señales factuales (nombre/tamaño/negrita/color de fuente, fill, alineación horizontal, presencia de bordes). Colores theme/indexed se tokenizan; no se resuelve la paleta del tema a RGB final.
+
+## Region detection (Phase 2B) — cerrada
+
+- Tipos de región son etiquetas estructurales preliminares, no semántica de negocio.
+- Geometría de charts/imágenes y caches de pivots quedan fuera del MVP.
+- El detector solo consume `WorkbookInspection`; nunca relee el archivo.
+- Huecos vacíos interiores se fusionan solo con score de continuidad (bordes/fill); gaps fuertes o bandas título↔tabla no se unen.

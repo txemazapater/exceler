@@ -9,6 +9,9 @@ from typing import Annotated
 import typer
 
 from exceler.application.workbook.serialization import inspection_to_dict
+from exceler.application.regions.heuristic_detector import HeuristicRegionDetector
+from exceler.application.regions.serialization import regions_to_dict
+from exceler.domain.regions.models import RegionDetectionResult
 from exceler.domain.workbook.enums import InspectionCompletionStatus
 from exceler.domain.workbook.errors import (
     EncryptedWorkbookError,
@@ -78,8 +81,29 @@ def _print_human(inspection: WorkbookInspection) -> None:
         typer.echo(f"    Merged ranges: {len(ws.merged_ranges)}")
 
 
+def _print_regions_human(result: RegionDetectionResult) -> None:
+    typer.echo(f"Workbook hash: {result.workbook_hash}")
+    typer.echo(f"Detector: {result.detector_version}")
+    typer.echo(f"Inspector: {result.inspector_version}")
+    typer.echo(f"Schema: {result.regions_schema_version}")
+    if result.warnings:
+        for warning in result.warnings:
+            typer.echo(f"Warning: {warning}")
+    typer.echo("")
+    for sheet in result.sheets:
+        typer.echo(f"[{sheet.sheet_index}] {sheet.sheet_name} — {len(sheet.regions)} region(s)")
+        for region in sheet.regions:
+            box = region.bounding_box
+            parent = f" parent={region.parent_id}" if region.parent_id else ""
+            typer.echo(
+                f"  {region.id}: {region.region_type.value} "
+                f"r{box.first_row}-{box.last_row} c{box.first_col}-{box.last_col} "
+                f"conf={region.confidence:.2f}{parent}"
+            )
+
+
 def register_workbook_commands(app: typer.Typer) -> None:
-    workbook_app = typer.Typer(help="Workbook inspection commands (Phase 2A)")
+    workbook_app = typer.Typer(help="Workbook inspection and region detection")
     app.add_typer(workbook_app, name="workbook")
 
     @workbook_app.command("inspect")
@@ -169,6 +193,99 @@ def register_workbook_commands(app: typer.Typer) -> None:
                 _write(buf.getvalue(), output)
             else:
                 _print_human(inspection)
+
+        if inspection.completion_status is InspectionCompletionStatus.PARTIAL:
+            raise typer.Exit(EXIT_PARTIAL)
+
+    @workbook_app.command("regions")
+    def workbook_regions(
+        path: PathArg,
+        format: FormatOpt = "text",
+        pretty: PrettyOpt = False,
+        output: OutputOpt = None,
+        max_cells: MaxCellsOpt = None,
+        max_cells_scanned: MaxScannedOpt = None,
+    ) -> None:
+        """Inspect then detect logical regions (Phase 2B; no Excel re-read in detector)."""
+        as_json = format.lower() == "json"
+        if format.lower() not in {"text", "json"}:
+            payload = _error_payload("INVALID_ARGS", "format must be text or json")
+            if as_json:
+                typer.echo(json.dumps(payload))
+            else:
+                err = payload["error"]
+                assert isinstance(err, dict)
+                typer.echo(str(err["message"]))
+            raise typer.Exit(EXIT_INVALID_ARGS)
+
+        options = WorkbookInspectionOptions()
+        if max_cells is not None or max_cells_scanned is not None:
+            options = WorkbookInspectionOptions(
+                include_empty_formatted_cells=options.include_empty_formatted_cells,
+                include_comments=options.include_comments,
+                include_hyperlinks=options.include_hyperlinks,
+                include_external_links=options.include_external_links,
+                max_worksheets=options.max_worksheets,
+                max_cells_observed=(
+                    max_cells if max_cells is not None else options.max_cells_observed
+                ),
+                max_cells_scanned=(
+                    max_cells_scanned
+                    if max_cells_scanned is not None
+                    else options.max_cells_scanned
+                ),
+                max_file_size_bytes=options.max_file_size_bytes,
+            )
+
+        reader = OpenPyxlWorkbookReader()
+        detector = HeuristicRegionDetector()
+        try:
+            source = LocalWorkbookSource(path)
+            inspection = reader.inspect(source, options)
+            result = detector.detect(inspection)
+        except WorkbookNotFoundError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_NOT_FOUND) from exc
+        except WorkbookAccessDeniedError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_NOT_FOUND) from exc
+        except UnsupportedWorkbookFormatError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_UNSUPPORTED) from exc
+        except (InvalidWorkbookError, EncryptedWorkbookError) as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_INVALID) from exc
+        except WorkbookLimitExceededError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_LIMIT) from exc
+        except WorkbookInspectionError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_UNEXPECTED) from exc
+        except Exception as exc:  # noqa: BLE001
+            _emit_error(
+                "UNEXPECTED_ERROR",
+                "Unexpected region detection failure.",
+                as_json=as_json,
+                pretty=pretty,
+                output=output,
+            )
+            raise typer.Exit(EXIT_UNEXPECTED) from exc
+
+        if as_json:
+            text = json.dumps(
+                {"ok": True, **regions_to_dict(result)},
+                indent=2 if pretty else None,
+                ensure_ascii=False,
+            )
+            _write(text, output)
+        else:
+            if output is not None:
+                buf = StringIO()
+                with contextlib.redirect_stdout(buf):
+                    _print_regions_human(result)
+                _write(buf.getvalue(), output)
+            else:
+                _print_regions_human(result)
 
         if inspection.completion_status is InspectionCompletionStatus.PARTIAL:
             raise typer.Exit(EXIT_PARTIAL)

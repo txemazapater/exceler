@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "scenario_id": "false_gap_inside_table",
+  "workbook": "workbooks/structural/false_gap_inside_table.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Gap",
+          "region_count": 1,
+          "regions": [
+            {
+              "region_type": "table",
+              "bbox": {
+                "first_row": 1,
+                "last_row": 6,
+                "first_col": 1,
+                "last_col": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

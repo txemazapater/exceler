@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "scenario_id": "table_with_totals_footer",
+  "workbook": "workbooks/structural/table_with_totals_footer.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Totals",
+          "region_count_min": 1,
+          "regions": [
+            {
+              "region_type": "table",
+              "bbox": {
+                "first_row": 1,
+                "last_row": 5,
+                "first_col": 1,
+                "last_col": 3
+              },
+              "has_footer": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

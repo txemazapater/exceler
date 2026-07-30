@@ -1,0 +1,16 @@
+{
+  "scenario_id": "note_block_below_table",
+  "description": "Tabla seguida de bloque de notas separado",
+  "workbook": "workbooks/structural/note_block_below_table.xlsx",
+  "generator": "region_scenarios.build_note_block_below_table",
+  "seed": 20260730,
+  "intentions": [
+    "Región table + región note/unknown"
+  ],
+  "features": [
+    "regions",
+    "table",
+    "note"
+  ],
+  "versioned": true
+}

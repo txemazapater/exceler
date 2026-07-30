@@ -55,7 +55,8 @@ Sirve para aceptar de forma segura la extensión; no contiene macros ejecutables
 **2A** inspection (activa) → **2B** regions → **2C** profiling → **2D** keys → **2E** relationships.
 **2S** es inventario filesystem (paralelo). Ver [roadmap.md](roadmap.md).
 
-Durante 2A solo se valida `expectations.inspection`. Secciones `regions` / `relationships` / etc. pueden existir como reservadas.
+Durante 2A/2B se validan `expectations.inspection` y, cuando existe, `expectations.regions`.
+Secciones `relationships` / profiling / keys pueden existir como reservadas.
 
 ## Restricción
 

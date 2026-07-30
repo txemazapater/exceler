@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "scenario_id": "note_block_below_table",
+  "workbook": "workbooks/structural/note_block_below_table.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Notes",
+          "region_count_min": 2,
+          "contains_types": [
+            "table",
+            "note"
+          ]
+        }
+      ]
+    }
+  }
+}

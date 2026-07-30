@@ -6,15 +6,26 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Fase 2B: detección de regiones lógicas (`HeuristicRegionDetector`, CLI `workbook regions`, `expectations.regions`).
+- Corpus 2B: footer, notas, nesting, false-gap, separadores por estilo.
+- Inspección schema **3**: estilos factuales (font/fill/alignment/borders) para continuidad visual.
+
+### Changed
+
+- Fase 2B marcada como cerrada; siguiente corte 2C.
+- README/roadmap/limitations actualizados para regiones.
+
+### Added (prev)
+
 - Fase 2A hardening: identidad por `sha256(payload)`, `cells_scanned`/`cells_observed`, inspección `complete`/`partial`, schema JSON 2, exit CLI 7.
 - Fixtures patológicos: `pathological_inflated_dimension`, `moderately_inflated_dimension`, `max_observed_cells_partial`.
 
-### Changed
+### Changed (prev)
 
 - Fase 2A marcada como cerrada tras hardening de límites e identidad.
 - `WorkbookSource` ya no exige `content_hash()` en el protocolo.
 
-### Added (prev)
+### Added (earlier)
 
 - Fase 2A: Workbook Inspection Foundation (`WorkbookInspection`, `OpenPyxlWorkbookReader`, CLI `workbook inspect`).
 - Corpus 2A ampliado (tipos físicos, veryHidden, freeze/autofilter, VBA stub, dimensión inflada, tablas avanzadas, …).

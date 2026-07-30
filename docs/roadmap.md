@@ -17,8 +17,8 @@ Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un comprom
 Las fases numeradas 3–12 del roadmap largo siguen vigentes como entregas de producto;
 2S/2A–2E son cortes de implementación que alimentan esas entregas sin solaparse en alcance.
 
-Estado actual: **Fase 2A cerrada** — Workbook Inspection Foundation endurecida.
-Siguiente corte: **2B** (ampliar corpus primero).
+Estado actual: **Fase 2B cerrada** — detección de regiones lógicas sobre `WorkbookInspection` (schema inspección 3).
+Siguiente corte: **2C** (perfilado e inferencia de tipos).
 
 ## Fase 0 — Fundamentos
 
@@ -95,7 +95,13 @@ Siguiente corte: **2B** (ampliar corpus primero).
 
 ## Fase 2B — Region and Table Detection
 
-Antes: escenarios con regiones separadas, títulos, subtotales, cabeceras multinivel y ruido.
+- Corpus de regiones (positivos, negativos, nesting, separadores por estilo).
+- Estilos factuales enriquecidos en inspección (schema **3**): font/fill/alignment/borders.
+- `LogicalRegion` + `HeuristicRegionDetector` (Union-Find + scoring; sin openpyxl).
+- CLI `exceler workbook regions`; expected `expectations.regions`; comparador parcial.
+- Documentación `docs/region-detection.md`.
+
+**Salida:** regiones estructurales preliminares sin semántica 2C–2E. **Cerrada.**
 
 ## Fase 2C — Profiling and Type Inference
 

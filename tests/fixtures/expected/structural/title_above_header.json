@@ -8,6 +8,18 @@
       "workbook": {
         "worksheet_count": 1
       }
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Titled",
+          "region_count_min": 2,
+          "contains_types": [
+            "title",
+            "table"
+          ]
+        }
+      ]
     }
   }
 }

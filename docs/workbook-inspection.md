@@ -100,7 +100,7 @@ uv run exceler workbook inspect archivo.xlsx --max-cells 100000 --max-cells-scan
 - Dominio: `exceler.domain.workbook`
 - Puerto: `WorkbookReader` / `WorkbookSource` (sin `content_hash` en el protocolo)
 - Adaptador: `OpenPyxlWorkbookReader` + `LocalWorkbookSource`
-- JSON: inspección `schema_version` = **2**
+- JSON: inspección `schema_version` = **3** (estilos enriquecidos para 2B)
 
 ## Limitaciones conocidas
 

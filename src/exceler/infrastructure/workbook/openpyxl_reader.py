@@ -111,6 +111,91 @@ def _map_value(raw: Any, *, library_data_type: str | None) -> CellValue:
     return CellValue(kind=CellValueKind.STRING, text=str(raw))
 
 
+def _color_token(color: Any) -> str | None:
+    """Stable factual color token when openpyxl exposes rgb/theme/indexed."""
+    if color is None:
+        return None
+    rgb = getattr(color, "rgb", None)
+    if isinstance(rgb, str) and rgb and rgb != "00000000":
+        return rgb.upper() if len(rgb) in {6, 8} else rgb
+    theme = getattr(color, "theme", None)
+    if theme is not None:
+        return f"theme:{theme}"
+    indexed = getattr(color, "indexed", None)
+    if indexed is not None:
+        return f"indexed:{indexed}"
+    return None
+
+
+def _border_present(side: Any) -> bool:
+    if side is None:
+        return False
+    style = getattr(side, "style", None)
+    return style is not None and style != "none"
+
+
+def _extract_style(cell: Any) -> RelevantCellStyle | None:
+    font = cell.font
+    fill = cell.fill
+    alignment = cell.alignment
+    border = cell.border
+
+    font_name = getattr(font, "name", None) if font is not None else None
+    font_size = getattr(font, "size", None) if font is not None else None
+    font_bold = bool(font and font.bold)
+    font_color = _color_token(getattr(font, "color", None) if font is not None else None)
+
+    fill_color = None
+    if fill is not None:
+        pattern = getattr(fill, "patternType", None) or getattr(fill, "fill_type", None)
+        if pattern and pattern != "none":
+            fill_color = _color_token(getattr(fill, "fgColor", None)) or _color_token(
+                getattr(fill, "start_color", None)
+            )
+
+    horizontal = None
+    if alignment is not None and alignment.horizontal:
+        horizontal = str(alignment.horizontal)
+
+    border_top = _border_present(getattr(border, "top", None) if border is not None else None)
+    border_right = _border_present(getattr(border, "right", None) if border is not None else None)
+    border_bottom = _border_present(getattr(border, "bottom", None) if border is not None else None)
+    border_left = _border_present(getattr(border, "left", None) if border is not None else None)
+
+    number_format = cell.number_format if cell.number_format not in (None, "General") else None
+
+    has_signal = any(
+        [
+            font_name is not None,
+            font_size is not None,
+            font_bold,
+            font_color is not None,
+            fill_color is not None,
+            horizontal is not None,
+            border_top,
+            border_right,
+            border_bottom,
+            border_left,
+            number_format is not None,
+        ]
+    )
+    if not has_signal:
+        return None
+    return RelevantCellStyle(
+        font_name=font_name,
+        font_size=float(font_size) if font_size is not None else None,
+        font_bold=font_bold,
+        font_color=font_color,
+        fill_color=fill_color,
+        horizontal_alignment=horizontal,
+        border_top=border_top,
+        border_right=border_right,
+        border_bottom=border_bottom,
+        border_left=border_left,
+        number_format=number_format,
+    )
+
+
 def _cell_relevant(cell: Any, *, options: WorkbookInspectionOptions) -> bool:
     if cell.value is not None:
         return True
@@ -124,6 +209,15 @@ def _cell_relevant(cell: Any, *, options: WorkbookInspectionOptions) -> bool:
         if cell.number_format not in (None, "General"):
             return True
         if cell.font is not None and cell.font.bold:
+            return True
+        style = _extract_style(cell)
+        if style is not None and (
+            style.fill_color is not None
+            or style.border_top
+            or style.border_right
+            or style.border_bottom
+            or style.border_left
+        ):
             return True
     return False
 
@@ -161,10 +255,7 @@ def _build_cell_inspection(cell: Any, *, options: WorkbookInspectionOptions) -> 
             target=cell.hyperlink.target,
             tooltip=getattr(cell.hyperlink, "tooltip", None),
         )
-    style = None
-    bold = bool(cell.font and cell.font.bold)
-    if bold or (cell.number_format not in (None, "General")):
-        style = RelevantCellStyle(font_bold=bold, number_format=cell.number_format)
+    style = _extract_style(cell)
     return CellInspection(
         coordinate=cell.coordinate,
         row=cell.row,
@@ -237,6 +328,7 @@ class OpenPyxlWorkbookReader:
             "Document core/custom properties are not required for Phase 2A.",
             "FileIdentity.content_hash is sha256 of the inspected payload bytes.",
             "Pathological declared dimensions use materialized-cell fallback (adapter-internal).",
+            "Cell styles expose factual presence signals (font/fill/alignment/borders) for Phase 2B.",
         ]
 
         if announced_size != actual_size:

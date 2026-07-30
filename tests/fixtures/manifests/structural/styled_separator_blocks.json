@@ -1,0 +1,15 @@
+{
+  "scenario_id": "styled_separator_blocks",
+  "description": "Dos bloques con fills distintos separados por fila vacía",
+  "workbook": "workbooks/structural/styled_separator_blocks.xlsx",
+  "generator": "region_scenarios.build_styled_separator_blocks",
+  "seed": 20260730,
+  "intentions": [
+    "Exactamente dos regiones"
+  ],
+  "features": [
+    "regions",
+    "style_separator"
+  ],
+  "versioned": true
+}

@@ -6,6 +6,7 @@ from openpyxl import Workbook
 from tests.generators import (
     corporate_scenarios,
     inspection_scenarios,
+    region_scenarios,
     structural_scenarios,
 )
 from tests.generators.workbook_factory import ScenarioSpec
@@ -15,12 +16,15 @@ SpecialSaver = Callable[[Workbook, object], None]
 
 ALL_SPECS: list[ScenarioSpec] = [
     *structural_scenarios.MINIMAL_SPECS,
+    *region_scenarios.REGION_SPECS,
     *inspection_scenarios.INSPECTION_SPECS,
     *corporate_scenarios.CORPORATE_SPECS,
 ]
 
 ALL_BUILDERS: dict[str, Builder] = {}
 for name, fn in structural_scenarios.BUILDERS.items():
+    ALL_BUILDERS[name] = fn  # type: ignore[assignment]
+for name, fn in region_scenarios.BUILDERS.items():
     ALL_BUILDERS[name] = fn  # type: ignore[assignment]
 for name, fn in inspection_scenarios.BUILDERS.items():
     ALL_BUILDERS[name] = fn  # type: ignore[assignment]

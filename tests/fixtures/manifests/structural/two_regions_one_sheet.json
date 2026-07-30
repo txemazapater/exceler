@@ -8,7 +8,8 @@
     "Dos bloques independientes en la misma hoja"
   ],
   "features": [
-    "multi_region"
+    "multi_region",
+    "regions"
   ],
   "versioned": true
 }

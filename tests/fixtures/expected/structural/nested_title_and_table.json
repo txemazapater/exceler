@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scenario_id": "nested_title_and_table",
+  "workbook": "workbooks/structural/nested_title_and_table.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Nested",
+          "region_count_min": 2,
+          "contains_types": [
+            "title",
+            "table"
+          ],
+          "has_parent_child": true
+        }
+      ]
+    }
+  }
+}

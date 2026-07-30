@@ -1,0 +1,17 @@
+{
+  "scenario_id": "table_with_totals_footer",
+  "description": "Tabla con fila de totales/fórmulas al pie",
+  "workbook": "workbooks/structural/table_with_totals_footer.xlsx",
+  "generator": "region_scenarios.build_table_with_totals_footer",
+  "seed": 20260730,
+  "intentions": [
+    "Una región table",
+    "Última fila candidata a footer"
+  ],
+  "features": [
+    "regions",
+    "table",
+    "footer"
+  ],
+  "versioned": true
+}

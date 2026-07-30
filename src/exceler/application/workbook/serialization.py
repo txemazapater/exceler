@@ -33,10 +33,25 @@ def cell_to_dict(cell: CellInspection) -> dict[str, Any]:
             "tooltip": cell.hyperlink.tooltip,
         }
     if cell.style is not None:
-        payload["style"] = {
+        style_payload: dict[str, Any] = {
             "font_bold": cell.style.font_bold,
             "number_format": cell.style.number_format,
         }
+        if cell.style.font_name is not None:
+            style_payload["font_name"] = cell.style.font_name
+        if cell.style.font_size is not None:
+            style_payload["font_size"] = cell.style.font_size
+        if cell.style.font_color is not None:
+            style_payload["font_color"] = cell.style.font_color
+        if cell.style.fill_color is not None:
+            style_payload["fill_color"] = cell.style.fill_color
+        if cell.style.horizontal_alignment is not None:
+            style_payload["horizontal_alignment"] = cell.style.horizontal_alignment
+        style_payload["border_top"] = cell.style.border_top
+        style_payload["border_right"] = cell.style.border_right
+        style_payload["border_bottom"] = cell.style.border_bottom
+        style_payload["border_left"] = cell.style.border_left
+        payload["style"] = style_payload
     return payload
 
 

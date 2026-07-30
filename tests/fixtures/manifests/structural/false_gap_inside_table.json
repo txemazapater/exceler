@@ -1,0 +1,16 @@
+{
+  "scenario_id": "false_gap_inside_table",
+  "description": "Fila vacía interior que no debe dividir la tabla",
+  "workbook": "workbooks/structural/false_gap_inside_table.xlsx",
+  "generator": "region_scenarios.build_false_gap_inside_table",
+  "seed": 20260730,
+  "intentions": [
+    "Una sola región table pese a gap"
+  ],
+  "features": [
+    "regions",
+    "table",
+    "negative_split"
+  ],
+  "versioned": true
+}

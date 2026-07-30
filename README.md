@@ -6,14 +6,15 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 2A cerrada:** inspección factual de workbooks (identidad por payload, límites scanned/observed, complete/partial).
-Siguiente: **2B** (regiones/tablas lógicas) ampliando primero el corpus; aún **no** hay inferencia semántica.
+**Fase 2B cerrada:** regiones lógicas desde inspección factual (sin reabrir Excel).
+Siguiente: **2C** (perfilado / tipos); aún **no** hay inferencia de claves ni relaciones.
 
 CI: GitHub Actions (`quality` + unit + fixture verify, `integration` + Postgres, `docker` build + Compose smoke).
 Local sin Docker: `pytest -m "not integration and not docker"`.
 Staging manual: [docs/staging.md](docs/staging.md).
 Fixtures: `uv run exceler dev fixtures generate|verify`.
 Inspección: `uv run exceler workbook inspect path.xlsx [--format json]`.
+Regiones: `uv run exceler workbook regions path.xlsx [--format json]`.
 
 ## Arranque rápido (Docker Compose)
 
@@ -64,7 +65,7 @@ Los libros Excel corporativos suelen acumular, sin diseño previo, datos maestro
 
 ## Fuera del alcance actual
 
-CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint directos; inspección Excel; perfilado; inferencia; generación SQL; colas; Kubernetes; motor de grafos.
+CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint directos; perfilado semántico; inferencia de claves/relaciones; generación SQL; colas; Kubernetes; motor de grafos.
 
 ## Documentación
 
@@ -82,6 +83,7 @@ CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint
 | [docs/configuration.md](docs/configuration.md) | Configuración y secretos |
 | [docs/fixtures.md](docs/fixtures.md) | Corpus sintético Excel (Fase 2.0) |
 | [docs/workbook-inspection.md](docs/workbook-inspection.md) | Inspección factual (Fase 2A) |
+| [docs/region-detection.md](docs/region-detection.md) | Detección de regiones (Fase 2B) |
 | [docs/limitations.md](docs/limitations.md) | Limitaciones conocidas |
 | [docs/staging.md](docs/staging.md) | Staging manual en SAPIENS |
 | [docs/decisions/](docs/decisions/README.md) | ADRs |
@@ -111,6 +113,8 @@ exceler source list
 exceler source validate <id>
 exceler workbook inspect archivo.xlsx
 exceler workbook inspect archivo.xlsx --format json --pretty
+exceler workbook regions archivo.xlsx
+exceler workbook regions archivo.xlsx --format json --pretty
 exceler dev fixtures generate
 exceler dev fixtures verify
 ```

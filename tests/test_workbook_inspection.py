@@ -292,7 +292,7 @@ def test_xlsm_with_vba_stub_detected() -> None:
 def test_serialization_schema_version() -> None:
     path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "hidden_sheet"))
     payload = inspection_to_dict(_inspect(path))
-    assert payload["schema_version"] == 2
+    assert payload["schema_version"] == 3
     assert payload["inspection"]["completion_status"] == "complete"
     assert payload["inspection"]["truncation_reasons"] == []
     assert "cells_scanned" in payload["inspection"]

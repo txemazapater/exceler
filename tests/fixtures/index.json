@@ -17,6 +17,11 @@
     "cell_errors",
     "excel_structured_table",
     "xlsm_container",
+    "table_with_totals_footer",
+    "note_block_below_table",
+    "nested_title_and_table",
+    "false_gap_inside_table",
+    "styled_separator_blocks",
     "very_hidden_sheet",
     "freeze_and_autofilter",
     "hidden_rows",
@@ -53,6 +58,11 @@
     "workbooks/types/cell_errors.xlsx",
     "workbooks/structural/excel_structured_table.xlsx",
     "workbooks/structural/xlsm_container.xlsm",
+    "workbooks/structural/table_with_totals_footer.xlsx",
+    "workbooks/structural/note_block_below_table.xlsx",
+    "workbooks/structural/nested_title_and_table.xlsx",
+    "workbooks/structural/false_gap_inside_table.xlsx",
+    "workbooks/structural/styled_separator_blocks.xlsx",
     "workbooks/structural/very_hidden_sheet.xlsx",
     "workbooks/structural/freeze_and_autofilter.xlsx",
     "workbooks/structural/hidden_rows.xlsx",
@@ -73,5 +83,5 @@
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 34
+  "count": 39
 }

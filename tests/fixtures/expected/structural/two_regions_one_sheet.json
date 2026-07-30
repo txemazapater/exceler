@@ -10,8 +10,15 @@
       }
     },
     "regions": {
-      "reserved_for": "2B",
-      "logical_tables": 2
+      "sheets": [
+        {
+          "name": "Regions",
+          "region_count": 2,
+          "contains_types": [
+            "table"
+          ]
+        }
+      ]
     }
   }
 }
