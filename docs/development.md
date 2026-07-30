@@ -3,32 +3,50 @@
 ## Requisitos
 
 - Python 3.12+
-- Docker / Docker Compose (entorno de referencia)
+- [uv](https://docs.astral.sh/uv/) (gestor de dependencias y lock)
+- Docker / Docker Compose (Server Host de referencia)
 - PostgreSQL 16 (Compose o instancia local)
 
 ## Setup nativo
 
 ```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# Linux/macOS: source .venv/bin/activate
-pip install -e ".[dev]"
+uv sync --frozen --all-extras
 cp .env.example .env
 ```
 
+Activa el entorno de uv (`.venv`) o usa `uv run ...`.
+
 Configura `DATABASE_URL` o `EXCELER_DB_*` apuntando a PostgreSQL.
+
+### Actualizar dependencias
+
+```bash
+# editar rangos en pyproject.toml si hace falta
+uv lock
+uv sync --frozen --all-extras
+```
+
+Revisa el diff de `uv.lock` en el PR. No uses un segundo gestor de dependencias en paralelo.
 
 ## Comandos útiles
 
 ```bash
-exceler db upgrade
-uvicorn exceler.main:app --reload --port 8000
-exceler source list
-pytest
-ruff check src tests
-ruff format src tests
-mypy
+uv run exceler db upgrade
+uv run uvicorn exceler.main:app --reload --port 8000
+uv run exceler source list
+uv run pytest
+uv run ruff format --check src tests
+uv run ruff check src tests
+uv run mypy
 ```
+
+## CI
+
+GitHub Actions ejecuta en `push`/`pull_request` a `main`:
+
+- `ruff format --check`, `ruff check`, `mypy`
+- `pytest` (con PostgreSQL de servicio)
+- `docker build` (instalación desde `uv.lock`)
 
 ## Estructura
 
@@ -48,17 +66,12 @@ Dependencias conceptuales: API/CLI → Application → Domain/Ports ← Infrastr
 ## Pruebas de API con PostgreSQL
 
 ```bash
-set TEST_DATABASE_URL=postgresql+psycopg://exceler:pass@localhost:5432/exceler
-pytest
+# Windows PowerShell
+$env:TEST_DATABASE_URL="postgresql+psycopg://exceler:pass@localhost:5432/exceler"
+uv run pytest
 ```
 
-En Compose, tras `db upgrade`:
-
-```bash
-docker compose exec -e TEST_DATABASE_URL=postgresql+psycopg://exceler:$(cat /run/secrets/db_password)@exceler-db:5432/exceler exceler-app pytest
-```
-
-Las pruebas de dominio no requieren base de datos.
+Las pruebas de dominio y liveness no requieren base de datos.
 
 ## OpenAPI
 

@@ -103,7 +103,9 @@ Ubicación explorable con mecanismo de acceso, identidad, alcance y política.
 
 **Responsabilidad:** definir *dónde* y *cómo* se puede descubrir, no *qué significa* el contenido.
 
-**Atributos conceptuales típicos:** identificador, nombre, tipo, endpoint, ubicación raíz, mecanismo de autenticación, `CredentialReference`, habilitado/deshabilitado, modo solo lectura, recursividad, patrones include/exclude, límites operativos, frecuencia/política, última ejecución correcta, último error, configuración específica del conector.
+**Atributos conceptuales típicos:** identificador, nombre, tipo, endpoint, ubicación raíz, mecanismo de autenticación, `CredentialReference` (`env://` / `file://`), habilitado/deshabilitado, modo solo lectura, recursividad, patrones include/exclude, límites operativos, frecuencia/política, última ejecución correcta, último error, configuración específica del conector.
+
+La **validez de configuración** y la **accesibilidad actual** son dimensiones distintas: un origen puede persistirse correctamente aunque el recurso no esté montado o viva en otro nodo. La accesibilidad se diagnostica con una operación explícita de validación.
 
 **Relaciones:** usa `CredentialReference`; origina `DiscoveryRun` y `DiscoveredAsset`.
 

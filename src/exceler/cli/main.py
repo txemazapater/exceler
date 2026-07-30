@@ -70,9 +70,14 @@ def source_validate(source_id: str) -> None:
     service, session = _source_service()
     try:
         result = service.validate(UUID(source_id))
-        typer.echo(f"valid={result.valid} message={result.message}")
+        typer.echo(
+            f"valid={result.valid} configuration_valid={result.configuration_valid} "
+            f"accessible={result.accessible} message={result.message}"
+        )
         for key, value in result.checks.items():
-            typer.echo(f"  {key}={value}")
+            typer.echo(f"  check.{key}={value}")
+        for err in result.errors:
+            typer.echo(f"  error.{err.code}={err.message}")
     finally:
         session.close()  # type: ignore[attr-defined]
 

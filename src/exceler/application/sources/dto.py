@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from exceler.domain.sources.enums import AuthenticationType, ScanPolicy, SourceType
 from exceler.domain.sources.models import DiscoverySource
+from exceler.domain.sources.validation import ValidationIssue
 
 
 class SourceCreate(BaseModel):
@@ -92,9 +93,17 @@ class SourceList(BaseModel):
     limit: int
 
 
+class ValidationErrorItem(BaseModel):
+    code: str
+    message: str
+
+
 class SourceValidationResult(BaseModel):
     valid: bool
+    configuration_valid: bool
+    accessible: bool
     checks: dict[str, object]
+    errors: list[ValidationErrorItem]
     message: str
 
 
@@ -123,3 +132,7 @@ def source_to_read(source: DiscoverySource) -> SourceRead:
     data = asdict(source)
     data["is_archived"] = source.is_archived
     return SourceRead.model_validate(data)
+
+
+def issues_to_items(issues: list[ValidationIssue]) -> list[ValidationErrorItem]:
+    return [ValidationErrorItem(code=item.code, message=item.message) for item in issues]

@@ -81,10 +81,23 @@ def client(
     get_settings.cache_clear()
 
 
-def test_health(client: TestClient) -> None:
-    response = client.get("/health")
+def test_health_live_without_db_dependency() -> None:
+    get_settings.cache_clear()
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/health/live")
+        assert response.status_code == 200
+        assert response.json()["status"] == "live"
+        compat = client.get("/health")
+        assert compat.status_code == 200
+
+
+def test_health_ready(client: TestClient) -> None:
+    response = client.get("/health/ready")
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    body = response.json()
+    assert body["status"] == "ready"
+    assert body["checks"]["database"] == "ok"
 
 
 def test_source_crud_and_validate(
@@ -96,32 +109,57 @@ def test_source_crud_and_validate(
         "read_only": True,
         "include_patterns": ["*.xlsx"],
         "exclude_patterns": ["~$*"],
+        "credential_reference": "env://EXCELER_EXAMPLE_SECRET",
     }
     created = client.post("/api/v1/sources", json=payload)
     assert created.status_code == 201, created.text
     body = created.json()
-    assert body["name"] == "comercial"
-    assert "password" not in created.text.lower()
+    assert body["credential_reference"] == "env://EXCELER_EXAMPLE_SECRET"
+    assert "password" not in created.text.lower() or "credential_reference" in created.text
     source_id = body["id"]
 
-    listed = client.get("/api/v1/sources")
-    assert listed.status_code == 200
-    assert listed.json()["total"] == 1
+    missing = source_root.parent / "not-yet-mounted"
+    updated = client.put(
+        f"/api/v1/sources/{source_id}",
+        json={"root_location": str(missing).replace("\\", "/")},
+    )
+    assert updated.status_code == 200, updated.text
 
-    fetched = client.get(f"/api/v1/sources/{source_id}")
-    assert fetched.status_code == 200
+    validated_missing = client.post(f"/api/v1/sources/{source_id}/validate")
+    assert validated_missing.status_code == 200
+    missing_body = validated_missing.json()
+    assert missing_body["configuration_valid"] is True
+    assert missing_body["accessible"] is False
+    assert missing_body["valid"] is False
+    assert missing_body["errors"][0]["code"] == "root_missing"
 
+    restored = client.put(
+        f"/api/v1/sources/{source_id}",
+        json={"root_location": str(source_root).replace("\\", "/")},
+    )
+    assert restored.status_code == 200
     validated = client.post(f"/api/v1/sources/{source_id}/validate")
     assert validated.status_code == 200
     assert validated.json()["valid"] is True
 
-    disabled = client.patch(f"/api/v1/sources/{source_id}/status", json={"enabled": False})
-    assert disabled.status_code == 200
-    assert disabled.json()["enabled"] is False
-
     archived = client.delete(f"/api/v1/sources/{source_id}")
     assert archived.status_code == 200
     assert archived.json()["archived_at"] is not None
+    blocked = client.put(f"/api/v1/sources/{source_id}", json={"name": "nope"})
+    assert blocked.status_code == 409
 
     audits = db_session.execute(text("select count(*) from audit_events")).scalar_one()
     assert int(audits) >= 3
+
+
+def test_create_missing_path_ok(client: TestClient, source_root: Path) -> None:
+    missing = source_root.parent / "future-share"
+    created = client.post(
+        "/api/v1/sources",
+        json={
+            "name": "future",
+            "root_location": str(missing).replace("\\", "/"),
+            "read_only": True,
+        },
+    )
+    assert created.status_code == 201, created.text

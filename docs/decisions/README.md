@@ -90,3 +90,4 @@ Enlaces a issues, PRs, docs de dominio/arquitectura, etc.
 | [0001](0001-phase-0-1-domain-and-execution-model.md) | Corrección del modelo temporal y de ejecución (Fase 0.1) | accepted |
 | [0002](0002-runtime-and-deployment-strategy.md) | Estrategia inicial de ejecución y despliegue | accepted |
 | [0003](0003-initial-technology-stack.md) | Stack tecnológico inicial | accepted |
+| [0004](0004-execution-hosts-and-nodes.md) | Modelo de hosts y nodos de ejecución | accepted |

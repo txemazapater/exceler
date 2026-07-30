@@ -10,14 +10,20 @@ from exceler.application.sources.dto import (
     SourceStatusUpdate,
     SourceUpdate,
     SourceValidationResult,
+    issues_to_items,
     source_from_create,
     source_to_read,
 )
-from exceler.domain.sources.errors import SourceConflictError, SourceNotFoundError
+from exceler.domain.sources.errors import (
+    SourceConflictError,
+    SourceNotFoundError,
+    SourceValidationError,
+)
 from exceler.domain.sources.models import DiscoverySource
 from exceler.domain.sources.validation import (
-    validate_filesystem_accessibility,
-    validate_source_invariants,
+    ValidationIssue,
+    probe_filesystem_accessibility,
+    validate_source_configuration,
 )
 
 
@@ -35,8 +41,7 @@ class SourceService:
 
     def create(self, payload: SourceCreate) -> SourceRead:
         source = source_from_create(payload)
-        validate_source_invariants(source)
-        validate_filesystem_accessibility(source.root_location, self._allowed_roots)
+        validate_source_configuration(source, allowed_source_roots=self._allowed_roots)
         existing = self._repository.get_by_name(source.name)
         if existing and not existing.is_archived:
             raise SourceConflictError(f"Source name already exists: {source.name}")
@@ -50,8 +55,7 @@ class SourceService:
         return source_to_read(saved)
 
     def get(self, source_id: UUID) -> SourceRead:
-        source = self._require(source_id)
-        return source_to_read(source)
+        return source_to_read(self._require(source_id))
 
     def list(
         self, *, include_archived: bool = False, offset: int = 0, limit: int = 50
@@ -70,25 +74,18 @@ class SourceService:
 
     def update(self, source_id: UUID, payload: SourceUpdate) -> SourceRead:
         source = self._require(source_id)
-        if source.is_archived:
-            raise SourceConflictError("Cannot update an archived source")
-        data = payload.model_dump(exclude_unset=True)
-        for key, value in data.items():
-            setattr(source, key, value)
-        if "name" in data and isinstance(source.name, str):
-            source.name = source.name.strip()
-        validate_source_invariants(source)
-        validate_filesystem_accessibility(source.root_location, self._allowed_roots)
+        changes = payload.model_dump(exclude_unset=True)
+        source.reconfigure(changes)
+        validate_source_configuration(source, allowed_source_roots=self._allowed_roots)
         conflict = self._repository.get_by_name(source.name)
         if conflict and conflict.id != source.id and not conflict.is_archived:
             raise SourceConflictError(f"Source name already exists: {source.name}")
-        source.touch()
         saved = self._repository.save(source)
         self._audit.record(
             action="source.updated",
             entity_type="DiscoverySource",
             entity_id=str(saved.id),
-            details={"fields": sorted(data.keys())},
+            details={"fields": sorted(changes.keys())},
         )
         return source_to_read(saved)
 
@@ -120,27 +117,60 @@ class SourceService:
 
     def validate(self, source_id: UUID) -> SourceValidationResult:
         source = self._require(source_id)
-        validate_source_invariants(source)
-        checks = validate_filesystem_accessibility(source.root_location, self._allowed_roots)
-        checks.update(
-            {
-                "read_only": source.read_only,
-                "patterns_ok": True,
-                "limits_ok": True,
-                "within_allowed_roots": True,
+        config_errors: list[ValidationIssue] = []
+        try:
+            validate_source_configuration(source, allowed_source_roots=self._allowed_roots)
+            configuration_valid = True
+        except SourceValidationError as exc:
+            configuration_valid = False
+            config_errors.append(ValidationIssue(code=exc.code, message=exc.message))
+
+        if configuration_valid:
+            report = probe_filesystem_accessibility(source.root_location, self._allowed_roots)
+            accessible = report.accessible
+            checks = dict(report.checks)
+            errors = list(report.errors)
+            # probe also re-checks config; trust the dedicated config pass above
+            configuration_valid = configuration_valid and report.configuration_valid
+            if not report.configuration_valid:
+                errors = report.errors
+        else:
+            accessible = False
+            checks = {
+                "path_resolved": False,
+                "exists": False,
+                "is_directory": False,
+                "readable": False,
+                "within_allowed_roots": False,
             }
+            errors = config_errors
+
+        checks["read_only"] = source.read_only
+        valid = configuration_valid and accessible
+        result = SourceValidationResult(
+            valid=valid,
+            configuration_valid=configuration_valid,
+            accessible=accessible,
+            checks=checks,
+            errors=issues_to_items(errors),
+            message=(
+                "Source is configured and currently accessible"
+                if valid
+                else "Source validation completed with findings"
+            ),
         )
         self._audit.record(
             action="source.validated",
             entity_type="DiscoverySource",
             entity_id=str(source.id),
-            details={"valid": True},
+            details={
+                "valid": result.valid,
+                "configuration_valid": result.configuration_valid,
+                "accessible": result.accessible,
+                "error_codes": [item.code for item in result.errors],
+            },
         )
-        return SourceValidationResult(
-            valid=True,
-            checks=checks,
-            message="Source configuration is valid",
-        )
+        return result
 
     def _require(self, source_id: UUID) -> DiscoverySource:
         source = self._repository.get(source_id)

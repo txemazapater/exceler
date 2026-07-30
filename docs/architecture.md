@@ -5,14 +5,28 @@ Documento conceptual (Fase 0.1). Describe responsabilidades y contratos entre su
 
 ## Arquitectura ejecutable inicial (Fase 1)
 
-Monolito modular desplegado con Compose:
+Monolito modular desplegado con Compose (**Server Host**):
 
 ```text
 exceler-app  →  API + application + domain + infrastructure + CLI
 exceler-db   →  PostgreSQL (red interna)
 ```
 
-Orígenes filesystem llegan como volúmenes `:ro` bajo `/sources/...`.
+Orígenes filesystem llegan como volúmenes `:ro` bajo `/sources/...` cuando el Server Host los materializa.
+El Core es independiente del host: también se contemplan Native, Desktop y Agent ([ADR 0004](decisions/0004-execution-hosts-and-nodes.md)).
+
+### Configuración vs accesibilidad
+
+- **Crear/actualizar** valida configuración (sintaxis, raíces permitidas, patrones, `read_only`, credenciales por referencia).
+- **`POST .../validate`** diagnostica accesibilidad actual en el nodo y devuelve un resultado estructurado (`valid`, `configuration_valid`, `accessible`, `checks`, `errors`).
+- Un origen puede estar bien configurado y no ser accesible aún (mount ausente, nodo distinto, recurso caído).
+
+### Health
+
+- `GET /health/live` — liveness del proceso (sin PostgreSQL).
+- `GET /health/ready` — readiness (PostgreSQL + configuración básica).
+- `GET /health` — alias de compatibilidad de liveness.
+
 No hay workers, colas, SMB directo ni parser Excel en esta fase.
 
 Ver [deployment.md](deployment.md), [ADR 0002](decisions/0002-runtime-and-deployment-strategy.md) y [ADR 0003](decisions/0003-initial-technology-stack.md).

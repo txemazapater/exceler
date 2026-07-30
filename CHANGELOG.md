@@ -4,27 +4,20 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-### Added
-
-- Fase 1 ejecutable: registro de `DiscoverySource` (API + CLI + PostgreSQL + Compose).
-- Stack Python 3.12 / FastAPI / SQLAlchemy / Alembic / Typer (ADR 0003).
-- Estrategia Docker Compose de referencia (ADR 0002).
-- Documentación de despliegue, desarrollo y configuración.
-- Ajustes documentales: ubicación de `AssetSnapshot`, cardinalidad de runs, materialización de snapshots.
-
 ### Changed
 
-- Fase 0.1: modelo temporal y de ejecución; Information Graph conceptual desde el inicio.
-- Roadmap: SMB y SharePoint/OneDrive adelantados; renumeración de fases.
-- Rama por defecto: `main`.
-- ADR 0001: renombres editoriales sin ADR obligatorio.
+- Crear/actualizar un origen valida configuración, no accesibilidad actual.
+- `POST /api/v1/sources/{id}/validate` devuelve resultado estructurado (`configuration_valid`, `accessible`, `errors`).
+- Health separado: `/health/live` y `/health/ready` (Compose usa readiness).
+- `credential_reference` exige esquemas `env://` o `file://`.
+- `DiscoverySource.reconfigure()` protege campos e invariantes.
+- Dependencias reproducibles con `uv.lock`; Docker e instalación vía `uv sync --frozen`.
 
-### Added (fundación)
+### Added
 
-- Licencia MIT.
-- Documentación fundacional y proceso ADR.
-- Guía de muestras sintéticas.
-- `CONTRIBUTING.md`.
+- ADR 0004 — hosts Server/Native/Desktop/Agent.
+- GitHub Actions CI (quality, tests+Postgres, docker-build).
+- Fase 1 ejecutable previa, ADRs 0002–0003 y documentación de despliegue.
 
 ## [0.0.0] — 2026-07-30
 

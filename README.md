@@ -6,9 +6,11 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 1 en curso (base ejecutable):** registro de orígenes (`DiscoverySource`), API, CLI, PostgreSQL y Docker Compose.
+**Fase 1 consolidada:** registro de orígenes con separación configuración/accesibilidad, health live/ready, lock `uv`, CI y hosts documentados.
 
 Todavía **no** hay enumeración completa de archivos, conectores SMB/SharePoint, ni inspección/perfilado/inferencia de Excel.
+
+CI: GitHub Actions (`quality`, `tests` con PostgreSQL, `docker-build`).
 
 ## Arranque rápido (Docker Compose)
 
@@ -17,7 +19,14 @@ cp .env.example .env
 cp secrets/db_password.example secrets/db_password
 docker compose up --build
 docker compose exec exceler-app exceler db upgrade
-curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/health/live
+curl http://127.0.0.1:8000/health/ready
+```
+
+Desarrollo nativo con lock reproducible:
+
+```bash
+uv sync --frozen --all-extras
 ```
 
 OpenAPI: http://127.0.0.1:8000/docs
@@ -72,15 +81,19 @@ CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint
 ## API (Fase 1)
 
 ```text
-GET    /health
+GET    /health                 # alias liveness
+GET    /health/live
+GET    /health/ready
 GET    /api/v1/sources
 POST   /api/v1/sources
 GET    /api/v1/sources/{id}
 PUT    /api/v1/sources/{id}
 PATCH  /api/v1/sources/{id}/status
 DELETE /api/v1/sources/{id}          # archiva (soft-delete)
-POST   /api/v1/sources/{id}/validate
+POST   /api/v1/sources/{id}/validate # accesibilidad estructurada
 ```
+
+Crear/actualizar valida **configuración**. `validate` diagnostica **accesibilidad** en el nodo actual.
 
 ## CLI
 

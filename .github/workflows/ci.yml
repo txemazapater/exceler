@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - name: Sync dependencies
+        run: uv sync --frozen --all-extras
+      - name: Ruff format
+        run: uv run ruff format --check src tests
+      - name: Ruff lint
+        run: uv run ruff check src tests
+      - name: Mypy
+        run: uv run mypy
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: exceler
+          POSTGRES_PASSWORD: exceler_ci
+          POSTGRES_DB: exceler
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U exceler -d exceler"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://exceler:exceler_ci@localhost:5432/exceler
+      EXCELER_ALLOWED_SOURCE_ROOTS: /tmp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - name: Sync dependencies
+        run: uv sync --frozen --all-extras
+      - name: Pytest
+        run: uv run pytest
+
+  docker-build:
+    name: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t exceler:ci .

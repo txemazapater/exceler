@@ -1,7 +1,7 @@
 # Despliegue
 
-Estrategia de referencia: **Docker Compose** ([ADR 0002](decisions/0002-runtime-and-deployment-strategy.md)).
-La ejecución nativa permanece soportada ([development.md](development.md)).
+Estrategia de referencia: **Docker Compose** en **Server Host** ([ADR 0002](decisions/0002-runtime-and-deployment-strategy.md), [ADR 0004](decisions/0004-execution-hosts-and-nodes.md)).
+Native / Desktop / Agent son hosts adicionales documentados; no se asume que todo origen sea accesible desde el servidor central.
 
 ## Servicios
 
@@ -9,6 +9,8 @@ La ejecución nativa permanece soportada ([development.md](development.md)).
 |----------|-----|
 | `exceler-app` | API FastAPI, CLI, migraciones, lógica de aplicación |
 | `exceler-db` | PostgreSQL 16 (red interna; sin puerto publicado al host por defecto) |
+
+La imagen instala dependencias con **`uv sync --frozen`** desde `uv.lock`.
 
 ## Arranque
 
@@ -29,19 +31,18 @@ docker compose exec exceler-app exceler db upgrade
 Comprobar salud:
 
 ```bash
-curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/health/live
+curl http://127.0.0.1:8000/health/ready
 ```
+
+- Compose healthcheck de `exceler-app` → `/health/ready`
+- HEALTHCHECK de imagen → `/health/live`
+- `/health` permanece como alias de liveness
 
 Parar:
 
 ```bash
 docker compose down
-```
-
-Pruebas dentro del contenedor:
-
-```bash
-docker compose exec exceler-app pytest
 ```
 
 ## Volúmenes
@@ -51,16 +52,7 @@ docker compose exec exceler-app pytest
 - `exceler_tmp` — temporales.
 - `./samples/sources:/sources/samples:ro` — origen sintético de ejemplo.
 
-Montajes corporativos reales no se versionan. Usar `docker-compose.override.yml` (ver `docker-compose.override.example.yml`):
-
-```yaml
-services:
-  exceler-app:
-    volumes:
-      - /mnt/comercial:/sources/comercial:ro
-```
-
-EXCELER registra rutas **internas** (`/sources/...`). En esta fase, SMB/autenticación de red la gestiona el host.
+Montajes corporativos reales no se versionan. Usar `docker-compose.override.yml`.
 
 ## Seguridad del contenedor `exceler-app`
 
@@ -68,7 +60,6 @@ EXCELER registra rutas **internas** (`/sources/...`). En esta fase, SMB/autentic
 - `read_only: true` + tmpfs `/tmp` + volúmenes de escritura explícitos;
 - `cap_drop: ALL`;
 - `no-new-privileges:true`;
-- sin `privileged` ni socket Docker;
 - orígenes `:ro`;
 - secretos vía Docker secrets en `/run/secrets/`.
 

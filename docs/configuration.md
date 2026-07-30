@@ -9,6 +9,8 @@ Preferencia: variables de entorno (y secretos montados). Archivos de ejemplo:
 - `docker-compose.override.example.yml`
 - `secrets/db_password.example`
 
+`pyproject.toml` declara rangos de dependencias; **`uv.lock`** fija la resolución reproducible.
+
 ## Variables principales
 
 | Variable | Descripción |
@@ -23,16 +25,23 @@ Preferencia: variables de entorno (y secretos montados). Archivos de ejemplo:
 | `EXCELER_AUTO_MIGRATE` | Reservado; migraciones se aplican vía CLI |
 | `EXCELER_API_DEV_TOKEN` | Gate opcional; header `X-Exceler-Token` |
 
-## Referencias de secretos
+## Referencias de secretos y `credential_reference`
+
+Esquemas aceptados:
 
 ```text
-file:///run/secrets/db_password
-env://EXCELER_DB_PASSWORD
+env://VARIABLE_NAME
+file:///absolute/path/to/secret
 ```
 
-La aplicación resuelve la referencia en tiempo de ejecución. Los logs redactan claves sensibles.
+Reservados para fases futuras (rechazados hoy): `vault://`, `keyring://`, `secret-manager://`.
 
-`credential_reference` en un `DiscoverySource` guarda **solo** la referencia, nunca el secreto.
+Reglas:
+
+- no se aceptan secretos desnudos;
+- la API persiste y devuelve **solo la referencia**, nunca el valor resuelto;
+- los logs no incluyen contenido secreto;
+- una referencia puede no resolverse en el Server Host si pertenece a otro nodo (futuro Agent Host).
 
 ## Qué no versionar
 

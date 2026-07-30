@@ -15,11 +15,13 @@ Ver [docs/development.md](docs/development.md).
 Antes de un PR de código:
 
 ```bash
-ruff format src tests
-ruff check src tests
-mypy
-pytest
+uv run ruff format src tests
+uv run ruff check src tests
+uv run mypy
+uv run pytest
 ```
+
+Mantén `uv.lock` actualizado si cambias dependencias (`uv lock`).
 
 ## Decisiones tecnológicas
 

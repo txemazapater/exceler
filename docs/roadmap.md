@@ -2,7 +2,7 @@
 
 Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un compromiso de calendario.
 
-Estado actual: **Fase 1 en implementación** (registro de orígenes). Fase 0.1 documentalmente cerrada.
+Estado actual: **Fase 1 consolidada** (configuración vs accesibilidad, health, lock, CI, hosts). Siguiente: Fase 2 filesystem inventory.
 
 ## Fase 0 — Fundamentos
 
