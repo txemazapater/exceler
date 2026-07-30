@@ -4,10 +4,15 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- Fase 2B contrato endurecido (`regions_schema_version` 2 / detector `2B.2`): ocupación en capas
+  (observed/content/visual) y tablas estructuradas que reservan su interior ante solapes parciales.
+
 ### Added
 
 - Fase 2B: detección de regiones lógicas (`HeuristicRegionDetector`, CLI `workbook regions`, `expectations.regions`).
-- Corpus 2B: footer, notas, nesting, false-gap, separadores por estilo.
+- Corpus 2B: footer, notas, nesting, false-gap, separadores por estilo, solape parcial con tabla estructurada.
 - Inspección schema **3**: estilos factuales (font/fill/alignment/borders) para continuidad visual.
 
 ### Changed

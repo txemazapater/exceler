@@ -67,11 +67,25 @@ class RegionStyleProfile:
 
 @dataclass(frozen=True)
 class RegionStatistics:
+    """Occupancy counts are layered — do not treat them as interchangeable.
+
+    - observed_count: cells present in WorkbookInspection.cells inside the bbox
+    - content_occupied_count: cells with value/formula (content occupancy)
+    - visual_occupied_count: content + styled empties + merge coverage (visual occupancy)
+    - occupied_count: alias of content_occupied_count (legacy name)
+    - density / empty_ratio: based on content occupancy vs bbox area
+    - visual_density: visual occupancy vs bbox area
+    """
+
     cell_count: int
+    observed_count: int
+    content_occupied_count: int
+    visual_occupied_count: int
     occupied_count: int
     empty_ratio: float
     formula_ratio: float
     density: float
+    visual_density: float
     row_count: int
     column_count: int
     distinct_value_kinds: int
@@ -79,10 +93,14 @@ class RegionStatistics:
     def to_dict(self) -> dict[str, Any]:
         return {
             "cell_count": self.cell_count,
+            "observed_count": self.observed_count,
+            "content_occupied_count": self.content_occupied_count,
+            "visual_occupied_count": self.visual_occupied_count,
             "occupied_count": self.occupied_count,
             "empty_ratio": self.empty_ratio,
             "formula_ratio": self.formula_ratio,
             "density": self.density,
+            "visual_density": self.visual_density,
             "row_count": self.row_count,
             "column_count": self.column_count,
             "distinct_value_kinds": self.distinct_value_kinds,

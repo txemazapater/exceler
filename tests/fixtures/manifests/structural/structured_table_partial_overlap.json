@@ -1,0 +1,17 @@
+{
+  "scenario_id": "structured_table_partial_overlap",
+  "description": "Tabla estructurada con columna adyacente (solape parcial)",
+  "workbook": "workbooks/structural/structured_table_partial_overlap.xlsx",
+  "generator": "region_scenarios.build_structured_table_partial_overlap",
+  "seed": 20260730,
+  "intentions": [
+    "Tabla estructurada conserva bbox exacto",
+    "Columna adyacente es región heurística separada"
+  ],
+  "features": [
+    "regions",
+    "structured_table",
+    "partial_overlap"
+  ],
+  "versioned": true
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "scenario_id": "structured_table_partial_overlap",
+  "workbook": "workbooks/structural/structured_table_partial_overlap.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      },
+      "worksheets": [
+        {
+          "name": "Partial",
+          "tables": [
+            {
+              "name": "CoreInventory",
+              "ref": "A1:B4"
+            }
+          ]
+        }
+      ]
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Partial",
+          "region_count_min": 2,
+          "regions": [
+            {
+              "region_type": "table",
+              "bbox": {
+                "first_row": 1,
+                "last_row": 4,
+                "first_col": 1,
+                "last_col": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

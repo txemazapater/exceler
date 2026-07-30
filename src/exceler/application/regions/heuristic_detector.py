@@ -88,6 +88,123 @@ class _CellFact:
     fill_color: str | None
     bordered: bool
     merge_id: str | None = None
+    observed: bool = False
+    has_content: bool = False
+    visual: bool = False
+
+
+def _has_visual_style(fact: _CellFact) -> bool:
+    return bool(
+        fact.font_bold
+        or fact.fill_color
+        or fact.bordered
+        or fact.font_name
+        or fact.font_size is not None
+    )
+
+
+def _structured_table_boxes(ws: WorksheetInspection) -> list[BoundingBox]:
+    boxes: list[BoundingBox] = []
+    for table in ws.tables:
+        parsed = _parse_range(table.reference)
+        if parsed is None:
+            continue
+        r1, r2, c1, c2 = parsed
+        boxes.append(BoundingBox(first_row=r1, last_row=r2, first_col=c1, last_col=c2))
+    return boxes
+
+
+def _key_in_boxes(key: tuple[int, int], boxes: list[BoundingBox]) -> bool:
+    row, col = key
+    return any(
+        box.first_row <= row <= box.last_row and box.first_col <= col <= box.last_col
+        for box in boxes
+    )
+
+
+def _build_occupancy(ws: WorksheetInspection) -> dict[tuple[int, int], _CellFact]:
+    """Build layered occupancy facts from observed cells + merge visual expansion.
+
+    Layers (orthogonal flags on each fact):
+    - observed: present in WorkbookInspection.cells
+    - has_content: non-null value or formula
+    - visual: participates in visual continuity (content, styled empty, or merge coverage)
+    """
+    facts: dict[tuple[int, int], _CellFact] = {}
+    for cell in ws.cells:
+        style = cell.style
+        has_content = cell.value.kind is not CellValueKind.NULL or cell.formula is not None
+        fact = _CellFact(
+            coordinate=cell.coordinate,
+            row=cell.row,
+            column=cell.column,
+            kind=cell.value.kind,
+            formula=cell.formula,
+            has_comment=cell.comment is not None,
+            font_bold=bool(style and style.font_bold),
+            font_name=style.font_name if style else None,
+            font_size=style.font_size if style else None,
+            fill_color=style.fill_color if style else None,
+            bordered=bool(
+                style
+                and (
+                    style.border_top
+                    or style.border_right
+                    or style.border_bottom
+                    or style.border_left
+                )
+            ),
+            observed=True,
+            has_content=has_content,
+            visual=False,
+        )
+        fact.visual = has_content or _has_visual_style(fact) or fact.has_comment
+        facts[(cell.row, cell.column)] = fact
+
+    for merged in ws.merged_ranges:
+        parsed = _parse_range(merged.reference)
+        if parsed is None:
+            continue
+        r1, r2, c1, c2 = parsed
+        anchor = _parse_a1(merged.anchor)
+        anchor_fact = facts.get(anchor) if anchor else None
+        for row in range(r1, r2 + 1):
+            for col in range(c1, c2 + 1):
+                key = (row, col)
+                if key in facts:
+                    facts[key].merge_id = merged.reference
+                    facts[key].visual = True
+                    continue
+                # Merge coverage is visual only — never invent content on non-anchor cells.
+                facts[key] = _CellFact(
+                    coordinate=_coord(row, col),
+                    row=row,
+                    column=col,
+                    kind=CellValueKind.NULL,
+                    formula=None,
+                    has_comment=False,
+                    font_bold=bool(anchor_fact.font_bold) if anchor_fact else False,
+                    font_name=anchor_fact.font_name if anchor_fact else None,
+                    font_size=anchor_fact.font_size if anchor_fact else None,
+                    fill_color=anchor_fact.fill_color if anchor_fact else None,
+                    bordered=bool(anchor_fact.bordered) if anchor_fact else False,
+                    merge_id=merged.reference,
+                    observed=False,
+                    has_content=False,
+                    visual=True,
+                )
+    return facts
+
+
+def _visual_facts(
+    facts: dict[tuple[int, int], _CellFact],
+    *,
+    exclude_boxes: list[BoundingBox] | None = None,
+) -> dict[tuple[int, int], _CellFact]:
+    boxes = exclude_boxes or []
+    return {
+        key: fact for key, fact in facts.items() if fact.visual and not _key_in_boxes(key, boxes)
+    }
 
 
 class _UnionFind:
@@ -184,78 +301,6 @@ def _bbox_of(cells: list[_CellFact]) -> BoundingBox:
         first_col=min(c.column for c in cells),
         last_col=max(c.column for c in cells),
     )
-
-
-def _build_facts(ws: WorksheetInspection) -> dict[tuple[int, int], _CellFact]:
-    facts: dict[tuple[int, int], _CellFact] = {}
-    for cell in ws.cells:
-        style = cell.style
-        facts[(cell.row, cell.column)] = _CellFact(
-            coordinate=cell.coordinate,
-            row=cell.row,
-            column=cell.column,
-            kind=cell.value.kind,
-            formula=cell.formula,
-            has_comment=cell.comment is not None,
-            font_bold=bool(style and style.font_bold),
-            font_name=style.font_name if style else None,
-            font_size=style.font_size if style else None,
-            fill_color=style.fill_color if style else None,
-            bordered=bool(
-                style
-                and (
-                    style.border_top
-                    or style.border_right
-                    or style.border_bottom
-                    or style.border_left
-                )
-            ),
-        )
-
-    for merged in ws.merged_ranges:
-        parsed = _parse_range(merged.reference)
-        if parsed is None:
-            continue
-        r1, r2, c1, c2 = parsed
-        anchor = _parse_a1(merged.anchor)
-        anchor_fact = facts.get(anchor) if anchor else None
-        for row in range(r1, r2 + 1):
-            for col in range(c1, c2 + 1):
-                key = (row, col)
-                if key in facts:
-                    facts[key].merge_id = merged.reference
-                    continue
-                if anchor_fact is not None:
-                    facts[key] = _CellFact(
-                        coordinate=_coord(row, col),
-                        row=row,
-                        column=col,
-                        kind=anchor_fact.kind,
-                        formula=None,
-                        has_comment=False,
-                        font_bold=anchor_fact.font_bold,
-                        font_name=anchor_fact.font_name,
-                        font_size=anchor_fact.font_size,
-                        fill_color=anchor_fact.fill_color,
-                        bordered=anchor_fact.bordered,
-                        merge_id=merged.reference,
-                    )
-                else:
-                    facts[key] = _CellFact(
-                        coordinate=_coord(row, col),
-                        row=row,
-                        column=col,
-                        kind=CellValueKind.NULL,
-                        formula=None,
-                        has_comment=False,
-                        font_bold=False,
-                        font_name=None,
-                        font_size=None,
-                        fill_color=None,
-                        bordered=False,
-                        merge_id=merged.reference,
-                    )
-    return facts
 
 
 def _connected_components(
@@ -374,12 +419,15 @@ def _classify(
     width = bbox.last_col - bbox.first_col + 1
     height = bbox.last_row - bbox.first_row + 1
     area = max(width * height, 1)
-    occupied = len(cells)
-    density = occupied / area
-    comment_ratio = sum(1 for c in cells if c.has_comment) / max(occupied, 1)
-    consistency = _column_kind_consistency(cells, bbox)
+    content_cells = [c for c in cells if c.has_content]
+    visual_n = sum(1 for c in cells if c.visual)
+    content_n = len(content_cells)
+    density = content_n / area
+    comment_ratio = sum(1 for c in content_cells if c.has_comment) / max(content_n, 1)
+    consistency = _column_kind_consistency(content_cells or cells, bbox)
     top = [c for c in cells if c.row == bbox.first_row]
-    headerish = _header_like(top)
+    top_content = [c for c in top if c.has_content] or top
+    headerish = _header_like(top_content)
 
     merge_wide = False
     for merged in merges:
@@ -397,10 +445,10 @@ def _classify(
                 break
 
     title_score = 0.0
-    if height <= 2 and occupied <= max(4, width) and (below_dense or merge_wide or width >= 2):
+    if height <= 2 and content_n <= max(4, width) and (below_dense or merge_wide or width >= 2):
         title_score += 0.35
         evidence.append(
-            RegionEvidenceItem("few_cells_title_band", 0.35, "Shallow band with few occupied cells")
+            RegionEvidenceItem("few_cells_title_band", 0.35, "Shallow band with few content cells")
         )
     if any(c.font_bold for c in cells):
         title_score += 0.2
@@ -434,10 +482,12 @@ def _classify(
             )
         if density >= 0.45:
             table_score += 0.2
-            evidence.append(RegionEvidenceItem("density", 0.2, f"Density={density:.2f}"))
+            evidence.append(RegionEvidenceItem("density", 0.2, f"Content density={density:.2f}"))
 
     note_score = 0.0
-    string_ratio = sum(1 for c in cells if c.kind is CellValueKind.STRING) / max(occupied, 1)
+    string_ratio = sum(1 for c in content_cells if c.kind is CellValueKind.STRING) / max(
+        content_n, 1
+    )
     if height <= 1 and string_ratio >= 0.5 and (below_dense or merge_wide):
         title_score += 0.3
         evidence.append(RegionEvidenceItem("single_row_string_band", 0.3, "Single-row string band"))
@@ -454,7 +504,7 @@ def _classify(
     if comment_ratio > 0:
         note_score += 0.25
         evidence.append(RegionEvidenceItem("comments", 0.25, "Comments present"))
-    if occupied <= 4 and height >= 1 and width <= 2 and not below_dense:
+    if content_n <= 4 and height >= 1 and width <= 2 and not below_dense:
         note_score += 0.2
         evidence.append(RegionEvidenceItem("short_text_block", 0.2, "Short text-like block"))
     if string_ratio >= 0.8 and width <= 2 and height >= 2 and not below_dense:
@@ -475,6 +525,9 @@ def _classify(
     if best_type is RegionType.TITLE and table_score > title_score and height >= 3:
         best_type = RegionType.TABLE
         best = table_score
+    if best_type is RegionType.UNKNOWN and visual_n / area >= 0.6 and height >= 2 and width >= 2:
+        best_type = RegionType.TABLE
+        best = max(table_score, 0.4)
     confidence = max(0.0, min(1.0, best))
     return best_type, evidence, confidence
 
@@ -504,9 +557,11 @@ def _stats_and_style(
     width = bbox.last_col - bbox.first_col + 1
     height = bbox.last_row - bbox.first_row + 1
     area = max(width * height, 1)
-    occupied = len(cells)
+    observed_n = sum(1 for c in cells if c.observed)
+    content_n = sum(1 for c in cells if c.has_content)
+    visual_n = sum(1 for c in cells if c.visual)
     formula_count = sum(1 for c in cells if c.formula)
-    kinds = {c.kind for c in cells}
+    kinds = {c.kind for c in cells if c.has_content}
     fills = [c.fill_color for c in cells if c.fill_color]
     fonts = [c.font_name for c in cells if c.font_name]
     bold_n = sum(1 for c in cells if c.font_bold)
@@ -514,66 +569,62 @@ def _stats_and_style(
     dominant = Counter(fills).most_common(1)[0][0] if fills else None
     stats = RegionStatistics(
         cell_count=area,
-        occupied_count=occupied,
-        empty_ratio=max(0.0, 1.0 - occupied / area),
-        formula_ratio=formula_count / max(occupied, 1),
-        density=occupied / area,
+        observed_count=observed_n,
+        content_occupied_count=content_n,
+        visual_occupied_count=visual_n,
+        occupied_count=content_n,
+        empty_ratio=max(0.0, 1.0 - content_n / area),
+        formula_ratio=formula_count / max(content_n, 1),
+        density=content_n / area,
+        visual_density=visual_n / area,
         row_count=height,
         column_count=width,
         distinct_value_kinds=len(kinds),
     )
+    style_denom = max(visual_n, 1)
     profile = RegionStyleProfile(
         distinct_fill_colors=len(set(fills)),
         distinct_font_names=len(set(fonts)),
-        bold_cell_ratio=bold_n / max(occupied, 1),
-        bordered_cell_ratio=border_n / max(occupied, 1),
+        bold_cell_ratio=bold_n / style_denom,
+        bordered_cell_ratio=border_n / style_denom,
         dominant_fill_color=dominant,
     )
     return stats, profile
 
 
+def _facts_in_bbox(facts: dict[tuple[int, int], _CellFact], bbox: BoundingBox) -> list[_CellFact]:
+    return [
+        facts[key]
+        for key in facts
+        if bbox.first_row <= key[0] <= bbox.last_row and bbox.first_col <= key[1] <= bbox.last_col
+    ]
+
+
 def _seed_structured_tables(
     ws: WorksheetInspection,
-    regions: list[LogicalRegion],
     facts: dict[tuple[int, int], _CellFact],
     options: RegionDetectionOptions,
 ) -> list[LogicalRegion]:
-    if not ws.tables:
-        return regions
+    """Authoritative table regions from Excel structured tables (exact ref).
+
+    Heuristic components must already exclude these interiors so partial overlaps
+    never produce duplicate covering regions.
+    """
     seeded: list[LogicalRegion] = []
-    absorbed_ids: set[str] = set()
     for idx, table in enumerate(ws.tables):
         parsed = _parse_range(table.reference)
         if parsed is None:
             continue
         r1, r2, c1, c2 = parsed
         bbox = BoundingBox(first_row=r1, last_row=r2, first_col=c1, last_col=c2)
-        covered = [facts[key] for key in facts if r1 <= key[0] <= r2 and c1 <= key[1] <= c2]
+        covered = _facts_in_bbox(facts, bbox)
         if options.include_cell_coordinates:
-            if covered:
-                coords = tuple(sorted(c.coordinate for c in covered))
-            else:
+            coords = tuple(sorted(c.coordinate for c in covered if c.observed or c.has_content))
+            if not coords:
                 coords = tuple(_coord(r, c) for r in range(r1, r2 + 1) for c in range(c1, c2 + 1))
         else:
             coords = ()
-        cells_for_stats = covered or [
-            _CellFact(
-                coordinate=_coord(r, c),
-                row=r,
-                column=c,
-                kind=CellValueKind.NULL,
-                formula=None,
-                has_comment=False,
-                font_bold=False,
-                font_name=None,
-                font_size=None,
-                fill_color=None,
-                bordered=False,
-            )
-            for r in range(r1, r2 + 1)
-            for c in range(c1, c2 + 1)
-        ]
-        stats, profile = _stats_and_style(cells_for_stats, bbox)
+        stats, profile = _stats_and_style(covered, bbox)
         headers = (r1,) if table.header_row_count else ()
         footers = (r2,) if table.totals_row_count else ()
         region_id = f"{ws.name}::structured::{table.name or idx}"
@@ -601,17 +652,7 @@ def _seed_structured_tables(
                 evidence=evidence,
             )
         )
-        for region in regions:
-            rb = region.bounding_box
-            if (
-                rb.first_row >= r1
-                and rb.last_row <= r2
-                and rb.first_col >= c1
-                and rb.last_col <= c2
-            ):
-                absorbed_ids.add(region.id)
-    kept = [r for r in regions if r.id not in absorbed_ids]
-    return seeded + kept
+    return seeded
 
 
 def _apply_nesting(
@@ -679,8 +720,11 @@ def _detect_sheet(
     ws: WorksheetInspection,
     options: RegionDetectionOptions,
 ) -> SheetRegions:
-    facts = _build_facts(ws)
-    components = _connected_components(facts, options)
+    facts = _build_occupancy(ws)
+    reserved_boxes = _structured_table_boxes(ws)
+    # Heuristic connectivity uses visual occupancy outside structured-table interiors.
+    heuristic_facts = _visual_facts(facts, exclude_boxes=reserved_boxes)
+    components = _connected_components(heuristic_facts, options)
 
     regions: list[LogicalRegion] = []
     sorted_components = sorted(
@@ -707,7 +751,9 @@ def _detect_sheet(
         headers, footers = _header_footer_rows(cells, bbox, region_type)
         stats, profile = _stats_and_style(cells, bbox)
         coords = (
-            tuple(sorted(c.coordinate for c in cells)) if options.include_cell_coordinates else ()
+            tuple(sorted(c.coordinate for c in cells if c.observed or c.has_content))
+            if options.include_cell_coordinates
+            else ()
         )
         regions.append(
             LogicalRegion(
@@ -727,7 +773,7 @@ def _detect_sheet(
             )
         )
 
-    regions = _seed_structured_tables(ws, regions, facts, options)
+    regions = _seed_structured_tables(ws, facts, options) + regions
     regions = _apply_nesting(regions, options)
     regions.sort(key=lambda r: (r.bounding_box.first_row, r.bounding_box.first_col, r.id))
     return SheetRegions(sheet_name=ws.name, sheet_index=ws.index, regions=tuple(regions))
@@ -750,6 +796,8 @@ class HeuristicRegionDetector:
             "Region types are preliminary structural labels, not business semantics.",
             "Chart/image object geometry and pivot caches are out of scope for Phase 2B MVP.",
             "Detector consumes WorkbookInspection only; it never re-reads Excel bytes.",
+            "Occupancy is layered: observed vs content vs visual; density uses content.",
+            "Structured Excel tables reserve their interiors; heuristics run only outside them.",
         )
         return RegionDetectionResult(
             workbook_hash=inspection.file.content_hash,

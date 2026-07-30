@@ -31,6 +31,7 @@ REGION_SCENARIO_IDS = {
     "nested_title_and_table",
     "false_gap_inside_table",
     "styled_separator_blocks",
+    "structured_table_partial_overlap",
 }
 
 
@@ -87,6 +88,69 @@ def test_structured_table_seeding() -> None:
     seeded = [r for r in sheet.regions if r.id.startswith(f"{sheet.sheet_name}::structured::")]
     assert seeded
     assert all(r.region_type is RegionType.TABLE and r.confidence == 1.0 for r in seeded)
+    # Pure structured sheet should not keep a duplicate heuristic covering the same bbox.
+    structured_boxes = {
+        (
+            r.bounding_box.first_row,
+            r.bounding_box.last_row,
+            r.bounding_box.first_col,
+            r.bounding_box.last_col,
+        )
+        for r in seeded
+    }
+    heuristic = [r for r in sheet.regions if "::structured::" not in r.id]
+    for region in heuristic:
+        key = (
+            region.bounding_box.first_row,
+            region.bounding_box.last_row,
+            region.bounding_box.first_col,
+            region.bounding_box.last_col,
+        )
+        assert key not in structured_boxes
+
+
+def test_structured_table_partial_overlap_splits() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "structured_table_partial_overlap")
+    )
+    inspection = READER.inspect(LocalWorkbookSource(path))
+    result = DETECTOR.detect(inspection)
+    sheet = result.sheets[0]
+    seeded = [r for r in sheet.regions if "::structured::" in r.id]
+    heuristic = [r for r in sheet.regions if "::structured::" not in r.id]
+    assert len(seeded) == 1
+    assert seeded[0].bounding_box.to_dict() == {
+        "first_row": 1,
+        "last_row": 4,
+        "first_col": 1,
+        "last_col": 2,
+    }
+    assert heuristic
+    assert all(r.bounding_box.first_col >= 3 for r in heuristic)
+
+
+def test_occupancy_layers_are_distinct() -> None:
+    from exceler.application.regions.heuristic_detector import _build_occupancy
+
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "false_gap_inside_table"))
+    inspection = READER.inspect(LocalWorkbookSource(path))
+    facts = _build_occupancy(inspection.worksheets[0])
+    observed = {k for k, f in facts.items() if f.observed}
+    content = {k for k, f in facts.items() if f.has_content}
+    visual = {k for k, f in facts.items() if f.visual}
+    assert content <= visual
+    assert observed  # inspection recorded cells
+    # Empty bordered gap row is visual (and observed as formatted) but not content.
+    gap_keys = {(4, 1), (4, 2)}
+    assert gap_keys <= visual
+    assert gap_keys.isdisjoint(content)
+
+    result = DETECTOR.detect(inspection)
+    stats = result.sheets[0].regions[0].statistics
+    assert stats.content_occupied_count == stats.occupied_count
+    assert stats.visual_occupied_count >= stats.content_occupied_count
+    assert stats.observed_count >= stats.content_occupied_count
+    assert "visual_density" in stats.to_dict()
 
 
 def test_false_gap_stays_one_table() -> None:

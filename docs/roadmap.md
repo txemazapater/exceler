@@ -95,13 +95,14 @@ Siguiente corte: **2C** (perfilado e inferencia de tipos).
 
 ## Fase 2B — Region and Table Detection
 
-- Corpus de regiones (positivos, negativos, nesting, separadores por estilo).
+- Corpus de regiones (positivos, negativos, nesting, separadores por estilo, solape parcial estructurado).
 - Estilos factuales enriquecidos en inspección (schema **3**): font/fill/alignment/borders.
 - `LogicalRegion` + `HeuristicRegionDetector` (Union-Find + scoring; sin openpyxl).
+- Ocupación en capas (observed/content/visual); tablas estructuradas reservan su interior.
 - CLI `exceler workbook regions`; expected `expectations.regions`; comparador parcial.
-- Documentación `docs/region-detection.md`.
+- Documentación `docs/region-detection.md` (`regions_schema_version` **2**).
 
-**Salida:** regiones estructurales preliminares sin semántica 2C–2E. **Cerrada.**
+**Salida:** regiones estructurales preliminares sin semántica 2C–2E. **Cerrada** (contrato 2B.2).
 
 ## Fase 2C — Profiling and Type Inference
 

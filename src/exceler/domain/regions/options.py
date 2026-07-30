@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-DETECTOR_VERSION = "2B.1"
-REGIONS_SCHEMA_VERSION = 1
+DETECTOR_VERSION = "2B.2"
+REGIONS_SCHEMA_VERSION = 2
 
 
 @dataclass(frozen=True)

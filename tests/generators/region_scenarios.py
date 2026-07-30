@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from tests.generators.workbook_factory import ScenarioSpec, bold_header, new_workbook, write_matrix
+from tests.generators.workbook_factory import (
+    ScenarioSpec,
+    add_excel_table,
+    bold_header,
+    new_workbook,
+    write_matrix,
+)
 
 THIN = Side(style="thin", color="000000")
 BOX = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
@@ -137,6 +143,25 @@ def build_styled_separator_blocks(_seed: int) -> Workbook:
     return wb
 
 
+def build_structured_table_partial_overlap(_seed: int) -> Workbook:
+    """Excel table A1:B4 plus adjacent content C1:C4 that would otherwise glue into one blob."""
+    wb = new_workbook(sheet_title="Partial")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["Sku", "Qty", "Note"],
+            ["S-1", 1, "alpha"],
+            ["S-2", 2, "beta"],
+            ["S-3", 3, "gamma"],
+        ],
+    )
+    bold_header(ws, 1, 3)
+    add_excel_table(ws, name="CoreInventory", ref="A1:B4")
+    return wb
+
+
 REGION_SPECS: list[ScenarioSpec] = [
     ScenarioSpec(
         scenario_id="table_with_totals_footer",
@@ -264,6 +289,48 @@ REGION_SPECS: list[ScenarioSpec] = [
             },
         },
     ),
+    ScenarioSpec(
+        scenario_id="structured_table_partial_overlap",
+        category="structural",
+        description="Tabla estructurada con columna adyacente (solape parcial)",
+        relative_workbook="workbooks/structural/structured_table_partial_overlap.xlsx",
+        generator_name="region_scenarios.build_structured_table_partial_overlap",
+        intentions=[
+            "Tabla estructurada conserva bbox exacto",
+            "Columna adyacente es región heurística separada",
+        ],
+        features=["regions", "structured_table", "partial_overlap"],
+        expected_skeleton={
+            "inspection": {
+                "workbook": {"worksheet_count": 1},
+                "worksheets": [
+                    {
+                        "name": "Partial",
+                        "tables": [{"name": "CoreInventory", "ref": "A1:B4"}],
+                    }
+                ],
+            },
+            "regions": {
+                "sheets": [
+                    {
+                        "name": "Partial",
+                        "region_count_min": 2,
+                        "regions": [
+                            {
+                                "region_type": "table",
+                                "bbox": {
+                                    "first_row": 1,
+                                    "last_row": 4,
+                                    "first_col": 1,
+                                    "last_col": 2,
+                                },
+                            }
+                        ],
+                    }
+                ]
+            },
+        },
+    ),
 ]
 
 
@@ -273,4 +340,7 @@ BUILDERS: dict[str, object] = {
     "region_scenarios.build_nested_title_and_table": build_nested_title_and_table,
     "region_scenarios.build_false_gap_inside_table": build_false_gap_inside_table,
     "region_scenarios.build_styled_separator_blocks": build_styled_separator_blocks,
+    "region_scenarios.build_structured_table_partial_overlap": (
+        build_structured_table_partial_overlap
+    ),
 }

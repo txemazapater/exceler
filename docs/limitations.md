@@ -20,3 +20,5 @@
 - Geometría de charts/imágenes y caches de pivots quedan fuera del MVP.
 - El detector solo consume `WorkbookInspection`; nunca relee el archivo.
 - Huecos vacíos interiores se fusionan solo con score de continuidad (bordes/fill); gaps fuertes o bandas título↔tabla no se unen.
+- **Ocupación en capas:** `observed` ≠ `content` ≠ `visual`; la densidad contractual usa contenido.
+- **Tablas estructuradas:** reservan su interior; la heurística no compite dentro del ref Excel.
