@@ -7,6 +7,7 @@ El versionado semántico se aplicará cuando exista software publicable.
 
 ### Added
 
+- Licencia MIT.
 - Documentación fundacional de EXCELER (visión, alcance, arquitectura, dominio, terminología, seguridad, roadmap).
 - Criterios de selección tecnológica sin fijar stack.
 - Plantilla y proceso de Architecture Decision Records (ADR).

@@ -79,6 +79,7 @@ Todavía no hay implementación de conectores, inventarios ni analizadores. El r
 ```text
 /
 ├── README.md
+├── LICENSE
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
 ├── docs/
@@ -98,7 +99,7 @@ Las carpetas `src/`, `tests/`, `tools/` y `.github/` se añadirán cuando exista
 
 ## Licencia
 
-Pendiente de decisión. No se ha fijado licencia todavía.
+[MIT](LICENSE) — Copyright (c) 2026 txemazapater.
 
 ## Contribución
 

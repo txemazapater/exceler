@@ -65,7 +65,7 @@ Queda explícitamente fuera:
 - Modelo observado, inferido y canónico no se mezclan.
 - Las tecnologías de implementación permanecen abiertas hasta ADR explícitos.
 - No se añadirá CI hasta que exista código real que validar.
-- La licencia del proyecto está pendiente de decisión.
+- La licencia del proyecto es MIT.
 
 ## Relación con otras piezas
 
