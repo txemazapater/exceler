@@ -3,6 +3,20 @@
 Documento conceptual (Fase 0.1). Describe responsabilidades y contratos entre subsistemas.
 **No fija** lenguaje, framework, base de datos, colas, motor de grafos ni formato de configuración.
 
+## Arquitectura ejecutable inicial (Fase 1)
+
+Monolito modular desplegado con Compose:
+
+```text
+exceler-app  →  API + application + domain + infrastructure + CLI
+exceler-db   →  PostgreSQL (red interna)
+```
+
+Orígenes filesystem llegan como volúmenes `:ro` bajo `/sources/...`.
+No hay workers, colas, SMB directo ni parser Excel en esta fase.
+
+Ver [deployment.md](deployment.md), [ADR 0002](decisions/0002-runtime-and-deployment-strategy.md) y [ADR 0003](decisions/0003-initial-technology-stack.md).
+
 ## Objetivo arquitectónico
 
 EXCELER se organiza para:

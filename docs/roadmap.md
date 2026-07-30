@@ -2,7 +2,7 @@
 
 Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un compromiso de calendario.
 
-Estado actual: **Fase 0.1 cerrada a nivel documental** (corrección del modelo temporal y de ejecución). Siguiente: implementación a partir de Fase 1.
+Estado actual: **Fase 1 en implementación** (registro de orígenes). Fase 0.1 documentalmente cerrada.
 
 ## Fase 0 — Fundamentos
 
@@ -31,12 +31,15 @@ Estado actual: **Fase 0.1 cerrada a nivel documental** (corrección del modelo t
 ## Fase 1 — Registro de orígenes
 
 - Modelo de `DiscoverySource`.
-- Validación de configuración.
-- Declaración de capacidades esperadas.
-- `CredentialReference` (abstracción).
-- Persistencia/configuración del registro (tecnología aún por ADR).
+- Validación de configuración y rutas filesystem bajo raíces permitidas.
+- Declaración de capacidades esperadas (filesystem en esta fase).
+- `CredentialReference` (abstracción; sin secretos en claro).
+- Persistencia PostgreSQL + migraciones Alembic.
+- API REST + CLI administrativa.
+- Auditoría esencial de cambios.
+- Docker Compose de referencia.
 
-**Salida:** orígenes configurables sin exploración real obligatoria.
+**Salida:** orígenes configurables y validables sin enumeración completa de archivos ni análisis Excel.
 
 ## Fase 2 — Conector de sistema de archivos
 

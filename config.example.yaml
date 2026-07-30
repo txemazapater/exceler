@@ -1,0 +1,15 @@
+# Example configuration (YAML-ish documentation). Prefer environment variables.
+#
+# exceler:
+#   env: development
+#   allowed_source_roots:
+#     - /sources
+#   database:
+#     host: exceler-db
+#     port: 5432
+#     name: exceler
+#     user: exceler
+#     password_ref: file:///run/secrets/db_password
+#   api:
+#     # Optional local gate only — not production auth
+#     dev_token_ref: env://EXCELER_API_DEV_TOKEN

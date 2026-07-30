@@ -2,6 +2,13 @@
 
 EXCELER trata información corporativa potencialmente sensible. La seguridad es un principio de diseño, no un añadido posterior.
 
+## Contenedores y orígenes montados
+
+En Compose, los orígenes se montan `:ro`. EXCELER solo ve rutas internas permitidas (`EXCELER_ALLOWED_SOURCE_ROOTS`).
+Los secretos de base de datos usan referencias `file://` / `env://` o Docker secrets; no se versionan.
+
+Ver [deployment.md](deployment.md) y [configuration.md](configuration.md).
+
 ## Solo lectura sobre orígenes
 
 El descubrimiento y el análisis **no deben**:

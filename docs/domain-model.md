@@ -4,11 +4,34 @@ Modelo conceptual (Fase 0.1). Los nombres pueden evolucionar mediante ADR; deben
 
 ## Capas
 
+```text
+Source / Inventory
+    DiscoverySource
+    DiscoveredAsset
+    DiscoveryObservation
+    AssetSnapshot          ← captura estable; no es modelo observado
+
+Observed Model
+    ObservedWorkbook
+    ObservedWorksheet
+    ObservedRegion
+    ObservedField
+
+Inferred Model
+    InferredEntity, InferredField, CandidateKey, CandidateRelationship, …
+
+Canonical Model
+    CanonicalEntity, CanonicalField, Mapping, …
+```
+
 | Capa | Pregunta que responde | Ejemplos |
 |------|----------------------|----------|
-| Observado | ¿Qué se vio, sin reinterpretar? | `ObservedWorkbook`, `ObservedField`, `AssetSnapshot` |
+| Inventario / captura | ¿Qué activo existe y qué captura se tomó? | `DiscoveredAsset`, `AssetSnapshot` |
+| Observado | ¿Qué estructura/contenido se vio, sin reinterpretar? | `ObservedWorkbook`, `ObservedField` |
 | Inferido | ¿Qué proponemos y con qué evidencia? | `InferredEntity`, `CandidateKey`, `CandidateRelationship` |
 | Canónico | ¿Qué se aprobó como estructura corporativa? | `CanonicalEntity`, `Mapping` |
+
+`AssetSnapshot` pertenece a **inventario/captura**, no al modelo observado. Es la entrada estable del análisis; el modelo observado es la interpretación estructural factual producida por una `InspectionRun`.
 
 El **Information Graph** es la vista relacional de estas capas: existe como modelo conceptual desde el inicio. Su materialización consultable/visual es una fase de implementación posterior, no el momento en que “aparece” el grafo.
 
@@ -52,9 +75,11 @@ erDiagram
   ObservedWorkbook ||--o{ ObservedWorksheet : contains
   ObservedWorksheet ||--o{ ObservedRegion : contains
   ObservedRegion ||--o{ ObservedField : contains
-  ObservedField ||--o{ ProfilingRun : profiled_in
+  ProfilingRun }o--|| InspectionRun : based_on
+  ProfilingRun }o--|| AssetSnapshot : lineage
   ProfilingRun ||--o{ Profile : produces
-  InferenceRun }o--o{ AssetSnapshot : uses
+  InferenceRun }o--o{ InspectionRun : consumes
+  InferenceRun }o--o{ ProfilingRun : consumes
   InferenceRun ||--o{ InferredEntity : produces
   InferredEntity ||--o{ InferredField : has
   InferredEntity ||--o{ CandidateKey : proposes
@@ -133,19 +158,41 @@ Hecho de inventario en una run: el activo se listó, se intentó leer metadatos,
 
 ### AssetSnapshot
 
-Captura puntual del activo usada como entrada estable para inspección, perfilado e inferencia.
+Captura puntual del activo en la capa de **inventario/captura**. Entrada estable para análisis; **no** forma parte del modelo observado.
 
-**Responsabilidad:** congelar *qué contenido/metadatos se analizaron*, frente a la identidad mutable del `DiscoveredAsset`.
+**Responsabilidad:** congelar *qué se capturó* (lógica y, si aplica, materialmente), frente a la identidad mutable del `DiscoveredAsset`.
 
-**Atributos conceptuales típicos:** enlace al activo; opcionalmente a la observación que motivó la captura; instante; huella/hash; tamaño; indicador de accesibilidad en el momento de captura; referencia a bytes o materialización temporal (con política de retención/limpieza); versión del conector que leyó.
+#### Snapshot lógico vs materializado
 
-Sin snapshot no debería afirmarse un `ObservedWorkbook` reproducible: el modelo observado cuelga del snapshot, no solo del activo vivo.
+| Concepto | Contenido |
+|----------|-----------|
+| **Snapshot lógico** | Identidad de captura basada en hash, tamaño, fecha, ETag, versión externa y metadatos. |
+| **Snapshot materializado** | Conserva o referencia los bytes concretos analizados. |
+
+#### `SnapshotMaterializationStatus` / `ContentRetentionPolicy`
+
+Valores conceptuales posibles:
+
+- `metadata_only` — solo metadatos/huella; sin bytes retenidos;
+- `temporary_content` — bytes temporales para análisis, con limpieza;
+- `retained_content` — bytes retenidos bajo política explícita;
+- `external_version_reference` — referencia a versión inmutable del origen;
+- `unavailable` — captura lógica sin contenido recuperable ahora.
+
+La política de retención no tiene que implementarse completa en Fase 1; el modelo debe reconocerla.
+
+Sin snapshot no debería afirmarse un `ObservedWorkbook` reproducible: el modelo observado cuelga del snapshot vía `InspectionRun`, no solo del activo vivo.
 
 ### InspectionRun
 
-Ejecución del Workbook Inspector (u otro inspector de documento) sobre uno o más `AssetSnapshot`.
+Ejecución del Workbook Inspector (u otro inspector de documento).
 
-**Produce:** `ObservedWorkbook` y estructura asociada; registra versión del inspector, errores y cobertura.
+**Cardinalidad:**
+
+- consume **exactamente un** `AssetSnapshot`;
+- produce **cero o un** `ObservedWorkbook` (cero si falla o no aplica).
+
+Registra versión del inspector, errores y cobertura. Los lotes futuros, si existen, serán un `InspectionBatch` distinto; no se mezclan con `InspectionRun`.
 
 ### ObservedWorkbook
 
@@ -169,9 +216,17 @@ Columna o campo observado dentro de una región (encabezado aparente, posición,
 
 ### ProfilingRun
 
-Ejecución del Profiling Engine sobre regiones/campos observados (anclados a un snapshot/inspección).
+Ejecución del Profiling Engine.
 
-**Produce:** uno o más `Profile`; registra versión, muestreo aplicado y errores.
+**Registra explícitamente (auditoría), aunque algunas referencias sean derivables:**
+
+- `InspectionRun` de origen;
+- `AssetSnapshot` (linaje);
+- campos o regiones observadas procesadas;
+- política de muestreo;
+- versión del perfilador.
+
+**Produce:** uno o más `Profile`; errores de ejecución.
 
 ### Profile
 
@@ -181,7 +236,16 @@ Resultado de perfilado: tipos aparentes, nulos, unicidad, cardinalidad, patrones
 
 Ejecución del Inference Engine.
 
-**Consume:** estructura observada, perfiles y, cuando proceda, contexto inter-libro.
+**No depende únicamente de `AssetSnapshot`.** Consume de forma explícita:
+
+- una o varias `InspectionRun`;
+- una o varias `ProfilingRun`;
+- estructuras observadas;
+- perfiles;
+- contexto inter-libro opcional;
+- políticas o configuración del motor.
+
+El snapshot permanece en el **linaje** (a través de las inspecciones), pero no es la única entrada lógica.
 
 **Produce:** `InferredEntity`, `InferredField`, `CandidateKey`, `CandidateRelationship`, `EvidenceItem` asociados; registra versión del motor.
 

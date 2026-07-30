@@ -1,0 +1,6 @@
+# Copy to docker-compose.override.yml for local mounts (not versioned).
+#
+# services:
+#   exceler-app:
+#     volumes:
+#       - /mnt/example:/sources/example:ro

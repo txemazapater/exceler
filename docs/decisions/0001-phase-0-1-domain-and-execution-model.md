@@ -56,7 +56,8 @@ La documentación canónica queda en `docs/domain-model.md`, `docs/terminology.m
 ### Seguimiento
 
 - Fase 1 debe usar este modelo, no el de Fase 0 sin corregir.
-- Cualquier renombre de entidades en código requerirá ADR o enmienda a este.
+- Los cambios que alteren la **semántica, responsabilidades o relaciones** del dominio requieren ADR o enmienda a este.
+- Los **renombres editoriales** sin cambio semántico solo requieren actualización coherente de código y documentación (no un ADR nuevo).
 
 ## Referencias
 

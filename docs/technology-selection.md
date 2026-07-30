@@ -1,58 +1,44 @@
 # Criterios de selección tecnológica
 
-Este documento **no decide** el stack. Fija requisitos y criterios que condicionarán futuros ADR.
+Los criterios siguientes condicionaron los ADR 0002 y 0003. Las decisiones tomadas están en:
 
-## Decisiones explícitamente abiertas
+- [ADR 0002 — Ejecución y despliegue](decisions/0002-runtime-and-deployment-strategy.md)
+- [ADR 0003 — Stack inicial](decisions/0003-initial-technology-stack.md)
 
-Todavía no se asume:
+## Decisiones abiertas (posteriores)
 
-- lenguaje de programación;
-- framework;
-- base de datos de control/inventario;
-- sistema de colas;
+Todavía no se fija:
+
+- biblioteca concreta de lectura Excel (Fase 6);
+- sistema de colas / workers;
 - motor de grafos;
-- formato de configuración;
-- plataforma de empaquetado/ejecución;
+- autenticación de producto;
 - interfaz de usuario.
-
-Cualquier elección deberá registrarse en [decisions/](decisions/README.md).
 
 ## Requisitos que condicionan la elección
 
-### Lectura de Excel
+### Lectura de Excel (futuro cercano)
 
-- Lectura robusta de **XLSX** y **XLSM**.
+- Lectura robusta de **XLSX** y **XLSM** sin ejecutar macros.
 - Posible lectura futura de **XLS**.
-- Análisis **sin ejecutar macros** ni contenido activo.
-- Capacidad de inspeccionar estructura (hojas, tablas, nombres, fórmulas, vínculos) y, en fases posteriores, perfilar valores.
-- Comportamiento predecible ante archivos grandes y parcialmente corruptos (fallar de forma controlada).
+- Fallo controlado ante archivos grandes o corruptos.
 
 ### Plataforma
 
-- Funcionamiento en **Windows y Linux** como objetivo de diseño.
-- Posibilidad de ejecución centralizada y, más adelante, distribuida (agentes).
+- Windows y Linux.
+- Contenerización sencilla; ejecución nativa para CLI/agentes.
 
-### Arquitectura de software
+### Arquitectura
 
 - Conectores desacoplados del análisis.
-- Extensibilidad a otros tipos de documento sin reescribir el núcleo.
-- Soporte conceptual para CLI, servicio y agentes.
-- Observabilidad básica (logs estructurados, correlación por `DiscoveryRun`).
+- API + CLI + futuros workers sobre la misma capa de aplicación.
+- Observabilidad básica (logs estructurados).
 
 ### Datos y gobierno
 
-- Trazabilidad completa (linaje).
-- Separación observado / inferido / canónico.
-- Referencias de credenciales hacia almacenes seguros.
-- Pruebas reproducibles con muestras sintéticas.
+- Trazabilidad; secretos por referencia; pruebas con fixtures sintéticas.
 
-### Operación
-
-- Límites de tiempo, tamaño y cardinalidad configurables.
-- Limpieza de temporales.
-- Normalización de errores de conector.
-
-## Criterios de evaluación (cuando llegue el momento)
+## Criterios de evaluación
 
 | Criterio | Pregunta guía |
 |----------|---------------|
@@ -60,24 +46,24 @@ Cualquier elección deberá registrarse en [decisions/](decisions/README.md).
 | Rendimiento | ¿Soporta archivos grandes con muestreo controlado? |
 | Portabilidad | ¿Windows + Linux sin bifurcaciones imposibles? |
 | Seguridad | ¿Facilita secretos por referencia y mínimos privilegios? |
-| Testabilidad | ¿Permite pruebas deterministas con fixtures sintéticas? |
-| Operabilidad | ¿Logs, versiones de componente, fallos recuperables? |
+| Testabilidad | ¿Pruebas deterministas con fixtures sintéticas? |
+| Operabilidad | ¿Logs, versiones, fallos recuperables? |
 | Complejidad | ¿La abstracción paga su coste en la fase actual? |
 | Ecosistema | ¿Conectores FS/SMB/cloud son realistas después? |
 
-## Anti-objetivos de esta fase
+## Selección actual (resumen)
 
-- Elegir tecnología por moda o por defecto del autor.
-- Introducir dependencias “por si acaso”.
-- Crear CI sin código que validar.
-- Fijar UI antes de existir el motor.
+| Área | Elección |
+|------|----------|
+| Lenguaje | Python 3.12+ |
+| API | FastAPI |
+| ORM / migraciones | SQLAlchemy 2 + Alembic |
+| DB | PostgreSQL 16 |
+| CLI | Typer |
+| Despliegue de referencia | Docker Compose |
 
-## Próximo paso sugerido
+## Anti-objetivos actuales
 
-Cuando se aborde la Fase 1–2, redactar ADR separados al menos para:
-
-1. lenguaje/runtime;
-2. persistencia del registro/inventario;
-3. biblioteca de lectura Excel.
-
-Hasta entonces, este documento es la referencia de requisitos.
+- Microservicios, Redis, MinIO, Kubernetes, motor de grafos “por si acaso”.
+- UI de producto antes del motor.
+- CI decorativo sin valor (se añadirá cuando estabilice el pipeline de pruebas).

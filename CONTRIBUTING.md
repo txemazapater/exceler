@@ -1,31 +1,26 @@
 # Contribuir a EXCELER
 
-EXCELER está en **fase de definición arquitectónica**. Las contribuciones útiles ahora son documentales y de diseño, no implementaciones prematuras.
+## Principios
 
-## Principios al contribuir
-
-- Respeta los [principios fundamentales](README.md#principios-fundamentales).
+- Respeta los principios del [README](README.md).
 - Usa el vocabulario de [docs/terminology.md](docs/terminology.md).
 - No mezcles modelo observado, inferido y canónico.
-- No asumas tecnologías no decididas en ADR.
-- No introduzcas archivos corporativos reales; solo muestras sintéticas documentadas.
+- Los cambios semánticos de dominio requieren ADR; los renombres editoriales no.
+- No introduzcas archivos corporativos reales ni secretos.
 
-## Cambios documentales
+## Desarrollo
 
-1. Mantén coherencia entre `README.md` y `docs/`.
-2. Si introduces un término nuevo, añádelo al glosario.
-3. Si tomas una decisión arquitectónica real, crea un ADR en `docs/decisions/`.
-4. Actualiza `CHANGELOG.md` bajo `[Unreleased]`.
+Ver [docs/development.md](docs/development.md).
 
-## Cambios de código (cuando existan)
+Antes de un PR de código:
 
-Todavía no hay árbol de código. Cuando se inicie la implementación:
-
-- las pruebas deben ser reproducibles;
-- los conectores no deben contener lógica de interpretación Excel;
-- el análisis no debe ejecutar macros;
-- los orígenes se tratan en solo lectura.
+```bash
+ruff format src tests
+ruff check src tests
+mypy
+pytest
+```
 
 ## Decisiones tecnológicas
 
-No propongas un stack como hecho consumado. Usa [docs/technology-selection.md](docs/technology-selection.md) y, si procede, un ADR.
+Consultar [docs/decisions/](docs/decisions/README.md). No propongas stacks alternativos en código sin ADR.

@@ -1,0 +1,40 @@
+# Bytecode / caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Secrets and local overrides
+.env
+.env.*
+!.env.example
+secrets/*
+!secrets/*.example
+docker-compose.override.yml
+*.pem
+*.key
+
+# Local data
+/work/
+/tmp/exceler/
+*.dump
+*.sql.gz
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

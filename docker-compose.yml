@@ -1,0 +1,81 @@
+name: exceler
+
+services:
+  exceler-db:
+    image: postgres:16-alpine
+    container_name: exceler-db
+    environment:
+      POSTGRES_DB: ${EXCELER_DB_NAME:-exceler}
+      POSTGRES_USER: ${EXCELER_DB_USER:-exceler}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - exceler_db_data:/var/lib/postgresql/data
+    networks:
+      - exceler_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Intentionally not publishing 5432 to the host by default.
+    restart: unless-stopped
+
+  exceler-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: exceler-app
+    depends_on:
+      exceler-db:
+        condition: service_healthy
+    environment:
+      EXCELER_ENV: ${EXCELER_ENV:-development}
+      EXCELER_DB_HOST: exceler-db
+      EXCELER_DB_PORT: 5432
+      EXCELER_DB_NAME: ${EXCELER_DB_NAME:-exceler}
+      EXCELER_DB_USER: ${EXCELER_DB_USER:-exceler}
+      EXCELER_DB_PASSWORD_REF: file:///run/secrets/db_password
+      EXCELER_ALLOWED_SOURCE_ROOTS: /sources
+      EXCELER_LOG_LEVEL: ${EXCELER_LOG_LEVEL:-INFO}
+      EXCELER_AUTO_MIGRATE: "false"
+      EXCELER_API_DEV_TOKEN: ${EXCELER_API_DEV_TOKEN:-}
+    secrets:
+      - db_password
+    ports:
+      - "${EXCELER_HTTP_PORT:-8000}:8000"
+    volumes:
+      - exceler_work:/work
+      - exceler_tmp:/tmp/exceler
+      - ./samples/sources:/sources/samples:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "exceler:exceler"
+    networks:
+      - exceler_internal
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    restart: unless-stopped
+
+networks:
+  exceler_internal:
+    driver: bridge
+
+volumes:
+  exceler_db_data:
+  exceler_work:
+  exceler_tmp:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password

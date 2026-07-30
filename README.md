@@ -4,98 +4,91 @@
 
 EXCELER aborda un problema habitual en empresas y organizaciones: la proliferación descontrolada de archivos Excel usados como bases de datos no gobernadas.
 
+## Estado del proyecto
+
+**Fase 1 en curso (base ejecutable):** registro de orígenes (`DiscoverySource`), API, CLI, PostgreSQL y Docker Compose.
+
+Todavía **no** hay enumeración completa de archivos, conectores SMB/SharePoint, ni inspección/perfilado/inferencia de Excel.
+
+## Arranque rápido (Docker Compose)
+
+```bash
+cp .env.example .env
+cp secrets/db_password.example secrets/db_password
+docker compose up --build
+docker compose exec exceler-app exceler db upgrade
+curl http://127.0.0.1:8000/health
+```
+
+OpenAPI: http://127.0.0.1:8000/docs
+
+Detalle: [docs/deployment.md](docs/deployment.md), [docs/development.md](docs/development.md), [docs/configuration.md](docs/configuration.md).
+
 ## El problema
 
-Los libros Excel corporativos suelen acumular, sin diseño previo:
-
-- datos maestros;
-- registros operativos;
-- catálogos y seguimientos;
-- controles e históricos;
-- reglas de negocio expresadas como fórmulas;
-- relaciones implícitas con otros libros;
-- copias parciales o divergentes de la misma información.
-
-Excel acaba convirtiéndose en una base de datos informal porque es accesible, flexible y no exige modelado previo. El coste aparece después: duplicidad, inconsistencia, dependencia de personas concretas y dificultad para consolidar en sistemas formales.
+Los libros Excel corporativos suelen acumular, sin diseño previo, datos maestros, operativos, catálogos, controles, fórmulas y copias divergentes. Excel acaba siendo una base de datos informal; el coste aparece al consolidar.
 
 ## Qué pretende descubrir
-
-EXCELER busca, de forma progresiva:
 
 1. dónde están esos archivos;
 2. cómo se accede a cada ubicación;
 3. qué activos existen, sin modificar las fuentes;
-4. cuál es su estructura y contenido observable;
-5. qué entidades, campos, claves y relaciones candidatas se pueden inferir;
-6. cómo construir un modelo de información corporativa;
-7. qué esquemas consolidados podrían materializarse en una base de datos;
-8. cómo mantener trazabilidad entre origen, inferencia y modelo aprobado.
-
-## Fuera del alcance inicial
-
-Quedan explícitamente fuera de esta fase:
-
-- interfaz CRUD para usuario final;
-- SPA (p. ej. Vue) u aplicación de escritorio;
-- edición, corrección o migración automática de archivos origen;
-- eliminación automática de duplicados;
-- modificación de permisos en los orígenes.
+4. estructura y contenido observable;
+5. entidades, campos, claves y relaciones candidatas;
+6. un modelo de información corporativa;
+7. esquemas consolidados posibles;
+8. trazabilidad origen → inferencia → modelo aprobado.
 
 ## Principios fundamentales
 
-1. **Descubrimiento antes que transformación** — observar, inventariar y comprender antes de materializar.
-2. **Solo lectura sobre los orígenes** — no modificar, renombrar, mover ni eliminar archivos fuente.
-3. **Separación entre acceso y análisis** — conectores, inspectores e inferencia no se mezclan.
-4. **Trazabilidad completa** — toda inferencia debe poder rastrearse hasta su origen.
-5. **Inferencias, no afirmaciones absolutas** — candidatos con evidencia, confianza y estado de revisión.
-6. **Seguridad y mínimo privilegio** — credenciales por referencia; identidades técnicas de solo lectura.
-7. **Arquitectura evolutiva** — Excel primero, sin acoplar el núcleo a un único formato.
+1. Descubrimiento antes que transformación.
+2. Solo lectura sobre los orígenes.
+3. Separación entre acceso y análisis.
+4. Trazabilidad completa.
+5. Inferencias, no afirmaciones absolutas.
+6. Seguridad y mínimo privilegio (credenciales por referencia).
+7. Arquitectura evolutiva (Excel primero, sin acoplar el núcleo).
 
-Detalle en [docs/vision.md](docs/vision.md), [docs/scope.md](docs/scope.md) y [docs/security.md](docs/security.md).
+## Fuera del alcance actual
 
-## Estado del proyecto
-
-El proyecto ha cerrado documentalmente la **Fase 0.1** (corrección del modelo temporal y de ejecución). Siguiente paso: implementación a partir de la Fase 1.
-
-Todavía no hay implementación de conectores, inventarios ni analizadores. El repositorio contiene la visión, el dominio, la arquitectura conceptual, el roadmap y el [ADR 0001](docs/decisions/0001-phase-0-1-domain-and-execution-model.md).
+CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint directos; inspección Excel; perfilado; inferencia; generación SQL; colas; Kubernetes; motor de grafos.
 
 ## Documentación
 
 | Documento | Contenido |
 |-----------|-----------|
-| [docs/vision.md](docs/vision.md) | Problema, visión, roles y valor |
-| [docs/scope.md](docs/scope.md) | Alcance, fuera de alcance, supuestos |
-| [docs/architecture.md](docs/architecture.md) | Subsistemas y contratos conceptuales |
-| [docs/domain-model.md](docs/domain-model.md) | Entidades conceptuales y relaciones |
-| [docs/terminology.md](docs/terminology.md) | Glosario del dominio |
-| [docs/security.md](docs/security.md) | Principios de seguridad y solo lectura |
-| [docs/roadmap.md](docs/roadmap.md) | Roadmap por fases |
-| [docs/technology-selection.md](docs/technology-selection.md) | Criterios de selección tecnológica (sin decisiones fijadas) |
-| [docs/decisions/](docs/decisions/README.md) | Architecture Decision Records (ADR) |
-| [samples/README.md](samples/README.md) | Criterios para muestras sintéticas de prueba |
+| [docs/vision.md](docs/vision.md) | Visión |
+| [docs/scope.md](docs/scope.md) | Alcance |
+| [docs/architecture.md](docs/architecture.md) | Arquitectura |
+| [docs/domain-model.md](docs/domain-model.md) | Dominio |
+| [docs/terminology.md](docs/terminology.md) | Glosario |
+| [docs/security.md](docs/security.md) | Seguridad |
+| [docs/roadmap.md](docs/roadmap.md) | Roadmap |
+| [docs/deployment.md](docs/deployment.md) | Despliegue Compose |
+| [docs/development.md](docs/development.md) | Desarrollo |
+| [docs/configuration.md](docs/configuration.md) | Configuración y secretos |
+| [docs/decisions/](docs/decisions/README.md) | ADRs |
 
-## Estructura del repositorio
+## API (Fase 1)
 
 ```text
-/
-├── README.md
-├── LICENSE
-├── CONTRIBUTING.md
-├── CHANGELOG.md
-├── docs/
-│   ├── vision.md
-│   ├── scope.md
-│   ├── architecture.md
-│   ├── domain-model.md
-│   ├── terminology.md
-│   ├── security.md
-│   ├── roadmap.md
-│   ├── technology-selection.md
-│   └── decisions/   (ADR, incl. 0001)
-└── samples/
+GET    /health
+GET    /api/v1/sources
+POST   /api/v1/sources
+GET    /api/v1/sources/{id}
+PUT    /api/v1/sources/{id}
+PATCH  /api/v1/sources/{id}/status
+DELETE /api/v1/sources/{id}          # archiva (soft-delete)
+POST   /api/v1/sources/{id}/validate
 ```
 
-Las carpetas `src/`, `tests/`, `tools/` y `.github/` se añadirán cuando exista código real que organizar o validar.
+## CLI
+
+```bash
+exceler db upgrade
+exceler source list
+exceler source validate <id>
+```
 
 ## Licencia
 

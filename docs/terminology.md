@@ -11,7 +11,11 @@ Glosario del dominio EXCELER (Fase 0.1). Si un documento usa un término de form
 | **Capacidad de conector** | Función soportada por un conector (listar, leer, hash, versiones, etc.). |
 | **Activo** (`DiscoveredAsset`) | Identidad durable de un archivo o documento en el inventario. |
 | **Observación** (`DiscoveryObservation`) | Registro de presencia/intento de acceso de un activo en una `DiscoveryRun`. |
-| **Snapshot de activo** (`AssetSnapshot`) | Captura puntual de contenido/metadatos sobre la que se ejecuta el análisis reproducible. |
+| **Snapshot de activo** (`AssetSnapshot`) | Captura puntual en inventario/captura (no modelo observado) usada como entrada estable del análisis. |
+| **Snapshot lógico** | Captura identificada por hash, tamaño, fecha, ETag, versión externa y metadatos. |
+| **Snapshot materializado** | Captura que conserva o referencia bytes concretos analizados. |
+| **Estado de materialización** | `metadata_only`, `temporary_content`, `retained_content`, `external_version_reference`, `unavailable`. |
+| **Política de retención de contenido** (`ContentRetentionPolicy`) | Reglas de conservación/limpieza de bytes de un snapshot. |
 | **Ejecución de descubrimiento** (`DiscoveryRun`) | Exploración/listado acotado en el tiempo sobre un origen. |
 | **Presencia** | Dimensión de inventario: si el activo se observa o no respecto al origen (`present`, `not_observed`, `potentially_removed`, …). |
 | **Accesibilidad** | Dimensión ortogonal: si un intento de lectura pudo completarse (`accessible`, `locked`, `permission_denied`, …). |
@@ -73,7 +77,8 @@ Glosario del dominio EXCELER (Fase 0.1). Si un documento usa un término de form
 ## Distinciones críticas
 
 - **Origen ≠ conector:** el origen se configura; el conector sabe operarlo.
-- **Activo ≠ snapshot:** el activo es la identidad; el snapshot es lo analizado en un momento.
+- **Activo ≠ snapshot:** el activo es la identidad; el snapshot es lo capturado en un momento.
+- **Snapshot ≠ modelo observado:** el snapshot es captura; el libro observado es estructura factual derivada por inspección.
 - **Presencia ≠ accesibilidad:** no listar un archivo no es lo mismo que no poder leerlo.
 - **Activo ≠ libro observado:** el libro es descripción estructural factual de un snapshot.
 - **Tabla ≠ entidad:** una tabla observada puede inspirar una entidad inferida, pero no la es automáticamente.

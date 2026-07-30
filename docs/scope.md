@@ -1,17 +1,17 @@
 # Alcance
 
-## Alcance inicial (Fases 0 / 0.1)
+## Alcance inicial (Fases 0 / 0.1 / 1)
 
-La definición arquitectónica incluye:
+La definición arquitectónica y la primera base ejecutable incluyen:
 
 - visión, principios y límites;
-- modelo de dominio (incl. corrección 0.1: snapshots, runs de análisis, evidencia/confianza, revisión generalizada);
+- modelo de dominio (incl. corrección 0.1);
 - subsistemas y contratos conceptuales;
-- glosario y criterios de seguridad;
-- roadmap incremental;
+- registro de orígenes (`DiscoverySource`) con API, CLI y PostgreSQL;
+- Docker Compose de referencia;
 - proceso ADR y muestras sintéticas documentadas.
 
-No incluye software ejecutable.
+No incluye todavía enumeración completa de activos, conectores SMB/SharePoint, ni análisis Excel.
 
 ## Alcance posterior (previsto)
 
