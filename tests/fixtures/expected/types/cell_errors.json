@@ -1,6 +1,7 @@
 {
+  "schema_version": 1,
   "scenario_id": "cell_errors",
-  "workbook": "cell_errors.xlsx",
-  "phase": "2.0",
-  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis."
+  "workbook": "workbooks/types/cell_errors.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {}
 }

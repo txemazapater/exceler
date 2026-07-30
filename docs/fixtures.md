@@ -13,6 +13,13 @@ Cada capacidad futura se valida contra un escenario sintético diseñado a prop�
 5. implementar;
 6. verificar no-regresión.
 
+## Fuente de verdad
+
+El catálogo Python `tests.generators.catalog.ALL_SPECS` es la **única fuente de verdad**.
+
+`tests/fixtures/index.json` se genera a partir del catálogo y `verify` falla si diverge.
+No deben mantenerse dos inventarios independientes.
+
 ## Contenido
 
 | Tipo | Ubicación | Notas |
@@ -20,7 +27,13 @@ Cada capacidad futura se valida contra un escenario sintético diseñado a prop�
 | Generadores | `tests/generators/` | Solo tests/dev; semilla fija |
 | Binarios | `tests/fixtures/workbooks/` | Pequeños, versionados |
 | Manifiestos | `tests/fixtures/manifests/` | Intención del generador |
-| Expected | `tests/fixtures/expected/` | Esqueleto para oráculos futuros |
+| Expected | `tests/fixtures/expected/` | Oráculos (`schema_version`) |
+| Índice | `tests/fixtures/index.json` | Derivado del catálogo |
+
+## Equivalencia de fixtures
+
+Dos fixtures son equivalentes cuando su **contenido lógico** (hojas, celdas, ocultación, tablas, nombres, etc.) coincide.
+No se usa el hash binario ZIP/XLSX como criterio de fallo (solo diagnóstico opcional).
 
 ## Comandos
 
@@ -30,11 +43,17 @@ uv run exceler dev fixtures verify
 uv run pytest -m "not integration and not docker"
 ```
 
-CI ejecuta `fixtures verify` en el job `quality`.
+CI ejecuta `fixtures verify` en el job `quality` (también `workflow_dispatch`).
 
-## Subfases posteriores
+## XLSM
 
-Antes de cada subfase (2A–2E) se amplía primero el corpus correspondiente. Ver roadmap.
+`xlsm_container.xlsm` es un libro con extensión `.xlsm` **sin** `vbaProject.bin`.
+Sirve para aceptar de forma segura la extensión; no contiene macros ejecutables y nunca se invocan vía Excel/COM.
+
+## Cortes posteriores (nomenclatura B)
+
+Antes de cada corte se amplía el corpus: **2A** inspection → **2B** regions → **2C** profiling → **2D** keys → **2E** relationships.
+**2S** es inventario filesystem (paralelo). Ver [roadmap.md](roadmap.md).
 
 ## Restricción
 

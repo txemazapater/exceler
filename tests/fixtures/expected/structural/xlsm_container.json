@@ -1,6 +1,7 @@
 {
+  "schema_version": 1,
   "scenario_id": "xlsm_container",
-  "workbook": "xlsm_container.xlsm",
-  "phase": "2.0",
-  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis."
+  "workbook": "workbooks/structural/xlsm_container.xlsm",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {}
 }

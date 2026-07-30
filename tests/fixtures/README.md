@@ -3,13 +3,16 @@
 Corpus sintético, determinista y versionado. **No** contiene datos corporativos reales.
 Los generadores viven en `tests/generators/` y no forman parte del dominio productivo.
 
+**Fuente de verdad:** `tests.generators.catalog.ALL_SPECS`.
+`index.json` es un artefacto derivado; `verify` falla si diverge.
+
 ## Layout
 
 ```text
 tests/fixtures/
 ├── workbooks/     # binarios .xlsx / .xlsm pequeños versionados
 ├── manifests/     # intención deliberada del generador
-├── expected/      # esqueletos de resultados esperados (motor futuro)
+├── expected/      # oráculos (schema_version + expectations)
 ├── index.json
 └── README.md
 ```
@@ -28,6 +31,8 @@ uv run python -m tests.generators.verify_fixtures
 
 Semilla por defecto: `20260730`.
 
+La regeneración de comprobación usa directorios temporales aislados (`tempfile`), no un scratch compartido versionado.
+
 ## Cómo añadir un escenario
 
 1. Definir el comportamiento futuro a validar.
@@ -36,14 +41,14 @@ Semilla por defecto: `20260730`.
 4. Ejecutar `exceler dev fixtures generate`.
 5. Revisar manifiesto + workbook + expected skeleton.
 6. Ejecutar `exceler dev fixtures verify` y tests unitarios.
-7. Ampliar `expected/` cuando exista la capacidad del motor (2A+).
+7. Ampliar `expected/` cuando exista la capacidad del motor (**2A+**).
 
 ## Seguridad
 
 - No ejecutar macros.
 - No seguir enlaces externos ni red.
 - No incluir secretos ni datos reales.
-- Los `.xlsm` son contenedores de lectura segura.
+- `xlsm_container.xlsm`: extensión `.xlsm` **sin** `vbaProject.bin` (aceptación segura; sin macros).
 
 ## Escenario corporativo inicial
 

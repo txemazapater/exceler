@@ -1,7 +1,9 @@
 {
+  "schema_version": 1,
   "scenario_id": "leading_trailing_blank_rows",
-  "workbook": "leading_trailing_blank_rows.xlsx",
-  "phase": "2.0",
+  "workbook": "workbooks/structural/leading_trailing_blank_rows.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "logical_tables": 1
+  "expectations": {
+    "logical_tables": 1
+  }
 }

@@ -2,8 +2,23 @@
 
 Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un compromiso de calendario.
 
-Estado actual: **Fase 2.0 completada** — laboratorio sintético operativo y verificado en CI.
-Fase 1 consolidada. La implementación funcional de inspección Excel (2A+) puede comenzar ampliando primero el corpus.
+**Nomenclatura de la franja Excel (Alternativa B):**
+
+| Id | Nombre | Rol |
+|----|--------|-----|
+| **2.0** | Synthetic Workbook Corpus | Laboratorio sintético (cerrado) |
+| **2S** | Source Inventory | Inventario filesystem de orígenes |
+| **2A** | Workbook Inspection | Lectura estructural factual |
+| **2B** | Region and Table Detection | Regiones y tablas lógicas |
+| **2C** | Profiling and Type Inference | Perfilado e inferencia de tipos |
+| **2D** | Key Detection | Candidatos a clave |
+| **2E** | Relationship Detection | Relaciones intra/inter-libro |
+
+Las fases numeradas 3–12 del roadmap largo siguen vigentes como entregas de producto;
+2S/2A–2E son cortes de implementación que alimentan esas entregas sin solaparse en alcance.
+
+Estado actual: **Fase 2.0 cerrada** (laboratorio sintético endurecido y verificado en CI).
+Siguiente corte: **2A** (ampliar corpus primero) o **2S** en paralelo documental.
 
 ## Fase 0 — Fundamentos
 
@@ -42,19 +57,20 @@ Fase 1 consolidada. La implementación funcional de inspección Excel (2A+) pued
 
 **Salida:** orígenes configurables y validables sin enumeración completa de archivos ni análisis Excel.
 
-## Fase 2.0 — Corpus sintético y oráculo de pruebas
+## Fase 2.0 — Synthetic Workbook Corpus
 
 - Generador determinista de libros Excel (`tests/generators/`).
 - Fixtures mínimos + escenario corporativo `hell_erp`.
-- Manifiestos y esqueletos `expected/`.
-- `exceler dev fixtures generate|verify`.
-- Verificación en CI.
+- Manifiestos, expected skeletons (`schema_version`) e índice derivado.
+- Instantánea lógica enriquecida + `exceler dev fixtures generate|verify`.
+- Pruebas negativas del verificador; verificación en CI.
 
 **Salida:** laboratorio reproducible antes de cualquier análisis Excel.
+**Fuente de verdad del catálogo:** `tests.generators.catalog.ALL_SPECS` (`index.json` es derivado).
 
-## Fase 2 — Conector de sistema de archivos
+## Fase 2S — Source Inventory (filesystem)
 
-*(Inventario filesystem; puede avanzar en paralelo documentalmente, pero el análisis Excel exige 2.0.)*
+*(Puede avanzar en paralelo documentalmente; el análisis Excel exige 2.0 y amplía corpus en 2A+.)*
 
 - Rutas locales y montadas.
 - Enumeración y filtros include/exclude.
@@ -63,11 +79,30 @@ Fase 1 consolidada. La implementación funcional de inspección Excel (2A+) pued
 - Errores normalizados.
 - Pruebas de no mutación del origen.
 
-**Salida:** primer conector útil en entornos controlados.
+**Salida:** primer conector útil en entornos controlados (alimenta la Fase 3).
 
-## Fase 2A+ — Inspección / regiones / tipado / claves / relaciones
+## Fase 2A — Workbook Inspection
 
-Cada subfase amplía primero el corpus (ver `docs/fixtures.md`) antes de implementar heurísticas.
+Antes de implementar: ampliar fixtures de libros, hojas, fórmulas, tablas, visibilidad y dimensiones; definir expected.
+
+- Lectura segura XLSX/XLSM (sin macros, sin red).
+- Modelo observado factual anclado a `AssetSnapshot`.
+
+## Fase 2B — Region and Table Detection
+
+Antes: escenarios con regiones separadas, títulos, subtotales, cabeceras multinivel y ruido.
+
+## Fase 2C — Profiling and Type Inference
+
+Antes: columnas inequívocas, ambiguas, mixtas y semánticas.
+
+## Fase 2D — Key Detection
+
+Antes: unicidad, casi unicidad, duplicados, claves compuestas y falsos candidatos.
+
+## Fase 2E — Relationship Detection
+
+Antes: coincidencias exactas, parciales, normalizadas, ambiguas y falsas relaciones.
 
 ## Fase 3 — Inventario y ejecuciones de descubrimiento
 
@@ -97,7 +132,9 @@ Cada subfase amplía primero el corpus (ver `docs/fixtures.md`) antes de impleme
 
 **Salida:** cobertura de orígenes documentales cloud frecuentes.
 
-## Fase 6 — Inspección estructural de Excel
+## Fase 6 — Inspección estructural de Excel (producto)
+
+Entrega de producto alineada con el corte **2A** (y posteriores ampliaciones).
 
 - `InspectionRun`.
 - Formatos soportados (prioridad XLSX/XLSM; XLS según viabilidad).
@@ -109,6 +146,8 @@ Cada subfase amplía primero el corpus (ver `docs/fixtures.md`) antes de impleme
 
 ## Fase 7 — Perfilado de datos
 
+Alineada con **2C**.
+
 - `ProfilingRun`.
 - Tipos aparentes, nulos, unicidad, cardinalidad.
 - Patrones, distribuciones, anomalías.
@@ -117,6 +156,8 @@ Cada subfase amplía primero el corpus (ver `docs/fixtures.md`) antes de impleme
 **Salida:** `Profile` ligado a campos/regiones observadas.
 
 ## Fase 8 — Inferencia inicial
+
+Incluye cortes **2B/2D** según avance.
 
 - `InferenceRun`.
 - Encabezados y entidades candidatas.
@@ -128,6 +169,8 @@ Cada subfase amplía primero el corpus (ver `docs/fixtures.md`) antes de impleme
 **Salida:** primer modelo inferido revisable.
 
 ## Fase 9 — Relaciones entre libros
+
+Alineada con **2E**.
 
 - Similitud de esquemas y datos.
 - Claves compartidas y duplicidades.
@@ -176,11 +219,18 @@ Cada subfase amplía primero el corpus (ver `docs/fixtures.md`) antes de impleme
 flowchart LR
   F0[0 Fundamentos] --> F01[0.1 Modelo]
   F01 --> F1[1 Orígenes]
-  F1 --> F2[2 FS]
-  F2 --> F3[3 Inventario]
+  F1 --> F20[2.0 Corpus]
+  F20 --> F2S[2S Inventory]
+  F20 --> F2A[2A Inspection]
+  F2S --> F3[3 Inventario]
+  F2A --> F2B[2B Regions]
+  F2B --> F2C[2C Profiling]
+  F2C --> F2D[2D Keys]
+  F2D --> F2E[2E Relations]
   F3 --> F4[4 SMB]
-  F3 --> F6[6 Inspector]
+  F3 --> F6[6 Inspector prod.]
   F4 --> F5[5 SPO/OD]
+  F2A --> F6
   F6 --> F7[7 Profiling]
   F7 --> F8[8 Inferencia]
   F8 --> F9[9 Inter-libro]
@@ -191,7 +241,7 @@ flowchart LR
   F11 --> F12[12 Schema]
 ```
 
-SMB (4) y SharePoint/OneDrive (5) pueden avanzar en paralelo al inicio de la inspección (6) cuando el inventario (3) ya sea usable.
+SMB (4) y SharePoint/OneDrive (5) pueden avanzar en paralelo al inicio de la inspección (6 / 2A) cuando el inventario (3 / 2S) ya sea usable.
 
 ## Criterio para avanzar de fase
 
@@ -200,10 +250,12 @@ No se considera cerrada una fase solo por existir código esqueleto. Debe haber:
 - contratos claros;
 - pruebas reproducibles cuando haya implementación;
 - documentación alineada con el comportamiento real;
-- ADR si se fija tecnología o se cambia el dominio.
+- ADR si se fija tecnología o se cambia el dominio;
+- escenario sintético positivo/negativo (y ambiguo si aplica) antes de cada capacidad 2A–2E.
 
 ## Relacionados
 
 - Alcance: [scope.md](scope.md)
 - Arquitectura: [architecture.md](architecture.md)
 - Dominio: [domain-model.md](domain-model.md)
+- Fixtures: [fixtures.md](fixtures.md)

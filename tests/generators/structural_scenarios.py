@@ -225,7 +225,11 @@ def build_excel_structured_table(_seed: int) -> Workbook:
 
 
 def build_xlsm_container(_seed: int) -> Workbook:
-    """XLSM container for safe read-only detection tests. No macros are executed."""
+    """Save as .xlsm extension without embedding vbaProject.bin.
+
+    This fixture validates safe acceptance of the XLSM container type.
+    It does not contain VBA macros and must never be executed via Excel/COM.
+    """
     wb = new_workbook(sheet_title="MacroBook")
     ws = wb.active
     assert ws is not None
@@ -233,7 +237,7 @@ def build_xlsm_container(_seed: int) -> Workbook:
         ws,
         [
             ["Note", "Detail"],
-            ["synthetic_xlsm", "no_macro_execution"],
+            ["synthetic_xlsm", "extension_only_no_vba_project"],
         ],
     )
     wb.defined_names.add(DefinedName(name="FixtureFlag", attr_text="'MacroBook'!$A$2"))
@@ -377,11 +381,19 @@ MINIMAL_SPECS: list[ScenarioSpec] = [
     ScenarioSpec(
         scenario_id="xlsm_container",
         category="structural",
-        description="Contenedor XLSM sintético sin ejecución de macros",
+        description=(
+            "Contenedor con extensión .xlsm sin proyecto VBA (sin vbaProject.bin); "
+            "aceptación segura de la extensión, sin ejecución de macros"
+        ),
         relative_workbook="workbooks/structural/xlsm_container.xlsm",
         generator_name="structural_scenarios.build_xlsm_container",
-        intentions=["Extensión xlsm", "Sin ejecución de contenido activo en tests"],
-        features=["xlsm", "no_macro_execution"],
+        intentions=[
+            "Archivo guardado con extensión .xlsm",
+            "No incluye vbaProject.bin",
+            "No se ejecutan macros ni automatización COM en tests",
+            "Incluye un nombre definido FixtureFlag para inspección estructural",
+        ],
+        features=["xlsm", "no_macro_execution", "no_vba_project", "defined_name"],
     ),
 ]
 

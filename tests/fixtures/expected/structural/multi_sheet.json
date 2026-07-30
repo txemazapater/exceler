@@ -1,7 +1,9 @@
 {
+  "schema_version": 1,
   "scenario_id": "multi_sheet",
-  "workbook": "multi_sheet.xlsx",
-  "phase": "2.0",
+  "workbook": "workbooks/structural/multi_sheet.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
-  "worksheets": 3
+  "expectations": {
+    "worksheets": 3
+  }
 }

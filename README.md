@@ -6,8 +6,8 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 2.0 lista:** corpus sintético de libros Excel (generadores, manifiestos, verify en CI).
-Siguiente: Fase 2 / 2A+ (aún **no** hay motor de inspección/inferencia Excel).
+**Fase 2.0 cerrada:** corpus sintético Excel endurecido (instantánea lógica, verify, CI).
+Siguiente: **2S** (inventario FS) y/o **2A** (inspección de workbook); aún **no** hay motor de análisis Excel.
 
 CI: GitHub Actions (`quality` + unit + fixture verify, `integration` + Postgres, `docker` build + Compose smoke).
 Local sin Docker: `pytest -m "not integration and not docker"`.

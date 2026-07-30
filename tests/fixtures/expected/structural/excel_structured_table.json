@@ -1,6 +1,7 @@
 {
+  "schema_version": 1,
   "scenario_id": "excel_structured_table",
-  "workbook": "excel_structured_table.xlsx",
-  "phase": "2.0",
-  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis."
+  "workbook": "workbooks/structural/excel_structured_table.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {}
 }

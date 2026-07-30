@@ -1,4 +1,6 @@
 {
+  "schema_version": 1,
+  "source_of_truth": "tests.generators.catalog.ALL_SPECS",
   "scenarios": [
     "empty_workbook",
     "empty_sheet",
@@ -20,6 +22,28 @@
     "hell_erp_pedidos",
     "hell_erp_lineas_pedido",
     "hell_erp_facturas"
+  ],
+  "workbooks": [
+    "workbooks/minimal/empty_workbook.xlsx",
+    "workbooks/minimal/empty_sheet.xlsx",
+    "workbooks/minimal/simple_rectangular_table.xlsx",
+    "workbooks/structural/multi_sheet.xlsx",
+    "workbooks/structural/leading_trailing_blank_rows.xlsx",
+    "workbooks/structural/interleaved_empty_columns.xlsx",
+    "workbooks/structural/title_above_header.xlsx",
+    "workbooks/structural/two_regions_one_sheet.xlsx",
+    "workbooks/structural/merged_cells.xlsx",
+    "workbooks/structural/hidden_sheet.xlsx",
+    "workbooks/structural/hidden_columns.xlsx",
+    "workbooks/types/formulas.xlsx",
+    "workbooks/types/cell_errors.xlsx",
+    "workbooks/structural/excel_structured_table.xlsx",
+    "workbooks/structural/xlsm_container.xlsm",
+    "workbooks/scenarios/hell_erp/clientes.xlsx",
+    "workbooks/scenarios/hell_erp/articulos.xlsx",
+    "workbooks/scenarios/hell_erp/pedidos.xlsx",
+    "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
+    "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
   "count": 20
 }

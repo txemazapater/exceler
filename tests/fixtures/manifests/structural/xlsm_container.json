@@ -1,16 +1,20 @@
 {
   "scenario_id": "xlsm_container",
-  "description": "Contenedor XLSM sintético sin ejecución de macros",
+  "description": "Contenedor con extensión .xlsm sin proyecto VBA (sin vbaProject.bin); aceptación segura de la extensión, sin ejecución de macros",
   "workbook": "workbooks/structural/xlsm_container.xlsm",
   "generator": "structural_scenarios.build_xlsm_container",
   "seed": 20260730,
   "intentions": [
-    "Extensión xlsm",
-    "Sin ejecución de contenido activo en tests"
+    "Archivo guardado con extensión .xlsm",
+    "No incluye vbaProject.bin",
+    "No se ejecutan macros ni automatización COM en tests",
+    "Incluye un nombre definido FixtureFlag para inspección estructural"
   ],
   "features": [
     "xlsm",
-    "no_macro_execution"
+    "no_macro_execution",
+    "no_vba_project",
+    "defined_name"
   ],
   "versioned": true
 }

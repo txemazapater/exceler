@@ -1,6 +1,7 @@
 {
+  "schema_version": 1,
   "scenario_id": "hell_erp_articulos",
-  "workbook": "articulos.xlsx",
-  "phase": "2.0",
-  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis."
+  "workbook": "workbooks/scenarios/hell_erp/articulos.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {}
 }
