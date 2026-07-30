@@ -541,10 +541,9 @@ class OpenPyxlWorkbookReader:
                 )
             )
             for cell in _iter_materialized_cells(ws):
-                scanned += 1
-                if scanned > scan_budget:
-                    scanned = scan_budget
+                if scanned >= scan_budget:
                     break
+                scanned += 1
                 if not _cell_relevant(cell, options=options):
                     continue
                 if observed >= observe_budget:
@@ -562,8 +561,7 @@ class OpenPyxlWorkbookReader:
             stop_observe = False
             for row in ws.iter_rows(min_row=1, max_row=max_row, max_col=max_col):
                 for cell in row:
-                    scanned += 1
-                    if scanned > scan_budget:
+                    if scanned >= scan_budget:
                         truncations.append(
                             InspectionTruncation(
                                 code=InspectionTruncationCode.MAX_CELLS_SCANNED,
@@ -573,6 +571,7 @@ class OpenPyxlWorkbookReader:
                         )
                         stop_observe = True
                         break
+                    scanned += 1
                     if not _cell_relevant(cell, options=options):
                         continue
                     if observed >= observe_budget:

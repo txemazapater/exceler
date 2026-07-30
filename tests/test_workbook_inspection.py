@@ -214,6 +214,19 @@ def test_max_observed_cells_partial() -> None:
     )
 
 
+def test_cells_scanned_never_exceeds_budget() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "max_observed_cells_partial")
+    )
+    budget = 25
+    inspection = _inspect(path, max_cells_scanned=budget)
+    assert inspection.cells_scanned <= budget
+    assert inspection.completion_status is InspectionCompletionStatus.PARTIAL
+    assert any(
+        t.code is InspectionTruncationCode.MAX_CELLS_SCANNED for t in inspection.truncation_reasons
+    )
+
+
 def test_missing_file() -> None:
     with pytest.raises(WorkbookNotFoundError):
         _inspect(Path("definitely-missing-exceler.xlsx"))
