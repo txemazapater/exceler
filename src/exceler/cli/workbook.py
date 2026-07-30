@@ -9,6 +9,7 @@ from typing import Annotated
 import typer
 
 from exceler.application.workbook.serialization import inspection_to_dict
+from exceler.domain.workbook.enums import InspectionCompletionStatus
 from exceler.domain.workbook.errors import (
     EncryptedWorkbookError,
     InvalidWorkbookError,
@@ -30,6 +31,7 @@ EXIT_UNSUPPORTED = 3
 EXIT_NOT_FOUND = 4
 EXIT_INVALID = 5
 EXIT_LIMIT = 6
+EXIT_PARTIAL = 7
 
 PathArg = Annotated[Path, typer.Argument(exists=False, help="Path to .xlsx or .xlsm")]
 FormatOpt = Annotated[str, typer.Option("--format", "-f", help="Output format: text|json")]
@@ -38,7 +40,12 @@ OutputOpt = Annotated[
     Path | None, typer.Option("--output", "-o", help="Write output to a file instead of stdout")
 ]
 MaxCellsOpt = Annotated[
-    int | None, typer.Option("--max-cells", help="Override max cells safety limit")
+    int | None,
+    typer.Option("--max-cells", help="Override max_cells_observed safety limit"),
+]
+MaxScannedOpt = Annotated[
+    int | None,
+    typer.Option("--max-cells-scanned", help="Override max_cells_scanned safety limit"),
 ]
 
 
@@ -49,16 +56,24 @@ def _error_payload(code: str, message: str) -> dict[str, object]:
 def _print_human(inspection: WorkbookInspection) -> None:
     typer.echo(f"Workbook: {inspection.file.file_name}")
     typer.echo(f"Format: {inspection.format.value}")
+    typer.echo(f"Completion: {inspection.completion_status.value}")
     typer.echo(f"Worksheets: {inspection.worksheets_observed}")
     typer.echo(f"VBA project: {'yes' if inspection.has_vba_project else 'no'}")
     typer.echo(f"Cells observed: {inspection.cells_observed}")
+    typer.echo(f"Cells scanned: {inspection.cells_scanned}")
     typer.echo(f"Duration: {inspection.duration_ms} ms")
+    if inspection.truncation_reasons:
+        typer.echo("Inspection completed partially.")
+        for reason in inspection.truncation_reasons:
+            loc = f" ({reason.location})" if reason.location else ""
+            typer.echo(f"Reason: {reason.code.value}{loc}")
     typer.echo("")
     for ws in inspection.worksheets:
         typer.echo(f"[{ws.index}] {ws.name}")
         typer.echo(f"    Visibility: {ws.visibility.value}")
         typer.echo(f"    Dimension: {ws.declared_dimension or '-'}")
         typer.echo(f"    Cells observed: {ws.cells_observed}")
+        typer.echo(f"    Cells scanned: {ws.cells_scanned}")
         typer.echo(f"    Tables: {len(ws.tables)}")
         typer.echo(f"    Merged ranges: {len(ws.merged_ranges)}")
 
@@ -74,6 +89,7 @@ def register_workbook_commands(app: typer.Typer) -> None:
         pretty: PrettyOpt = False,
         output: OutputOpt = None,
         max_cells: MaxCellsOpt = None,
+        max_cells_scanned: MaxScannedOpt = None,
     ) -> None:
         """Inspect a workbook factually (no table/type/key inference)."""
         as_json = format.lower() == "json"
@@ -88,14 +104,21 @@ def register_workbook_commands(app: typer.Typer) -> None:
             raise typer.Exit(EXIT_INVALID_ARGS)
 
         options = WorkbookInspectionOptions()
-        if max_cells is not None:
+        if max_cells is not None or max_cells_scanned is not None:
             options = WorkbookInspectionOptions(
                 include_empty_formatted_cells=options.include_empty_formatted_cells,
                 include_comments=options.include_comments,
                 include_hyperlinks=options.include_hyperlinks,
                 include_external_links=options.include_external_links,
                 max_worksheets=options.max_worksheets,
-                max_cells=max_cells,
+                max_cells_observed=(
+                    max_cells if max_cells is not None else options.max_cells_observed
+                ),
+                max_cells_scanned=(
+                    max_cells_scanned
+                    if max_cells_scanned is not None
+                    else options.max_cells_scanned
+                ),
                 max_file_size_bytes=options.max_file_size_bytes,
             )
 
@@ -146,6 +169,9 @@ def register_workbook_commands(app: typer.Typer) -> None:
                 _write(buf.getvalue(), output)
             else:
                 _print_human(inspection)
+
+        if inspection.completion_status is InspectionCompletionStatus.PARTIAL:
+            raise typer.Exit(EXIT_PARTIAL)
 
 
 def _emit_error(

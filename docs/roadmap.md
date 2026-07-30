@@ -17,8 +17,8 @@ Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un comprom
 Las fases numeradas 3–12 del roadmap largo siguen vigentes como entregas de producto;
 2S/2A–2E son cortes de implementación que alimentan esas entregas sin solaparse en alcance.
 
-Estado actual: **Fase 2A** — Workbook Inspection Foundation (observación factual).
-Fase 2.0 cerrada.
+Estado actual: **Fase 2A cerrada** — Workbook Inspection Foundation endurecida.
+Siguiente corte: **2B** (ampliar corpus primero).
 
 ## Fase 0 — Fundamentos
 
@@ -83,14 +83,15 @@ Fase 2.0 cerrada.
 
 ## Fase 2A — Workbook Inspection
 
-- Corpus ampliado (tipos físicos, veryHidden, freeze/filtro, VBA stub, dimensión inflada, …).
+- Corpus ampliado (tipos físicos, veryHidden, freeze/filtro, VBA stub, dimensión inflada/patológica, …).
 - Modelo `WorkbookInspection` independiente de openpyxl.
 - Puerto `WorkbookReader` + `OpenPyxlWorkbookReader`.
-- CLI `exceler workbook inspect` (text/json).
+- CLI `exceler workbook inspect` (text/json; exit 7 = parcial).
 - Expected bajo `expectations.inspection`; comparador parcial.
+- Hardening: hash del payload, `cells_scanned`/`cells_observed`, `completion_status`, schema JSON **2**.
 - ADR 0005 (openpyxl).
 
-**Salida:** observador fiable sin interpretación 2B–2E.
+**Salida:** observador fiable sin interpretación 2B–2E. **Cerrada.**
 
 ## Fase 2B — Region and Table Detection
 

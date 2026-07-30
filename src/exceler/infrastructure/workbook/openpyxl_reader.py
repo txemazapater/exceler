@@ -5,6 +5,11 @@ Open options (documented):
 - keep_vba=False — do not load VBA for execution; VBA presence is detected via ZIP.
 - keep_links=True — retain external link metadata if present (never followed/downloaded).
 - read_only=False — full load so tables, dimensions, merges and styles are observable.
+
+Pathological dimensions:
+When declared_area (max_row * max_column) exceeds the remaining max_cells_scanned budget,
+the adapter inspects only openpyxl-materialized cells (worksheet._cells), encapsulated here.
+That path never walks the full declared rectangle. See docs/limitations.md.
 """
 
 from __future__ import annotations
@@ -13,9 +18,11 @@ import logging
 import time
 import uuid
 import zipfile
+from collections.abc import Iterable
 from datetime import UTC, date, datetime
 from datetime import time as time_cls
 from decimal import Decimal
+from hashlib import sha256
 from io import BytesIO
 from typing import Any
 
@@ -25,6 +32,8 @@ from openpyxl.utils.exceptions import InvalidFileException
 from exceler.application.workbook.ports import WorkbookSource
 from exceler.domain.workbook.enums import (
     CellValueKind,
+    InspectionCompletionStatus,
+    InspectionTruncationCode,
     InspectionWarningCode,
     WorkbookFormat,
     WorksheetVisibility,
@@ -45,6 +54,7 @@ from exceler.domain.workbook.models import (
     ExternalLinkInspection,
     FileIdentity,
     HyperlinkInspection,
+    InspectionTruncation,
     InspectionWarning,
     MergedRangeInspection,
     RelevantCellStyle,
@@ -118,6 +128,57 @@ def _cell_relevant(cell: Any, *, options: WorkbookInspectionOptions) -> bool:
     return False
 
 
+def _iter_materialized_cells(ws: Any) -> Iterable[Any]:
+    """Yield openpyxl-materialized cells only (never the full declared rectangle).
+
+    Encapsulates worksheet._cells — an openpyxl internal structure — so pathological
+    dimensions do not force O(max_row * max_column) iteration.
+    """
+    cells_map = getattr(ws, "_cells", None)
+    if not isinstance(cells_map, dict):
+        return
+    for _coord, cell in sorted(cells_map.items(), key=lambda item: (item[0][0], item[0][1])):
+        yield cell
+
+
+def _build_cell_inspection(cell: Any, *, options: WorkbookInspectionOptions) -> CellInspection:
+    formula = None
+    raw = cell.value
+    if isinstance(raw, str) and raw.startswith("="):
+        formula = raw
+        value = CellValue(kind=CellValueKind.NULL)
+    elif cell.data_type == "f" and raw is not None:
+        formula = str(raw)
+        value = CellValue(kind=CellValueKind.NULL)
+    else:
+        value = _map_value(raw, library_data_type=cell.data_type)
+    comment = None
+    if options.include_comments and cell.comment is not None:
+        comment = CellComment(text=cell.comment.text, author=cell.comment.author)
+    hyperlink = None
+    if options.include_hyperlinks and cell.hyperlink is not None:
+        hyperlink = HyperlinkInspection(
+            target=cell.hyperlink.target,
+            tooltip=getattr(cell.hyperlink, "tooltip", None),
+        )
+    style = None
+    bold = bool(cell.font and cell.font.bold)
+    if bold or (cell.number_format not in (None, "General")):
+        style = RelevantCellStyle(font_bold=bold, number_format=cell.number_format)
+    return CellInspection(
+        coordinate=cell.coordinate,
+        row=cell.row,
+        column=cell.column,
+        value=value,
+        library_data_type=cell.data_type,
+        number_format=cell.number_format,
+        formula=formula,
+        comment=comment,
+        hyperlink=hyperlink,
+        style=style,
+    )
+
+
 class OpenPyxlWorkbookReader:
     def inspect(
         self,
@@ -138,12 +199,12 @@ class OpenPyxlWorkbookReader:
             },
         )
 
-        size = source.size_bytes()
-        if size > opts.max_file_size_bytes:
+        announced_size = source.size_bytes()
+        if announced_size > opts.max_file_size_bytes:
             raise WorkbookLimitExceededError(
                 f"Workbook exceeds max_file_size_bytes ({opts.max_file_size_bytes})."
             )
-        if size == 0:
+        if announced_size == 0:
             raise InvalidWorkbookError("Workbook file is empty.")
 
         extension = source.suggested_extension.lstrip(".").lower()
@@ -153,21 +214,41 @@ class OpenPyxlWorkbookReader:
             )
         workbook_format = WorkbookFormat.XLSM if extension == "xlsm" else WorkbookFormat.XLSX
 
-        try:
-            with source.open_binary() as handle:
-                payload = handle.read()
-        except Exception:
-            raise
+        with source.open_binary() as handle:
+            payload = handle.read()
 
-        content_hash = source.content_hash()
+        # Identity is bound to the exact bytes handed to openpyxl — never a second read.
+        content_hash = sha256(payload).hexdigest()
+        actual_size = len(payload)
+        if actual_size == 0:
+            raise InvalidWorkbookError("Workbook file is empty.")
+        if actual_size > opts.max_file_size_bytes:
+            raise WorkbookLimitExceededError(
+                f"Workbook payload exceeds max_file_size_bytes ({opts.max_file_size_bytes})."
+            )
+
         has_vba = _has_vba_project(payload)
         warnings: list[InspectionWarning] = []
+        truncations: list[InspectionTruncation] = []
         limitations: list[str] = [
             "Formulas are observed, not evaluated (data_only=False).",
             "VBA projects are detected by ZIP presence only; never executed.",
             "External links are listed when present; never followed or downloaded.",
             "Document core/custom properties are not required for Phase 2A.",
+            "FileIdentity.content_hash is sha256 of the inspected payload bytes.",
+            "Pathological declared dimensions use materialized-cell fallback (adapter-internal).",
         ]
+
+        if announced_size != actual_size:
+            warnings.append(
+                InspectionWarning(
+                    code=InspectionWarningCode.SOURCE_SIZE_CHANGED,
+                    message=(
+                        "Announced source size differs from inspected payload length; "
+                        "FileIdentity uses payload length and payload hash."
+                    ),
+                )
+            )
 
         if has_vba:
             warnings.append(
@@ -178,9 +259,6 @@ class OpenPyxlWorkbookReader:
             )
 
         try:
-            # data_only=False: preserve formulas.
-            # keep_vba=False: never load VBA for execution.
-            # keep_links=True: retain link metadata without network access.
             wb = load_workbook(
                 BytesIO(payload),
                 read_only=False,
@@ -207,7 +285,7 @@ class OpenPyxlWorkbookReader:
                 "inspection_id": inspection_id,
                 "format": workbook_format.value,
                 "sheet_count": len(wb.sheetnames),
-                "size_bytes": size,
+                "size_bytes": actual_size,
             },
         )
 
@@ -218,42 +296,50 @@ class OpenPyxlWorkbookReader:
             )
 
         worksheets: list[WorksheetInspection] = []
-        cells_observed = 0
-        cell_budget = opts.max_cells
+        cells_observed_total = 0
+        cells_scanned_total = 0
+        observe_budget = opts.max_cells_observed
+        scan_budget = opts.max_cells_scanned
 
         for index, name in enumerate(wb.sheetnames):
+            if observe_budget <= 0 or scan_budget <= 0:
+                truncations.append(
+                    InspectionTruncation(
+                        code=(
+                            InspectionTruncationCode.MAX_CELLS_OBSERVED
+                            if observe_budget <= 0
+                            else InspectionTruncationCode.MAX_CELLS_SCANNED
+                        ),
+                        message="Remaining worksheets skipped due to cell budget.",
+                        location=name,
+                    )
+                )
+                break
             ws = wb[name]
-            sheet_inspection, used = self._inspect_worksheet(
+            sheet_inspection, observed, scanned, sheet_truncations = self._inspect_worksheet(
                 ws,
                 index=index,
                 options=opts,
-                cell_budget=cell_budget,
+                observe_budget=observe_budget,
+                scan_budget=scan_budget,
                 warnings=warnings,
             )
             worksheets.append(sheet_inspection)
-            cells_observed += used
-            cell_budget -= used
+            cells_observed_total += observed
+            cells_scanned_total += scanned
+            observe_budget -= observed
+            scan_budget -= scanned
+            truncations.extend(sheet_truncations)
             logger.debug(
                 "worksheet_inspected",
                 extra={
                     "event": "worksheet_inspected",
                     "inspection_id": inspection_id,
                     "sheet": name,
-                    "cells_observed": used,
+                    "cells_observed": observed,
+                    "cells_scanned": scanned,
                 },
             )
-            if cell_budget <= 0 and index < len(wb.sheetnames) - 1:
-                warnings.append(
-                    InspectionWarning(
-                        code=InspectionWarningCode.CELL_LIMIT_REACHED,
-                        message="max_cells reached; remaining worksheets partially skipped.",
-                    )
-                )
-                logger.warning(
-                    "inspection_limit_reached",
-                    extra={"event": "inspection_limit_reached", "inspection_id": inspection_id},
-                )
-                break
 
         defined_names = tuple(
             sorted(
@@ -289,6 +375,21 @@ class OpenPyxlWorkbookReader:
         if modified_iso:
             modified_at = datetime.fromisoformat(modified_iso)
 
+        # Deduplicate truncation codes while preserving order.
+        seen_trunc: set[str] = set()
+        unique_truncations: list[InspectionTruncation] = []
+        for item in truncations:
+            key = f"{item.code.value}:{item.location}"
+            if key in seen_trunc:
+                continue
+            seen_trunc.add(key)
+            unique_truncations.append(item)
+
+        completion = (
+            InspectionCompletionStatus.PARTIAL
+            if unique_truncations
+            else InspectionCompletionStatus.COMPLETE
+        )
         duration_ms = int((time.perf_counter() - started) * 1000)
         result = WorkbookInspection(
             inspection_id=inspection_id,
@@ -300,7 +401,7 @@ class OpenPyxlWorkbookReader:
                 source_path=source.source_path(),
                 file_name=source.name,
                 extension=extension,
-                size_bytes=size,
+                size_bytes=actual_size,
                 modified_at=modified_at,
                 content_hash=content_hash,
             ),
@@ -309,8 +410,11 @@ class OpenPyxlWorkbookReader:
             external_links=tuple(sorted(external_links, key=lambda item: item.target)),
             has_vba_project=has_vba,
             warnings=tuple(warnings),
+            completion_status=completion,
+            truncation_reasons=tuple(unique_truncations),
             limitations=tuple(limitations),
-            cells_observed=cells_observed,
+            cells_observed=cells_observed_total,
+            cells_scanned=cells_scanned_total,
             worksheets_observed=len(worksheets),
         )
         logger.info(
@@ -319,8 +423,9 @@ class OpenPyxlWorkbookReader:
                 "event": "inspection_completed",
                 "inspection_id": inspection_id,
                 "duration_ms": duration_ms,
-                "cells_observed": cells_observed,
-                "worksheets_observed": len(worksheets),
+                "cells_observed": cells_observed_total,
+                "cells_scanned": cells_scanned_total,
+                "completion_status": completion.value,
                 "has_vba_project": has_vba,
             },
         )
@@ -332,9 +437,11 @@ class OpenPyxlWorkbookReader:
         *,
         index: int,
         options: WorkbookInspectionOptions,
-        cell_budget: int,
+        observe_budget: int,
+        scan_budget: int,
         warnings: list[InspectionWarning],
-    ) -> tuple[WorksheetInspection, int]:
+    ) -> tuple[WorksheetInspection, int, int, list[InspectionTruncation]]:
+        truncations: list[InspectionTruncation] = []
         declared = None
         try:
             declared = ws.calculate_dimension()
@@ -406,71 +513,85 @@ class OpenPyxlWorkbookReader:
                 )
             )
 
+        max_row = int(ws.max_row or 1)
+        max_col = int(ws.max_column or 1)
+        declared_area = max_row * max_col
+        use_materialized = declared_area > scan_budget
+
         cells: list[CellInspection] = []
-        max_row = ws.max_row or 1
-        max_col = ws.max_column or 1
-        used = 0
-        for row in ws.iter_rows(min_row=1, max_row=max_row, max_col=max_col):
-            for cell in row:
+        scanned = 0
+        observed = 0
+
+        if use_materialized:
+            warnings.append(
+                InspectionWarning(
+                    code=InspectionWarningCode.MATERIALIZED_CELLS_FALLBACK,
+                    message=(
+                        "Declared dimension area exceeds max_cells_scanned; "
+                        "inspecting materialized cells only."
+                    ),
+                    location=ws.title,
+                )
+            )
+            truncations.append(
+                InspectionTruncation(
+                    code=InspectionTruncationCode.MAX_CELLS_SCANNED,
+                    message="Declared sheet area exceeds scan budget; full rectangle not walked.",
+                    location=ws.title,
+                )
+            )
+            for cell in _iter_materialized_cells(ws):
+                scanned += 1
+                if scanned > scan_budget:
+                    scanned = scan_budget
+                    break
                 if not _cell_relevant(cell, options=options):
                     continue
-                if used >= cell_budget:
-                    warnings.append(
-                        InspectionWarning(
-                            code=InspectionWarningCode.CELL_LIMIT_REACHED,
-                            message="max_cells reached while reading worksheet cells.",
+                if observed >= observe_budget:
+                    truncations.append(
+                        InspectionTruncation(
+                            code=InspectionTruncationCode.MAX_CELLS_OBSERVED,
+                            message="max_cells_observed reached while collecting cells.",
                             location=ws.title,
                         )
                     )
                     break
-                formula = None
-                raw = cell.value
-                if isinstance(raw, str) and raw.startswith("="):
-                    formula = raw
-                    value = CellValue(kind=CellValueKind.NULL)
-                elif cell.data_type == "f" and raw is not None:
-                    formula = str(raw)
-                    value = CellValue(kind=CellValueKind.NULL)
-                else:
-                    value = _map_value(raw, library_data_type=cell.data_type)
-                comment = None
-                if options.include_comments and cell.comment is not None:
-                    comment = CellComment(text=cell.comment.text, author=cell.comment.author)
-                hyperlink = None
-                if options.include_hyperlinks and cell.hyperlink is not None:
-                    hyperlink = HyperlinkInspection(
-                        target=cell.hyperlink.target,
-                        tooltip=getattr(cell.hyperlink, "tooltip", None),
-                    )
-                style = None
-                bold = bool(cell.font and cell.font.bold)
-                if bold or (cell.number_format not in (None, "General")):
-                    style = RelevantCellStyle(
-                        font_bold=bold,
-                        number_format=cell.number_format,
-                    )
-                cells.append(
-                    CellInspection(
-                        coordinate=cell.coordinate,
-                        row=cell.row,
-                        column=cell.column,
-                        value=value,
-                        library_data_type=cell.data_type,
-                        number_format=cell.number_format,
-                        formula=formula,
-                        comment=comment,
-                        hyperlink=hyperlink,
-                        style=style,
-                    )
-                )
-                used += 1
-            else:
-                continue
-            break
+                cells.append(_build_cell_inspection(cell, options=options))
+                observed += 1
+        else:
+            stop_observe = False
+            for row in ws.iter_rows(min_row=1, max_row=max_row, max_col=max_col):
+                for cell in row:
+                    scanned += 1
+                    if scanned > scan_budget:
+                        truncations.append(
+                            InspectionTruncation(
+                                code=InspectionTruncationCode.MAX_CELLS_SCANNED,
+                                message="max_cells_scanned reached during rectangle walk.",
+                                location=ws.title,
+                            )
+                        )
+                        stop_observe = True
+                        break
+                    if not _cell_relevant(cell, options=options):
+                        continue
+                    if observed >= observe_budget:
+                        truncations.append(
+                            InspectionTruncation(
+                                code=InspectionTruncationCode.MAX_CELLS_OBSERVED,
+                                message="max_cells_observed reached while collecting cells.",
+                                location=ws.title,
+                            )
+                        )
+                        stop_observe = True
+                        break
+                    cells.append(_build_cell_inspection(cell, options=options))
+                    observed += 1
+                if stop_observe:
+                    break
 
         cells.sort(key=lambda item: (item.row, item.column))
 
-        # Inflated dimension heuristic: declared span >> cells with values/formulas.
         if declared and ":" in declared:
             valued_rows = [
                 c.row for c in cells if c.formula is not None or c.value.kind.value != "null"
@@ -505,7 +626,10 @@ class OpenPyxlWorkbookReader:
                 column_dimensions=tuple(col_dims),
                 tables=tuple(tables),
                 cells=tuple(cells),
-                cells_observed=used,
+                cells_observed=observed,
+                cells_scanned=scanned,
             ),
-            used,
+            observed,
+            scanned,
+            truncations,
         )

@@ -49,6 +49,25 @@ def compare_inspection_expectations(
     if not expected:
         return
 
+    if "completion_status" in expected:
+        if inspection.completion_status.value != expected["completion_status"]:
+            raise ExpectationMismatchError(
+                scenario_id,
+                "expectations.inspection.completion_status",
+                expected["completion_status"],
+                inspection.completion_status.value,
+            )
+
+    trunc_codes = {t.code.value for t in inspection.truncation_reasons}
+    for code in expected.get("truncation_codes") or []:
+        if code not in trunc_codes:
+            raise ExpectationMismatchError(
+                scenario_id,
+                "expectations.inspection.truncation_codes",
+                code,
+                sorted(trunc_codes),
+            )
+
     workbook_exp = expected.get("workbook")
     if isinstance(workbook_exp, dict):
         if "format" in workbook_exp and workbook_exp["format"] != inspection.format.value:
@@ -162,6 +181,13 @@ def compare_inspection_expectations(
                 scenario_id,
                 f"{path}.min_observed_cells",
                 f">={ws_exp['min_observed_cells']}",
+                ws.cells_observed,
+            )
+        if "max_observed_cells" in ws_exp and ws.cells_observed > ws_exp["max_observed_cells"]:
+            raise ExpectationMismatchError(
+                scenario_id,
+                f"{path}.max_observed_cells",
+                f"<={ws_exp['max_observed_cells']}",
                 ws.cells_observed,
             )
         if ws_exp.get("declared_dimension_inflated"):

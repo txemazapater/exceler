@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from exceler.domain.workbook.enums import (
     CellValueKind,
+    InspectionCompletionStatus,
+    InspectionTruncationCode,
     InspectionWarningCode,
     WorkbookFormat,
     WorksheetVisibility,
@@ -26,6 +28,7 @@ from exceler.domain.workbook.models import (
     ExternalLinkInspection,
     FileIdentity,
     HyperlinkInspection,
+    InspectionTruncation,
     InspectionWarning,
     MergedRangeInspection,
     RelevantCellStyle,
@@ -48,6 +51,9 @@ __all__ = [
     "ExternalLinkInspection",
     "FileIdentity",
     "HyperlinkInspection",
+    "InspectionCompletionStatus",
+    "InspectionTruncation",
+    "InspectionTruncationCode",
     "InspectionWarning",
     "InspectionWarningCode",
     "InvalidWorkbookError",

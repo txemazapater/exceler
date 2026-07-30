@@ -6,6 +6,8 @@ from exceler.domain.workbook.models import WorkbookInspection, WorkbookInspectio
 
 
 class WorkbookSource(Protocol):
+    """Binary workbook source. Identity of an inspection is derived from one payload read."""
+
     @property
     def name(self) -> str: ...
 
@@ -14,9 +16,9 @@ class WorkbookSource(Protocol):
 
     def open_binary(self) -> BinaryIO: ...
 
-    def size_bytes(self) -> int: ...
-
-    def content_hash(self) -> str: ...
+    def size_bytes(self) -> int:
+        """Announced size for pre-read limit checks (may differ from len(payload))."""
+        ...
 
     def modified_at_iso(self) -> str | None: ...
 

@@ -32,31 +32,41 @@ def _json_safe(value: Any) -> Any:
 
 def _cell_snapshot(ws: Worksheet) -> list[dict[str, Any]]:
     cells: list[dict[str, Any]] = []
-    max_row = ws.max_row or 1
-    max_col = ws.max_column or 1
-    for row in ws.iter_rows(min_row=1, max_row=max_row, max_col=max_col):
-        for cell in row:
-            if cell.value is None and not cell.comment and not cell.hyperlink:
-                # Keep empty cells only when they carry deliberate formatting used by fixtures.
-                if cell.number_format in (None, "General") and not (cell.font and cell.font.bold):
-                    continue
-            entry: dict[str, Any] = {
-                "coord": cell.coordinate,
-                "value": _json_safe(cell.value),
-                "data_type": cell.data_type,
-                "number_format": cell.number_format,
-            }
-            if isinstance(cell.value, str) and cell.value.startswith("="):
-                entry["formula"] = cell.value
-            elif cell.data_type == "f" and cell.value is not None:
-                entry["formula"] = str(cell.value)
-            if cell.comment is not None:
-                entry["comment"] = cell.comment.text
-            if cell.hyperlink is not None:
-                entry["hyperlink"] = cell.hyperlink.target
-            if cell.font is not None and cell.font.bold:
-                entry["font_bold"] = True
-            cells.append(entry)
+    max_row = int(ws.max_row or 1)
+    max_col = int(ws.max_column or 1)
+    declared_area = max_row * max_col
+    # Avoid walking pathological rectangles during fixture verification.
+    if declared_area > 500_000:
+        cells_map = getattr(ws, "_cells", {})
+        iterable = [cell for _coord, cell in sorted(cells_map.items())]
+    else:
+        iterable = [
+            cell
+            for row in ws.iter_rows(min_row=1, max_row=max_row, max_col=max_col)
+            for cell in row
+        ]
+    for cell in iterable:
+        if cell.value is None and not cell.comment and not cell.hyperlink:
+            # Keep empty cells only when they carry deliberate formatting used by fixtures.
+            if cell.number_format in (None, "General") and not (cell.font and cell.font.bold):
+                continue
+        entry: dict[str, Any] = {
+            "coord": cell.coordinate,
+            "value": _json_safe(cell.value),
+            "data_type": cell.data_type,
+            "number_format": cell.number_format,
+        }
+        if isinstance(cell.value, str) and cell.value.startswith("="):
+            entry["formula"] = cell.value
+        elif cell.data_type == "f" and cell.value is not None:
+            entry["formula"] = str(cell.value)
+        if cell.comment is not None:
+            entry["comment"] = cell.comment.text
+        if cell.hyperlink is not None:
+            entry["hyperlink"] = cell.hyperlink.target
+        if cell.font is not None and cell.font.bold:
+            entry["font_bold"] = True
+        cells.append(entry)
     cells.sort(key=lambda item: item["coord"])
     return cells
 

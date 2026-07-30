@@ -42,6 +42,11 @@ class LocalWorkbookSource:
         return self._path.stat().st_size
 
     def content_hash(self) -> str:
+        """Utility hash of the current file bytes.
+
+        Not part of WorkbookSource protocol. Inspectors must hash the payload they read,
+        not call this method (avoids a second snapshot that could diverge).
+        """
         digest = hashlib.sha256()
         with self.open_binary() as handle:
             for chunk in iter(lambda: handle.read(65536), b""):

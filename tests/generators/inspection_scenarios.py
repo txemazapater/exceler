@@ -82,6 +82,41 @@ def build_inflated_dimension(_seed: int) -> Workbook:
     return wb
 
 
+def build_moderately_inflated_dimension(_seed: int) -> Workbook:
+    """Declared area larger than valued cells but still under default max_cells_scanned."""
+    wb = new_workbook(sheet_title="Moderate")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(ws, [["Code"], ["A"], ["B"]])
+    far = ws.cell(row=200, column=10)
+    far.number_format = "0.00"
+    return wb
+
+
+def build_pathological_inflated_dimension(_seed: int) -> Workbook:
+    """Declared area exceeds default max_cells_scanned (5_000_000)."""
+    wb = new_workbook(sheet_title="Pathological")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(ws, [["Only"], ["real"]])
+    # 100_000 * 100 = 10_000_000 > 5_000_000
+    far = ws.cell(row=100_000, column=100)
+    far.number_format = "0.00"
+    return wb
+
+
+def build_max_observed_cells_partial(_seed: int) -> Workbook:
+    """Many relevant cells for testing max_cells_observed truncation (via options)."""
+    wb = new_workbook(sheet_title="Many")
+    ws = wb.active
+    assert ws is not None
+    rows: list[list[Any]] = [["Idx", "Val"]]
+    for i in range(1, 81):
+        rows.append([i, f"v{i}"])
+    write_matrix(ws, rows)
+    return wb
+
+
 def build_cell_physical_types(_seed: int) -> Workbook:
     wb = new_workbook(sheet_title="Types")
     ws = wb.active
@@ -363,6 +398,7 @@ INSPECTION_SPECS: list[ScenarioSpec] = [
         features=["inflated_dimension"],
         expected_skeleton={
             "inspection": {
+                "completion_status": "complete",
                 "worksheets": [
                     {
                         "name": "Inflated",
@@ -371,6 +407,63 @@ INSPECTION_SPECS: list[ScenarioSpec] = [
                     }
                 ],
                 "warnings_contain": ["DIMENSION_MAY_BE_INFLATED"],
+            }
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="moderately_inflated_dimension",
+        category="structural",
+        description="Dimensión inflada moderada dentro del presupuesto de escaneo",
+        relative_workbook="workbooks/structural/moderately_inflated_dimension.xlsx",
+        generator_name="inspection_scenarios.build_moderately_inflated_dimension",
+        intentions=[
+            "Inspección completa con defaults",
+            "Advertencia DIMENSION_MAY_BE_INFLATED",
+        ],
+        features=["inflated_dimension", "complete"],
+        expected_skeleton={
+            "inspection": {
+                "completion_status": "complete",
+                "worksheets": [{"name": "Moderate", "declared_dimension_inflated": True}],
+                "warnings_contain": ["DIMENSION_MAY_BE_INFLATED"],
+            }
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="pathological_inflated_dimension",
+        category="structural",
+        description="Dimensión declarada patológica que supera max_cells_scanned",
+        relative_workbook="workbooks/structural/pathological_inflated_dimension.xlsx",
+        generator_name="inspection_scenarios.build_pathological_inflated_dimension",
+        intentions=[
+            "No recorrer el rectángulo completo",
+            "completion_status=partial",
+            "truncation MAX_CELLS_SCANNED",
+        ],
+        features=["inflated_dimension", "partial", "scan_limit"],
+        expected_skeleton={
+            "inspection": {
+                "completion_status": "partial",
+                "truncation_codes": ["MAX_CELLS_SCANNED"],
+                "warnings_contain": ["MATERIALIZED_CELLS_FALLBACK", "DIMENSION_MAY_BE_INFLATED"],
+                "worksheets": [{"name": "Pathological"}],
+            }
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="max_observed_cells_partial",
+        category="structural",
+        description="Muchas celdas relevantes; parcial con max_cells_observed reducido",
+        relative_workbook="workbooks/structural/max_observed_cells_partial.xlsx",
+        generator_name="inspection_scenarios.build_max_observed_cells_partial",
+        intentions=["Con options.max_cells_observed=20 el resultado es parcial"],
+        features=["partial", "observe_limit"],
+        expected_skeleton={
+            "inspection": {
+                "options": {"max_cells_observed": 20},
+                "completion_status": "partial",
+                "truncation_codes": ["MAX_CELLS_OBSERVED"],
+                "worksheets": [{"name": "Many", "max_observed_cells": 20}],
             }
         },
     ),
@@ -528,6 +621,11 @@ BUILDERS: dict[str, object] = {
     "inspection_scenarios.build_freeze_and_autofilter": build_freeze_and_autofilter,
     "inspection_scenarios.build_hidden_rows": build_hidden_rows,
     "inspection_scenarios.build_inflated_dimension": build_inflated_dimension,
+    "inspection_scenarios.build_moderately_inflated_dimension": build_moderately_inflated_dimension,
+    "inspection_scenarios.build_pathological_inflated_dimension": (
+        build_pathological_inflated_dimension
+    ),
+    "inspection_scenarios.build_max_observed_cells_partial": build_max_observed_cells_partial,
     "inspection_scenarios.build_cell_physical_types": build_cell_physical_types,
     "inspection_scenarios.build_defined_names_variants": build_defined_names_variants,
     "inspection_scenarios.build_merged_variants": build_merged_variants,

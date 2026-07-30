@@ -6,13 +6,15 @@ from typing import Any
 
 from exceler.domain.workbook.enums import (
     CellValueKind,
+    InspectionCompletionStatus,
+    InspectionTruncationCode,
     InspectionWarningCode,
     WorkbookFormat,
     WorksheetVisibility,
 )
 
-INSPECTOR_VERSION = "2A.1"
-INSPECTION_SCHEMA_VERSION = 1
+INSPECTOR_VERSION = "2A.2"
+INSPECTION_SCHEMA_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -22,13 +24,17 @@ class WorkbookInspectionOptions:
     include_hyperlinks: bool = True
     include_external_links: bool = True
     max_worksheets: int = 1_000
-    max_cells: int = 2_000_000
+    max_cells_observed: int = 2_000_000
+    max_cells_scanned: int = 5_000_000
     max_file_size_bytes: int = 512 * 1024 * 1024  # 512 MiB pathological guard
 
 
 @dataclass(frozen=True)
 class FileIdentity:
-    """Neutral file identity — not a full AssetSnapshot (Phase 2S/3)."""
+    """Neutral file identity — not a full AssetSnapshot (Phase 2S/3).
+
+    content_hash and size_bytes MUST describe the exact payload bytes inspected.
+    """
 
     source_path: str | None
     file_name: str
@@ -163,6 +169,13 @@ class InspectionWarning:
 
 
 @dataclass(frozen=True)
+class InspectionTruncation:
+    code: InspectionTruncationCode
+    message: str
+    location: str | None = None
+
+
+@dataclass(frozen=True)
 class WorksheetInspection:
     name: str
     index: int
@@ -176,6 +189,7 @@ class WorksheetInspection:
     tables: tuple[StructuredTableInspection, ...]
     cells: tuple[CellInspection, ...]
     cells_observed: int
+    cells_scanned: int
 
 
 @dataclass(frozen=True)
@@ -191,6 +205,9 @@ class WorkbookInspection:
     external_links: tuple[ExternalLinkInspection, ...]
     has_vba_project: bool
     warnings: tuple[InspectionWarning, ...]
+    completion_status: InspectionCompletionStatus
+    truncation_reasons: tuple[InspectionTruncation, ...]
     limitations: tuple[str, ...] = field(default_factory=tuple)
     cells_observed: int = 0
+    cells_scanned: int = 0
     worksheets_observed: int = 0

@@ -1,13 +1,20 @@
 from __future__ import annotations
 
+from hashlib import sha256
+from io import BytesIO
 from pathlib import Path
+from typing import BinaryIO
 
 import pytest
 from tests.generators.catalog import ALL_SPECS
 from tests.generators.workbook_factory import workbook_path
 from tests.inspection_compare import compare_inspection_expectations
 
-from exceler.application.workbook.serialization import deterministic_inspection_dict
+from exceler.application.workbook.serialization import (
+    deterministic_inspection_dict,
+    inspection_to_dict,
+)
+from exceler.domain.workbook.enums import InspectionCompletionStatus, InspectionTruncationCode
 from exceler.domain.workbook.errors import (
     InvalidWorkbookError,
     UnsupportedWorkbookFormatError,
@@ -28,6 +35,21 @@ def _inspect(path: Path, **kwargs: object):
     return READER.inspect(LocalWorkbookSource(path), options)
 
 
+def _options_from_expected(expected: dict) -> WorkbookInspectionOptions:
+    raw = expected.get("options") or {}
+    base = WorkbookInspectionOptions()
+    return WorkbookInspectionOptions(
+        include_empty_formatted_cells=base.include_empty_formatted_cells,
+        include_comments=base.include_comments,
+        include_hyperlinks=base.include_hyperlinks,
+        include_external_links=base.include_external_links,
+        max_worksheets=raw.get("max_worksheets", base.max_worksheets),
+        max_cells_observed=raw.get("max_cells_observed", base.max_cells_observed),
+        max_cells_scanned=raw.get("max_cells_scanned", base.max_cells_scanned),
+        max_file_size_bytes=raw.get("max_file_size_bytes", base.max_file_size_bytes),
+    )
+
+
 def test_contract_inspection_against_expected() -> None:
     for spec in ALL_SPECS:
         expected = spec.expected_skeleton.get("inspection")
@@ -35,7 +57,8 @@ def test_contract_inspection_against_expected() -> None:
             continue
         path = workbook_path(spec)
         assert path.exists(), f"missing workbook for {spec.scenario_id}"
-        inspection = _inspect(path)
+        options = _options_from_expected(expected)
+        inspection = READER.inspect(LocalWorkbookSource(path), options)
         compare_inspection_expectations(
             scenario_id=spec.scenario_id,
             inspection=inspection,
@@ -53,6 +76,8 @@ def test_contract_inspection_against_expected() -> None:
         "xlsm_container",
         "xlsm_with_vba_stub",
         "inflated_dimension",
+        "pathological_inflated_dimension",
+        "max_observed_cells_partial",
         "cell_physical_types",
     ],
 )
@@ -69,20 +94,124 @@ def test_inspection_is_deterministic() -> None:
 
 
 def test_inspection_does_not_mutate_source(tmp_path: Path) -> None:
-    # Copy a versioned fixture into tmp and inspect there.
     src = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "simple_rectangular_table"))
     target = tmp_path / src.name
     data = src.read_bytes()
     target.write_bytes(data)
     before_stat = target.stat()
-    before_hash = LocalWorkbookSource(target).content_hash()
+    before_hash = sha256(data).hexdigest()
     _inspect(target)
     after_stat = target.stat()
-    after_hash = LocalWorkbookSource(target).content_hash()
+    after_hash = sha256(target.read_bytes()).hexdigest()
     assert after_hash == before_hash
     assert after_stat.st_size == before_stat.st_size
     assert after_stat.st_mtime_ns == before_stat.st_mtime_ns
     assert list(tmp_path.iterdir()) == [target]
+
+
+def test_payload_hash_identity_without_content_hash_call() -> None:
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "formulas"))
+    payload = path.read_bytes()
+
+    class CountingSource:
+        def __init__(self) -> None:
+            self.open_count = 0
+            self.hash_count = 0
+
+        @property
+        def name(self) -> str:
+            return path.name
+
+        @property
+        def suggested_extension(self) -> str:
+            return path.suffix
+
+        def open_binary(self) -> BinaryIO:
+            self.open_count += 1
+            return BytesIO(payload)
+
+        def size_bytes(self) -> int:
+            return len(payload)
+
+        def content_hash(self) -> str:
+            self.hash_count += 1
+            return "should-not-be-used"
+
+        def modified_at_iso(self) -> str | None:
+            return None
+
+        def source_path(self) -> str | None:
+            return str(path)
+
+    source = CountingSource()
+    inspection = READER.inspect(source)
+    assert source.hash_count == 0
+    assert source.open_count == 1
+    assert inspection.file.content_hash == sha256(payload).hexdigest()
+    assert inspection.file.size_bytes == len(payload)
+    assert inspection.completion_status is InspectionCompletionStatus.COMPLETE
+
+
+def test_source_size_mismatch_warns_but_uses_payload() -> None:
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "empty_sheet"))
+    payload = path.read_bytes()
+
+    class MismatchSource:
+        @property
+        def name(self) -> str:
+            return path.name
+
+        @property
+        def suggested_extension(self) -> str:
+            return ".xlsx"
+
+        def open_binary(self) -> BinaryIO:
+            return BytesIO(payload)
+
+        def size_bytes(self) -> int:
+            return len(payload) + 99
+
+        def modified_at_iso(self) -> str | None:
+            return None
+
+        def source_path(self) -> str | None:
+            return None
+
+    inspection = READER.inspect(MismatchSource())
+    assert inspection.file.size_bytes == len(payload)
+    assert inspection.file.content_hash == sha256(payload).hexdigest()
+    assert any(w.code.value == "SOURCE_SIZE_CHANGED" for w in inspection.warnings)
+
+
+def test_pathological_dimension_is_partial_and_bounded() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "pathological_inflated_dimension")
+    )
+    inspection = _inspect(path)
+    assert inspection.completion_status is InspectionCompletionStatus.PARTIAL
+    assert any(
+        t.code is InspectionTruncationCode.MAX_CELLS_SCANNED for t in inspection.truncation_reasons
+    )
+    assert inspection.cells_scanned <= WorkbookInspectionOptions().max_cells_scanned
+    # Must not approach the declared 10M rectangle.
+    assert inspection.cells_scanned < 10_000
+
+
+def test_max_observed_cells_partial() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "max_observed_cells_partial")
+    )
+    inspection = _inspect(path, max_cells_observed=20)
+    assert inspection.completion_status is InspectionCompletionStatus.PARTIAL
+    assert any(
+        t.code is InspectionTruncationCode.MAX_CELLS_OBSERVED for t in inspection.truncation_reasons
+    )
+    assert inspection.cells_observed == 20
+    coords = [c.coordinate for c in inspection.worksheets[0].cells]
+    assert coords == sorted(
+        coords,
+        key=lambda c: (int("".join(ch for ch in c if ch.isdigit())), c),
+    )
 
 
 def test_missing_file() -> None:
@@ -148,9 +277,10 @@ def test_xlsm_with_vba_stub_detected() -> None:
 
 
 def test_serialization_schema_version() -> None:
-    from exceler.application.workbook.serialization import inspection_to_dict
-
     path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "hidden_sheet"))
     payload = inspection_to_dict(_inspect(path))
-    assert payload["schema_version"] == 1
+    assert payload["schema_version"] == 2
+    assert payload["inspection"]["completion_status"] == "complete"
+    assert payload["inspection"]["truncation_reasons"] == []
+    assert "cells_scanned" in payload["inspection"]
     assert payload["inspection"]["worksheets"][1]["visibility"] == "hidden"

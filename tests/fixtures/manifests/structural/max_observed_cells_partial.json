@@ -1,0 +1,15 @@
+{
+  "scenario_id": "max_observed_cells_partial",
+  "description": "Muchas celdas relevantes; parcial con max_cells_observed reducido",
+  "workbook": "workbooks/structural/max_observed_cells_partial.xlsx",
+  "generator": "inspection_scenarios.build_max_observed_cells_partial",
+  "seed": 20260730,
+  "intentions": [
+    "Con options.max_cells_observed=20 el resultado es parcial"
+  ],
+  "features": [
+    "partial",
+    "observe_limit"
+  ],
+  "versioned": true
+}

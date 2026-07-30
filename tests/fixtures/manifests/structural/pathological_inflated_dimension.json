@@ -1,0 +1,18 @@
+{
+  "scenario_id": "pathological_inflated_dimension",
+  "description": "Dimensión declarada patológica que supera max_cells_scanned",
+  "workbook": "workbooks/structural/pathological_inflated_dimension.xlsx",
+  "generator": "inspection_scenarios.build_pathological_inflated_dimension",
+  "seed": 20260730,
+  "intentions": [
+    "No recorrer el rectángulo completo",
+    "completion_status=partial",
+    "truncation MAX_CELLS_SCANNED"
+  ],
+  "features": [
+    "inflated_dimension",
+    "partial",
+    "scan_limit"
+  ],
+  "versioned": true
+}

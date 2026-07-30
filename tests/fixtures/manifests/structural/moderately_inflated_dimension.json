@@ -1,0 +1,16 @@
+{
+  "scenario_id": "moderately_inflated_dimension",
+  "description": "Dimensión inflada moderada dentro del presupuesto de escaneo",
+  "workbook": "workbooks/structural/moderately_inflated_dimension.xlsx",
+  "generator": "inspection_scenarios.build_moderately_inflated_dimension",
+  "seed": 20260730,
+  "intentions": [
+    "Inspección completa con defaults",
+    "Advertencia DIMENSION_MAY_BE_INFLATED"
+  ],
+  "features": [
+    "inflated_dimension",
+    "complete"
+  ],
+  "versioned": true
+}

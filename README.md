@@ -6,8 +6,8 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 2A en curso:** inspección factual de workbooks (`.xlsx`/`.xlsm`) sin interpretación.
-Fase 2.0 cerrada (corpus sintético). Aún **no** hay detección de tablas/tipos/claves/relaciones.
+**Fase 2A cerrada:** inspección factual de workbooks (identidad por payload, límites scanned/observed, complete/partial).
+Siguiente: **2B** (regiones/tablas lógicas) ampliando primero el corpus; aún **no** hay inferencia semántica.
 
 CI: GitHub Actions (`quality` + unit + fixture verify, `integration` + Postgres, `docker` build + Compose smoke).
 Local sin Docker: `pytest -m "not integration and not docker"`.

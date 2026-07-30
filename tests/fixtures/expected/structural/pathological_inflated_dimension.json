@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "scenario_id": "pathological_inflated_dimension",
+  "workbook": "workbooks/structural/pathological_inflated_dimension.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "completion_status": "partial",
+      "truncation_codes": [
+        "MAX_CELLS_SCANNED"
+      ],
+      "warnings_contain": [
+        "MATERIALIZED_CELLS_FALLBACK",
+        "DIMENSION_MAY_BE_INFLATED"
+      ],
+      "worksheets": [
+        {
+          "name": "Pathological"
+        }
+      ]
+    }
+  }
+}

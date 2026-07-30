@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "scenario_id": "max_observed_cells_partial",
+  "workbook": "workbooks/structural/max_observed_cells_partial.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "options": {
+        "max_cells_observed": 20
+      },
+      "completion_status": "partial",
+      "truncation_codes": [
+        "MAX_CELLS_OBSERVED"
+      ],
+      "worksheets": [
+        {
+          "name": "Many",
+          "max_observed_cells": 20
+        }
+      ]
+    }
+  }
+}

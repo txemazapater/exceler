@@ -80,6 +80,7 @@ def worksheet_to_dict(ws: WorksheetInspection) -> dict[str, Any]:
         ],
         "cells": [cell_to_dict(cell) for cell in ws.cells],
         "cells_observed": ws.cells_observed,
+        "cells_scanned": ws.cells_scanned,
     }
 
 
@@ -94,6 +95,15 @@ def inspection_to_dict(
         "inspection": {
             "inspector_version": inspection.inspector_version,
             "format": inspection.format.value,
+            "completion_status": inspection.completion_status.value,
+            "truncation_reasons": [
+                {
+                    "code": item.code.value,
+                    "message": item.message,
+                    "location": item.location,
+                }
+                for item in inspection.truncation_reasons
+            ],
             "file": {
                 "file_name": inspection.file.file_name,
                 "extension": inspection.file.extension,
@@ -125,6 +135,7 @@ def inspection_to_dict(
             ],
             "limitations": list(inspection.limitations),
             "cells_observed": inspection.cells_observed,
+            "cells_scanned": inspection.cells_scanned,
             "worksheets_observed": inspection.worksheets_observed,
             "duration_ms": inspection.duration_ms,
         },
@@ -137,7 +148,6 @@ def inspection_to_dict(
 
 def deterministic_inspection_dict(inspection: WorkbookInspection) -> dict[str, Any]:
     data = inspection_to_dict(inspection, include_ephemeral=False)
-    # Drop volatile identity fields from nested file for pure content comparison.
     file_meta = data["inspection"]["file"]
     file_meta.pop("source_path", None)
     file_meta.pop("modified_at", None)

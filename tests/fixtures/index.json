@@ -21,6 +21,9 @@
     "freeze_and_autofilter",
     "hidden_rows",
     "inflated_dimension",
+    "moderately_inflated_dimension",
+    "pathological_inflated_dimension",
+    "max_observed_cells_partial",
     "cell_physical_types",
     "defined_names_variants",
     "merged_variants",
@@ -54,6 +57,9 @@
     "workbooks/structural/freeze_and_autofilter.xlsx",
     "workbooks/structural/hidden_rows.xlsx",
     "workbooks/structural/inflated_dimension.xlsx",
+    "workbooks/structural/moderately_inflated_dimension.xlsx",
+    "workbooks/structural/pathological_inflated_dimension.xlsx",
+    "workbooks/structural/max_observed_cells_partial.xlsx",
     "workbooks/types/cell_physical_types.xlsx",
     "workbooks/structural/defined_names_variants.xlsx",
     "workbooks/structural/merged_variants.xlsx",
@@ -67,5 +73,5 @@
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 31
+  "count": 34
 }
