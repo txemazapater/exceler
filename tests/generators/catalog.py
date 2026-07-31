@@ -35,7 +35,7 @@ for name, fn in inspection_scenarios.BUILDERS.items():
 for name, fn in profiling_scenarios.BUILDERS.items():
     ALL_BUILDERS[name] = fn  # type: ignore[assignment]
 for name, fn in relationship_scenarios.BUILDERS.items():
-    ALL_BUILDERS[name] = fn  # type: ignore[assignment]
+    ALL_BUILDERS[name] = fn
 for name, fn in corporate_scenarios.BUILDERS.items():
     ALL_BUILDERS[name] = fn  # type: ignore[assignment]
 
