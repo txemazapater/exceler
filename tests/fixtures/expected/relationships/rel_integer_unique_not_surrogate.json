@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "scenario_id": "rel_duplicate_identifier",
-  "workbook": "workbooks/relationships/rel_duplicate_identifier.xlsx",
+  "scenario_id": "rel_integer_unique_not_surrogate",
+  "workbook": "workbooks/relationships/rel_integer_unique_not_surrogate.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
     "inspection": {
@@ -12,13 +12,14 @@
     "relationships": {
       "sheets": [
         {
-          "name": "Dup",
-          "accepted_primary_keys_max": 0,
+          "name": "Rows",
           "primary_keys": [
             {
               "column_index": 1,
               "accepted": false,
-              "rejection_reason": "below_min_pk_distinct_ratio"
+              "key_kind": "primary",
+              "key_kind_not": "surrogate",
+              "rejection_reason": "numeric_logical_type_not_accepted"
             }
           ]
         }

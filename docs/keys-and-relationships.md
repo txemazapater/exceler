@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile → relationships en una sola lectura de
 - Dominio: `exceler.domain.relationships`
 - Implementación: `DeterministicRelationshipAnalyzer`
 - `relationship_schema_version` = **1**
-- `relationship_engine_version` = **2D.1**
+- `relationship_engine_version` = **2D.2**
 - Conserva versiones de inspector / detector / profiler / regions / profiling
 
 Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling.workbook_hash`
@@ -38,19 +38,31 @@ Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling
 
 ## Salida
 
-- `primary_keys` / `composite_keys` por hoja (candidatos, nunca “la” PK definitiva)
+- `primary_keys` / `composite_keys` por hoja con `score`, `confidence`, `accepted`,
+  `rejection_reasons` (candidatos, nunca “la” PK definitiva)
 - `foreign_keys` y `relationships` con inclusión, cobertura, huérfanos y cardinalidad
-- `graph` (nodos/aristas estructurales)
+- `graph` (nodos/aristas estructurales; solo candidatos **accepted**)
 - evidencias (`RelationshipEvidenceItem`) y warnings/limitations
 
-Composites en 2D.1: **pares** solamente (triples detrás de opción, default off).
+Composites: **pares** solamente (triples detrás de opción, default off).
+
+## Confianza y aceptación (2D.2)
+
+1. `score`/`confidence` se normalizan contra el **peso positivo máximo posible**
+   (`RelationshipOptions.max_*_positive_weight`), no contra la evidencia presente.
+2. La aceptación es ortogonal al score: umbrales de distinct/null/score y tipos penalizados.
+3. Candidatos rechazados pueden emitirse marcados (`accepted=false`) para inspección.
+4. `INTEGER` + unicidad **no** implica `SURROGATE`; ese kind queda reservado a evidencia más fuerte.
+5. Tipos `TEXT`/`BOOLEAN`/… penalizados se rechazan como PK aunque sean únicos.
+6. `INTEGER`/`NUMBER`/`DECIMAL` únicos se puntúan pero **no se aceptan** como PK en 2D.2
+   (y nunca se etiquetan `SURROGATE` solo por unicidad).
 
 ## Decisiones
 
 1. Sin señales de nombre de columna para ranking PK/FK (headers solo en salida humana).
 2. Sin openpyxl/Excel/pandas en `domain.relationships` ni `application.relationships`.
 3. MVP de un solo workbook; IDs de extremos permiten multi-workbook futuro.
-4. Confianza = suma ponderada de evidencias centralizadas en `RelationshipOptions`.
+4. Pesos de evidencia centralizados en `RelationshipOptions`.
 5. Pares FK ambiguos: se conservan alternativas; no se fuerza un ganador.
 6. Bridge N:M: ambas lados no únicos + inclusión mutua alta → `many_to_many` con confianza moderada.
 
@@ -58,7 +70,8 @@ Composites en 2D.1: **pares** solamente (triples detrás de opción, default off
 
 `rel_simple_primary_key`, `rel_duplicate_identifier`, `rel_composite_key`,
 `rel_customers_orders`, `rel_invoice_header_lines`, `rel_orphan_and_partial`,
-`rel_bridge_table` — expectativas parciales en `expectations.relationships`.
+`rel_bridge_table`, `rel_integer_unique_not_surrogate`, `rel_pk_ranking` —
+expectativas parciales en `expectations.relationships` (incluye negativos y ranking).
 
 ## Fuera de alcance
 

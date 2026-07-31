@@ -8,7 +8,7 @@ from exceler.application.relationships.domain_compat import (
     domain_compatibility_score,
     logical_types_compatible,
 )
-from exceler.application.relationships.evidence import clamp, confidence_from_evidence
+from exceler.application.relationships.evidence import confidence_from_evidence
 from exceler.application.relationships.value_index import ColumnValueSet
 from exceler.domain.relationships.enums import Exactness, RelationshipCardinality
 from exceler.domain.relationships.models import (
@@ -86,7 +86,8 @@ def discover_foreign_keys(
 
     candidates.sort(
         key=lambda item: (
-            -item.confidence,
+            -int(item.accepted),
+            -item.score,
             -item.inclusion_ratio,
             item.from_column.column_id,
             item.to_column.column_id,
@@ -143,6 +144,7 @@ def _score_fk(
             "logical types compatible",
         ),
     ]
+    rejection_reasons: list[str] = []
     if orphan_ratio > 0:
         evidence.append(
             RelationshipEvidenceItem(
@@ -153,12 +155,21 @@ def _score_fk(
         )
 
     penalty = options.truncation_penalty if truncated else 0.0
-    confidence = confidence_from_evidence(evidence, penalty=penalty)
+    score = confidence_from_evidence(
+        evidence,
+        max_positive_weight=options.max_fk_positive_weight,
+        penalty=penalty,
+    )
+    if score < options.min_fk_score:
+        rejection_reasons.append("below_min_fk_score")
+    accepted = not rejection_reasons
 
     return ForeignKeyCandidate(
         from_column=child.ref,
         to_column=parent.ref,
-        confidence=clamp(confidence),
+        score=score,
+        confidence=score,
+        accepted=accepted,
         inclusion_ratio=inclusion,
         coverage_ratio=coverage,
         orphan_ratio=orphan_ratio,
@@ -167,6 +178,7 @@ def _score_fk(
         cardinality=cardinality,
         exactness=Exactness.TRUNCATED if truncated else Exactness.EXACT,
         evidence=tuple(evidence),
+        rejection_reasons=tuple(rejection_reasons),
         warnings=tuple(dict.fromkeys([*child.warnings, *parent.warnings])),
     )
 
@@ -199,6 +211,8 @@ def relationships_from_foreign_keys(
 ) -> list[RelationshipCandidate]:
     results: list[RelationshipCandidate] = []
     for fk in foreign_keys:
+        if not fk.accepted:
+            continue
         results.append(
             RelationshipCandidate(
                 from_column=fk.from_column,

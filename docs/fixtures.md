@@ -57,7 +57,7 @@ Sirve para aceptar de forma segura la extensión; no contiene macros ejecutables
 
 Durante 2A–2D se validan `expectations.inspection`, `expectations.regions`,
 `expectations.profiling` y `expectations.relationships` cuando existan.
-Corpus 2D: `rel_*` bajo `workbooks/relationships/`.
+Corpus 2D: `rel_*` bajo `workbooks/relationships/` (incluye negativos y ranking en 2D.2).
 
 ## Restricción
 

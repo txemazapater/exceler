@@ -199,6 +199,45 @@ def build_rel_bridge_table(_seed: int) -> Workbook:
     return wb
 
 
+def build_rel_integer_unique_not_surrogate(_seed: int) -> Workbook:
+    wb = new_workbook(sheet_title="Rows")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["RowNum", "Label"],
+            [1, "a"],
+            [2, "b"],
+            [3, "c"],
+            [4, "d"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+    return wb
+
+
+def build_rel_pk_ranking(_seed: int) -> Workbook:
+    """Code + unique free-text names: code must rank first among accepted PKs."""
+    wb = new_workbook(sheet_title="People")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["PersonCode", "FullName"],
+            ["P-01", "Alice Example"],
+            ["P-02", "Bob Example"],
+            ["P-03", "Carol Example"],
+            ["P-04", "Dan Example"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+    for row in range(2, 6):
+        ws.cell(row, 1).number_format = "@"
+    return wb
+
+
 RELATIONSHIP_SPECS: list[ScenarioSpec] = [
     ScenarioSpec(
         scenario_id="rel_simple_primary_key",
@@ -214,10 +253,13 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                 "sheets": [
                     {
                         "name": "Customers",
+                        "pk_rank_order": [1],
                         "primary_keys": [
                             {
                                 "column_index": 1,
-                                "minimum_confidence": 0.55,
+                                "accepted": True,
+                                "key_kind": "natural",
+                                "minimum_score": 0.45,
                             }
                         ],
                     }
@@ -239,10 +281,12 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                 "sheets": [
                     {
                         "name": "Dup",
+                        "accepted_primary_keys_max": 0,
                         "primary_keys": [
                             {
                                 "column_index": 1,
-                                "maximum_confidence": 0.7,
+                                "accepted": False,
+                                "rejection_reason": "below_min_pk_distinct_ratio",
                             }
                         ],
                     }
@@ -287,8 +331,9 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         "from_column_index": 2,
                         "to_sheet": "Customers",
                         "to_column_index": 1,
+                        "accepted": True,
                         "minimum_inclusion": 0.99,
-                        "minimum_confidence": 0.5,
+                        "minimum_confidence": 0.35,
                     }
                 ]
             },
@@ -311,6 +356,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         "from_column_index": 1,
                         "to_sheet": "Invoices",
                         "to_column_index": 1,
+                        "accepted": True,
                         "cardinality": "one_to_many",
                     }
                 ]
@@ -355,6 +401,65 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
             },
         },
     ),
+    ScenarioSpec(
+        scenario_id="rel_integer_unique_not_surrogate",
+        category="relationships",
+        description="Unique integers are not auto-labeled SURROGATE",
+        relative_workbook="workbooks/relationships/rel_integer_unique_not_surrogate.xlsx",
+        generator_name="relationship_scenarios.build_rel_integer_unique_not_surrogate",
+        intentions=["INTEGER+unique must not imply SURROGATE"],
+        features=["relationships", "key_kind"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 1}},
+            "relationships": {
+                "sheets": [
+                    {
+                        "name": "Rows",
+                        "primary_keys": [
+                            {
+                                "column_index": 1,
+                                "accepted": False,
+                                "key_kind": "primary",
+                                "key_kind_not": "surrogate",
+                                "rejection_reason": "numeric_logical_type_not_accepted",
+                            }
+                        ],
+                    }
+                ]
+            },
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="rel_pk_ranking",
+        category="relationships",
+        description="Code ranks above unique free-text name",
+        relative_workbook="workbooks/relationships/rel_pk_ranking.xlsx",
+        generator_name="relationship_scenarios.build_rel_pk_ranking",
+        intentions=["PK ranking prefers code/identifier over text"],
+        features=["relationships", "ranking"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 1}},
+            "relationships": {
+                "sheets": [
+                    {
+                        "name": "People",
+                        "pk_rank_order": [1],
+                        "primary_keys": [
+                            {
+                                "column_index": 1,
+                                "accepted": True,
+                                "key_kind": "natural",
+                            },
+                            {
+                                "column_index": 2,
+                                "accepted": False,
+                            },
+                        ],
+                    }
+                ]
+            },
+        },
+    ),
 ]
 
 BUILDERS = {
@@ -365,4 +470,8 @@ BUILDERS = {
     "relationship_scenarios.build_rel_invoice_header_lines": build_rel_invoice_header_lines,
     "relationship_scenarios.build_rel_orphan_and_partial": build_rel_orphan_and_partial,
     "relationship_scenarios.build_rel_bridge_table": build_rel_bridge_table,
+    "relationship_scenarios.build_rel_integer_unique_not_surrogate": (
+        build_rel_integer_unique_not_surrogate
+    ),
+    "relationship_scenarios.build_rel_pk_ranking": build_rel_pk_ranking,
 }

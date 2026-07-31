@@ -37,6 +37,8 @@ REL_SCENARIO_IDS = {
     "rel_invoice_header_lines",
     "rel_orphan_and_partial",
     "rel_bridge_table",
+    "rel_integer_unique_not_surrogate",
+    "rel_pk_ranking",
 }
 
 
@@ -125,7 +127,52 @@ def test_customers_orders_fk_inclusion() -> None:
 def test_composite_key_detected() -> None:
     path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "rel_composite_key"))
     _i, _r, _p, result = _run(path)
-    assert any(sheet.composite_keys for sheet in result.sheets)
+    assert any(ck.accepted for sheet in result.sheets for ck in sheet.composite_keys)
+
+
+def test_duplicate_identifier_rejected() -> None:
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "rel_duplicate_identifier"))
+    _i, _r, _p, result = _run(path)
+    sheet = result.sheets[0]
+    assert not any(pk.accepted for pk in sheet.primary_keys)
+    dup = next(pk for pk in sheet.primary_keys if pk.column.column_index == 1)
+    assert "below_min_pk_distinct_ratio" in dup.rejection_reasons
+
+
+def test_integer_unique_not_surrogate() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_integer_unique_not_surrogate")
+    )
+    _i, _r, _p, result = _run(path)
+    pk = next(pk for pk in result.sheets[0].primary_keys if pk.column.column_index == 1)
+    assert pk.key_kind.value == "primary"
+    assert pk.key_kind.value != "surrogate"
+    assert pk.accepted is False
+    assert "numeric_logical_type_not_accepted" in pk.rejection_reasons
+
+
+def test_pk_ranking_prefers_code_over_text() -> None:
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "rel_pk_ranking"))
+    _i, _r, _p, result = _run(path)
+    accepted = [pk for pk in result.sheets[0].primary_keys if pk.accepted]
+    assert accepted
+    assert accepted[0].column.column_index == 1
+    name_pk = next(pk for pk in result.sheets[0].primary_keys if pk.column.column_index == 2)
+    assert name_pk.accepted is False
+    assert "penalized_logical_type" in name_pk.rejection_reasons
+
+
+def test_confidence_calibrated_against_max_weight() -> None:
+    from exceler.application.relationships.evidence import confidence_from_evidence
+    from exceler.domain.relationships.models import RelationshipEvidenceItem
+
+    items = [
+        RelationshipEvidenceItem("a", 0.35, "only distinct"),
+        RelationshipEvidenceItem("b", 0.25, "only non-null"),
+    ]
+    # Against max 1.0, missing identifier+logical → score 0.60, not 1.0.
+    score = confidence_from_evidence(items, max_positive_weight=1.0)
+    assert 0.59 <= score <= 0.61
 
 
 def test_cli_workbook_relationships_json(tmp_path: Path) -> None:

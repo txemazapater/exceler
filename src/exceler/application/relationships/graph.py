@@ -98,6 +98,8 @@ def build_structural_graph(
         )
 
     for pk in primary_keys:
+        if not pk.accepted:
+            continue
         edges.append(
             GraphEdge(
                 id=f"pk::{pk.column.column_id}",
@@ -109,6 +111,8 @@ def build_structural_graph(
             )
         )
     for ck in composite_keys:
+        if not ck.accepted:
+            continue
         edge_id = "composite::" + "+".join(cref.column_id for cref in ck.columns)
         for cref in ck.columns:
             edges.append(
@@ -122,6 +126,8 @@ def build_structural_graph(
                 )
             )
     for fk in foreign_keys:
+        if not fk.accepted:
+            continue
         edges.append(
             GraphEdge(
                 id=f"fk::{fk.from_column.column_id}::{fk.to_column.column_id}",

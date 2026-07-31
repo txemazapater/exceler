@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_pk_ranking",
+  "description": "Code ranks above unique free-text name",
+  "workbook": "workbooks/relationships/rel_pk_ranking.xlsx",
+  "generator": "relationship_scenarios.build_rel_pk_ranking",
+  "seed": 20260730,
+  "intentions": [
+    "PK ranking prefers code/identifier over text"
+  ],
+  "features": [
+    "relationships",
+    "ranking"
+  ],
+  "versioned": true
+}

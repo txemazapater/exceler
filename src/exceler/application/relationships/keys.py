@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from exceler.application.relationships.evidence import clamp, confidence_from_evidence
+from exceler.application.relationships.evidence import confidence_from_evidence
 from exceler.application.relationships.value_index import ColumnValueSet
 from exceler.domain.profiling.enums import LogicalValueType
 from exceler.domain.relationships.enums import Exactness, KeyKind
@@ -16,11 +16,11 @@ from exceler.domain.relationships.models import (
 )
 from exceler.domain.relationships.options import RelationshipOptions
 
+# INTEGER is intentionally not preferred: uniqueness alone must not imply a surrogate key.
 _PREFERRED_TYPES = {
     LogicalValueType.IDENTIFIER,
     LogicalValueType.UUID,
     LogicalValueType.CODE,
-    LogicalValueType.INTEGER,
 }
 _PENALIZED_TYPES = {
     LogicalValueType.BOOLEAN,
@@ -29,6 +29,11 @@ _PENALIZED_TYPES = {
     LogicalValueType.TEXT,
     LogicalValueType.EMPTY,
     LogicalValueType.UNKNOWN,
+}
+_NUMERIC_TYPES = {
+    LogicalValueType.INTEGER,
+    LogicalValueType.NUMBER,
+    LogicalValueType.DECIMAL,
 }
 
 
@@ -43,11 +48,21 @@ def discover_primary_keys(
 
     results: list[PrimaryKeyCandidate] = []
     for _region_id, cols in sorted(by_region.items()):
-        ranked = sorted(
-            (_score_pk(col, options) for col in cols),
-            key=lambda item: (-item.confidence, item.column.column_index, item.column.column_id),
+        scored = [_score_pk(col, options) for col in cols]
+        accepted = [item for item in scored if item.accepted]
+        rejected = [item for item in scored if not item.accepted]
+        accepted.sort(
+            key=lambda item: (-item.score, item.column.column_index, item.column.column_id)
         )
-        results.extend(ranked[: options.max_pk_candidates_per_region])
+        rejected.sort(
+            key=lambda item: (-item.score, item.column.column_index, item.column.column_id)
+        )
+        region_results = accepted[: options.max_pk_candidates_per_region]
+        if options.emit_rejected_key_candidates:
+            # Keep rejected visible (capped) so false positives remain inspectable.
+            remaining = max(0, options.max_pk_candidates_per_region - len(region_results))
+            region_results.extend(rejected[: max(remaining, 3)])
+        results.extend(region_results)
     return results
 
 
@@ -61,6 +76,7 @@ def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCa
 
     evidence: list[RelationshipEvidenceItem] = []
     warnings = list(col.warnings)
+    rejection_reasons: list[str] = []
 
     evidence.append(
         RelationshipEvidenceItem(
@@ -103,8 +119,10 @@ def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCa
             )
         )
         warnings.append(f"Logical type {logical.value} is unlikely for a primary key.")
+        rejection_reasons.append("penalized_logical_type")
 
     if distinct_ratio < options.min_pk_distinct_ratio:
+        rejection_reasons.append("below_min_pk_distinct_ratio")
         evidence.append(
             RelationshipEvidenceItem(
                 "below_distinct_threshold",
@@ -113,6 +131,7 @@ def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCa
             )
         )
     if non_null_ratio < options.min_pk_non_null_ratio:
+        rejection_reasons.append("below_min_pk_non_null_ratio")
         evidence.append(
             RelationshipEvidenceItem(
                 "below_non_null_threshold",
@@ -120,19 +139,42 @@ def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCa
                 "null ratio above primary-key threshold",
             )
         )
+    if col.content_count < 1:
+        rejection_reasons.append("no_content_values")
+    # Unique numerics are scored but not accepted as PK in 2D.2 (no SURROGATE shortcut).
+    if logical in _NUMERIC_TYPES:
+        rejection_reasons.append("numeric_logical_type_not_accepted")
+        evidence.append(
+            RelationshipEvidenceItem(
+                "numeric_not_accepted_as_pk",
+                -0.15,
+                "numeric uniqueness alone is not accepted as primary key",
+            )
+        )
 
     penalty = options.truncation_penalty if col.exactness is Exactness.TRUNCATED else 0.0
-    confidence = confidence_from_evidence(evidence, penalty=penalty)
+    score = confidence_from_evidence(
+        evidence,
+        max_positive_weight=options.max_pk_positive_weight,
+        penalty=penalty,
+    )
+    if score < options.min_pk_score:
+        rejection_reasons.append("below_min_pk_score")
 
+    accepted = not rejection_reasons
+    # confidence mirrors score for ranking; acceptance is orthogonal.
+    confidence = score
+
+    # INTEGER + unique alone is never treated as SURROGATE (reserved for stronger evidence).
     key_kind = KeyKind.PRIMARY
-    if logical is LogicalValueType.INTEGER and distinct_ratio >= options.min_pk_distinct_ratio:
-        key_kind = KeyKind.SURROGATE
-    elif logical in {LogicalValueType.CODE, LogicalValueType.IDENTIFIER, LogicalValueType.UUID}:
+    if logical in {LogicalValueType.CODE, LogicalValueType.IDENTIFIER, LogicalValueType.UUID}:
         key_kind = KeyKind.NATURAL
 
     return PrimaryKeyCandidate(
         column=col.ref,
+        score=score,
         confidence=confidence,
+        accepted=accepted,
         key_kind=key_kind,
         statistics=RelationshipStatistics(
             distinct_count=len(col.distinct),
@@ -142,6 +184,7 @@ def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCa
             exactness=col.exactness,
         ),
         evidence=tuple(evidence),
+        rejection_reasons=tuple(rejection_reasons),
         warnings=tuple(warnings),
     )
 
@@ -157,7 +200,6 @@ def discover_composite_keys(
 
     results: list[CompositeKeyCandidate] = []
     for _region_id, cols in sorted(by_region.items()):
-        # Candidates: not unique alone, but have moderate distinctness.
         weak = [
             col
             for col in cols
@@ -178,11 +220,14 @@ def discover_composite_keys(
         for i, left in enumerate(weak):
             for right in weak[i + 1 :]:
                 candidate = _score_pair(left, right, options)
-                if candidate is not None:
+                if candidate is not None and (
+                    candidate.accepted or options.emit_rejected_key_candidates
+                ):
                     results.append(candidate)
     results.sort(
         key=lambda item: (
-            -item.confidence,
+            -int(item.accepted),
+            -item.score,
             item.columns[0].column_id,
             item.columns[1].column_id,
         )
@@ -208,40 +253,57 @@ def _score_pair(
     counter = Counter(pairs)
     if len(counter) > options.max_distinct_values_tracked:
         truncated = True
-        # Keep deterministic subset for ratio estimate
         keys = sorted(counter.keys())[: options.max_distinct_values_tracked]
         counter = Counter({key: counter[key] for key in keys})
     distinct_ratio = len(counter) / max(len(pairs), 1)
-    if distinct_ratio < options.min_pk_distinct_ratio:
-        return None
-    # Require both sides alone not unique
     left_ratio = len(left.distinct) / max(left.content_count, 1)
     right_ratio = len(right.distinct) / max(right.content_count, 1)
+
+    rejection_reasons: list[str] = []
+    if distinct_ratio < options.min_pk_distinct_ratio:
+        rejection_reasons.append("below_min_joint_distinct_ratio")
     if left_ratio >= options.min_pk_distinct_ratio or right_ratio >= options.min_pk_distinct_ratio:
-        return None
+        rejection_reasons.append("part_already_unique")
 
     evidence = [
         RelationshipEvidenceItem(
             "joint_unique",
-            0.55,
+            options.weight_joint_unique * distinct_ratio,
             f"joint_distinct_ratio={distinct_ratio:.4f}",
             {"joint_distinct_ratio": distinct_ratio},
         ),
         RelationshipEvidenceItem(
             "parts_not_unique",
-            0.35,
+            options.weight_parts_not_unique
+            * (1.0 if left_ratio < options.min_pk_distinct_ratio else 0.0)
+            * (1.0 if right_ratio < options.min_pk_distinct_ratio else 0.0),
             f"left_ratio={left_ratio:.4f} right_ratio={right_ratio:.4f}",
         ),
     ]
     penalty = options.truncation_penalty if truncated else 0.0
-    confidence = confidence_from_evidence(evidence, penalty=penalty)
+    score = confidence_from_evidence(
+        evidence,
+        max_positive_weight=options.max_composite_positive_weight,
+        penalty=penalty,
+    )
+    if score < options.min_pk_score:
+        rejection_reasons.append("below_min_pk_score")
+
+    # Drop pairs that never approached composite uniqueness unless emitting rejects.
+    if "below_min_joint_distinct_ratio" in rejection_reasons and distinct_ratio < 0.5:
+        return None
+
+    accepted = not rejection_reasons
     cols = tuple(sorted([left.ref, right.ref], key=lambda ref: (ref.column_index, ref.column_id)))
     return CompositeKeyCandidate(
         columns=cols,
-        confidence=clamp(confidence),
+        score=score,
+        confidence=score,
+        accepted=accepted,
         joint_distinct_ratio=distinct_ratio,
         joint_content_count=len(pairs),
         exactness=Exactness.TRUNCATED if truncated else Exactness.EXACT,
         evidence=tuple(evidence),
+        rejection_reasons=tuple(rejection_reasons),
         warnings=tuple(dict.fromkeys([*left.warnings, *right.warnings])),
     )

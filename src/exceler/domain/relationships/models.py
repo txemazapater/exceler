@@ -73,19 +73,25 @@ class RelationshipStatistics:
 @dataclass(frozen=True)
 class PrimaryKeyCandidate:
     column: ColumnRef
+    score: float
     confidence: float
+    accepted: bool
     key_kind: KeyKind
     statistics: RelationshipStatistics
     evidence: tuple[RelationshipEvidenceItem, ...]
+    rejection_reasons: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "column": self.column.to_dict(),
+            "score": self.score,
             "confidence": self.confidence,
+            "accepted": self.accepted,
             "key_kind": self.key_kind.value,
             "statistics": self.statistics.to_dict(),
             "evidence": [item.to_dict() for item in self.evidence],
+            "rejection_reasons": list(self.rejection_reasons),
             "warnings": list(self.warnings),
         }
 
@@ -93,21 +99,27 @@ class PrimaryKeyCandidate:
 @dataclass(frozen=True)
 class CompositeKeyCandidate:
     columns: tuple[ColumnRef, ...]
+    score: float
     confidence: float
+    accepted: bool
     joint_distinct_ratio: float
     joint_content_count: int
     exactness: Exactness
     evidence: tuple[RelationshipEvidenceItem, ...]
+    rejection_reasons: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "columns": [col.to_dict() for col in self.columns],
+            "score": self.score,
             "confidence": self.confidence,
+            "accepted": self.accepted,
             "joint_distinct_ratio": self.joint_distinct_ratio,
             "joint_content_count": self.joint_content_count,
             "exactness": self.exactness.value,
             "evidence": [item.to_dict() for item in self.evidence],
+            "rejection_reasons": list(self.rejection_reasons),
             "warnings": list(self.warnings),
         }
 
@@ -116,7 +128,9 @@ class CompositeKeyCandidate:
 class ForeignKeyCandidate:
     from_column: ColumnRef
     to_column: ColumnRef
+    score: float
     confidence: float
+    accepted: bool
     inclusion_ratio: float
     coverage_ratio: float
     orphan_ratio: float
@@ -125,13 +139,16 @@ class ForeignKeyCandidate:
     cardinality: RelationshipCardinality
     exactness: Exactness
     evidence: tuple[RelationshipEvidenceItem, ...]
+    rejection_reasons: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "from_column": self.from_column.to_dict(),
             "to_column": self.to_column.to_dict(),
+            "score": self.score,
             "confidence": self.confidence,
+            "accepted": self.accepted,
             "inclusion_ratio": self.inclusion_ratio,
             "coverage_ratio": self.coverage_ratio,
             "orphan_ratio": self.orphan_ratio,
@@ -140,6 +157,7 @@ class ForeignKeyCandidate:
             "cardinality": self.cardinality.value,
             "exactness": self.exactness.value,
             "evidence": [item.to_dict() for item in self.evidence],
+            "rejection_reasons": list(self.rejection_reasons),
             "warnings": list(self.warnings),
         }
 

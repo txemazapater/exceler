@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_integer_unique_not_surrogate",
+  "description": "Unique integers are not auto-labeled SURROGATE",
+  "workbook": "workbooks/relationships/rel_integer_unique_not_surrogate.xlsx",
+  "generator": "relationship_scenarios.build_rel_integer_unique_not_surrogate",
+  "seed": 20260730,
+  "intentions": [
+    "INTEGER+unique must not imply SURROGATE"
+  ],
+  "features": [
+    "relationships",
+    "key_kind"
+  ],
+  "versioned": true
+}

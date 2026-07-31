@@ -16,8 +16,9 @@
           "from_column_index": 2,
           "to_sheet": "Customers",
           "to_column_index": 1,
+          "accepted": true,
           "minimum_inclusion": 0.99,
-          "minimum_confidence": 0.5
+          "minimum_confidence": 0.35
         }
       ]
     }

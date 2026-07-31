@@ -35,7 +35,9 @@ _LIMITATIONS = (
     "Column names are never used as ranking signals.",
     "Formula cells contribute no key values (unevaluated).",
     "Analyzer consumes inspection + regions + profiling only; never re-reads Excel.",
-    "Single-workbook analysis in 2D.1; multi-workbook support is reserved.",
+    "Confidence is calibrated against max possible evidence weight (2D.2).",
+    "INTEGER uniqueness alone never implies SURROGATE key kind.",
+    "Single-workbook analysis in 2D.2; multi-workbook support is reserved.",
 )
 
 

@@ -13,10 +13,15 @@
       "sheets": [
         {
           "name": "Customers",
+          "pk_rank_order": [
+            1
+          ],
           "primary_keys": [
             {
               "column_index": 1,
-              "minimum_confidence": 0.55
+              "accepted": true,
+              "key_kind": "natural",
+              "minimum_score": 0.45
             }
           ]
         }

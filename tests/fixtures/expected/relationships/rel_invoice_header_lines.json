@@ -16,6 +16,7 @@
           "from_column_index": 1,
           "to_sheet": "Invoices",
           "to_column_index": 1,
+          "accepted": true,
           "cardinality": "one_to_many"
         }
       ]

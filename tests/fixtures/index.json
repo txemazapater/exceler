@@ -49,6 +49,8 @@
     "rel_invoice_header_lines",
     "rel_orphan_and_partial",
     "rel_bridge_table",
+    "rel_integer_unique_not_surrogate",
+    "rel_pk_ranking",
     "hell_erp_clientes",
     "hell_erp_articulos",
     "hell_erp_pedidos",
@@ -103,11 +105,13 @@
     "workbooks/relationships/rel_invoice_header_lines.xlsx",
     "workbooks/relationships/rel_orphan_and_partial.xlsx",
     "workbooks/relationships/rel_bridge_table.xlsx",
+    "workbooks/relationships/rel_integer_unique_not_surrogate.xlsx",
+    "workbooks/relationships/rel_pk_ranking.xlsx",
     "workbooks/scenarios/hell_erp/clientes.xlsx",
     "workbooks/scenarios/hell_erp/articulos.xlsx",
     "workbooks/scenarios/hell_erp/pedidos.xlsx",
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 52
+  "count": 54
 }

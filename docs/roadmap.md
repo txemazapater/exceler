@@ -119,11 +119,13 @@ Siguiente corte: semántica / entidades (y relaciones inter-workbook más adelan
 - `DeterministicRelationshipAnalyzer` consume solo inspection + regions + profiling.
 - Candidatos PK / compuestos (pares) / FK con inclusión, huérfanos y cardinalidad.
 - Grafo estructural; evidencias explícitas; sin ranking por nombres de columna.
+- **2D.2:** confianza vs peso máximo, `accepted`/`rejection_reasons`, sin SURROGATE
+  automático por INTEGER único; corpus negativo + ranking.
 - CLI `exceler workbook relationships`; expected `expectations.relationships`;
-  schema **1** / engine **2D.1**.
+  schema **1** / engine **2D.2**.
 - Documentación `docs/keys-and-relationships.md`.
 
-**Salida:** candidatos estructurales revisables (no constraints definitivos). **Cerrada (2D.1).**
+**Salida:** candidatos estructurales revisables (no constraints definitivos). **Cerrada (2D.2).**
 
 ## Relación inter-workbook (diferido)
 

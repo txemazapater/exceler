@@ -162,22 +162,29 @@ def _print_relationships_human(result: RelationshipAnalysisResult) -> None:
     for sheet in result.sheets:
         typer.echo(f"[{sheet.sheet_index}] {sheet.sheet_name}")
         for pk in sheet.primary_keys[:8]:
+            status = "accepted" if pk.accepted else "rejected"
+            reasons = f" reasons={','.join(pk.rejection_reasons)}" if pk.rejection_reasons else ""
             typer.echo(
                 f"  PK {pk.column.column_letter} {pk.column.effective_name}: "
-                f"conf={pk.confidence:.2f} kind={pk.key_kind.value} "
-                f"distinct_ratio={pk.statistics.distinct_ratio:.3f}"
+                f"{status} score={pk.score:.2f} conf={pk.confidence:.2f} "
+                f"kind={pk.key_kind.value} "
+                f"distinct_ratio={pk.statistics.distinct_ratio:.3f}{reasons}"
             )
         for ck in sheet.composite_keys[:5]:
             names = "+".join(f"{c.column_letter}:{c.effective_name}" for c in ck.columns)
-            typer.echo(f"  Composite {names}: conf={ck.confidence:.2f}")
+            status = "accepted" if ck.accepted else "rejected"
+            typer.echo(
+                f"  Composite {names}: {status} score={ck.score:.2f} conf={ck.confidence:.2f}"
+            )
     if result.foreign_keys:
         typer.echo("Foreign keys:")
         for fk in result.foreign_keys[:12]:
+            status = "accepted" if fk.accepted else "rejected"
             typer.echo(
                 f"  {fk.from_column.sheet_name}.{fk.from_column.effective_name} → "
                 f"{fk.to_column.sheet_name}.{fk.to_column.effective_name} "
-                f"incl={fk.inclusion_ratio:.3f} orphans={fk.orphan_count} "
-                f"card={fk.cardinality.value} conf={fk.confidence:.2f}"
+                f"{status} incl={fk.inclusion_ratio:.3f} orphans={fk.orphan_count} "
+                f"card={fk.cardinality.value} score={fk.score:.2f}"
             )
 
 

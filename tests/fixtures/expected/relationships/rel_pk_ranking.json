@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "scenario_id": "rel_duplicate_identifier",
-  "workbook": "workbooks/relationships/rel_duplicate_identifier.xlsx",
+  "scenario_id": "rel_pk_ranking",
+  "workbook": "workbooks/relationships/rel_pk_ranking.xlsx",
   "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
   "expectations": {
     "inspection": {
@@ -12,13 +12,19 @@
     "relationships": {
       "sheets": [
         {
-          "name": "Dup",
-          "accepted_primary_keys_max": 0,
+          "name": "People",
+          "pk_rank_order": [
+            1
+          ],
           "primary_keys": [
             {
               "column_index": 1,
-              "accepted": false,
-              "rejection_reason": "below_min_pk_distinct_ratio"
+              "accepted": true,
+              "key_kind": "natural"
+            },
+            {
+              "column_index": 2,
+              "accepted": false
             }
           ]
         }

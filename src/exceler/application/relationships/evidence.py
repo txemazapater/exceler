@@ -12,19 +12,18 @@ def clamp(value: float) -> float:
 def confidence_from_evidence(
     items: list[RelationshipEvidenceItem],
     *,
+    max_positive_weight: float,
     penalty: float = 0.0,
 ) -> float:
-    if not items:
+    """Calibrate score against the theoretical max positive weight, not present evidence.
+
+    Positive item weights are contributions toward ``max_positive_weight``.
+    Negative weights reduce the score proportionally to the same denominator.
+    """
+    if max_positive_weight <= 0:
         return clamp(0.0 - penalty)
-    total_weight = sum(max(item.weight, 0.0) for item in items)
-    if total_weight <= 0:
-        return clamp(0.0 - penalty)
-    # Positive evidence codes contribute; negative weights pull down.
-    score = sum(item.weight for item in items) / max(abs(total_weight), 1e-9)
-    # Normalize: treat sum of positive weights as denominator when mixed.
     positive = sum(item.weight for item in items if item.weight > 0)
-    if positive > 0:
-        score = sum(item.weight for item in items if item.weight > 0) / positive
-        neg = sum(-item.weight for item in items if item.weight < 0)
-        score = score * (1.0 - min(1.0, neg / (positive + neg + 1e-9)))
+    negative = sum(-item.weight for item in items if item.weight < 0)
+    score = positive / max_positive_weight
+    score -= negative / max_positive_weight
     return clamp(score - penalty)
