@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_incompatible_product_customer",
+  "workbook": "workbooks/relationships/rel_incompatible_product_customer.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 2
+      }
+    },
+    "relationships": {
+      "sheets": [
+        {
+          "name": "Customers",
+          "primary_keys": [
+            {
+              "column_index": 1,
+              "accepted": true,
+              "key_kind": "primary"
+            }
+          ]
+        }
+      ],
+      "foreign_keys_accepted_max": 0,
+      "foreign_keys": [
+        {
+          "from_sheet": "Products",
+          "from_column_index": 2,
+          "to_sheet": "Customers",
+          "to_column_index": 1,
+          "accepted": false,
+          "rejection_reason": "incompatible_reference_target_semantics"
+        },
+        {
+          "from_sheet": "Customers",
+          "from_column_index": 1,
+          "to_sheet": "Products",
+          "to_column_index": 2,
+          "accepted": false,
+          "rejection_reason": "incompatible_reference_target_semantics"
+        }
+      ]
+    }
+  }
+}

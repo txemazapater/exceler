@@ -53,6 +53,10 @@
     "rel_numeric_customer_id_fk",
     "rel_matching_measures_no_relation",
     "rel_measure_into_identifier_no_fk",
+    "rel_incompatible_product_customer",
+    "rel_alias_client_customer",
+    "rel_alias_article_product",
+    "rel_insufficient_bare_id_fk",
     "rel_pk_ranking",
     "hell_erp_clientes",
     "hell_erp_articulos",
@@ -112,6 +116,10 @@
     "workbooks/relationships/rel_numeric_customer_id_fk.xlsx",
     "workbooks/relationships/rel_matching_measures_no_relation.xlsx",
     "workbooks/relationships/rel_measure_into_identifier_no_fk.xlsx",
+    "workbooks/relationships/rel_incompatible_product_customer.xlsx",
+    "workbooks/relationships/rel_alias_client_customer.xlsx",
+    "workbooks/relationships/rel_alias_article_product.xlsx",
+    "workbooks/relationships/rel_insufficient_bare_id_fk.xlsx",
     "workbooks/relationships/rel_pk_ranking.xlsx",
     "workbooks/scenarios/hell_erp/clientes.xlsx",
     "workbooks/scenarios/hell_erp/articulos.xlsx",
@@ -119,5 +127,5 @@
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 57
+  "count": 61
 }

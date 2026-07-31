@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_alias_article_product",
+  "workbook": "workbooks/relationships/rel_alias_article_product.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 2
+      }
+    },
+    "relationships": {
+      "foreign_keys": [
+        {
+          "from_sheet": "OrderLines",
+          "from_column_index": 2,
+          "to_sheet": "Products",
+          "to_column_index": 1,
+          "accepted": true,
+          "minimum_inclusion": 0.99
+        }
+      ]
+    }
+  }
+}

@@ -135,7 +135,7 @@ def build_rel_orphan_and_partial(_seed: int) -> Workbook:
     write_matrix(
         ws,
         [
-            ["Id", "Label"],
+            ["ParentId", "Label"],
             ["P1", "one"],
             ["P2", "two"],
         ],
@@ -327,6 +327,135 @@ def build_rel_measure_into_identifier_no_fk(_seed: int) -> Workbook:
     )
     for cell in ("A1", "B1", "C1"):
         orders[cell].font = Font(bold=True)
+    return wb
+
+
+def build_rel_incompatible_product_customer(_seed: int) -> Workbook:
+    """ProductId ⊆ CustomerId must not invent an FK (incompatible entities)."""
+    wb = new_workbook(sheet_title="Customers")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["CustomerId", "Name"],
+            [100, "Alpha"],
+            [200, "Beta"],
+            [300, "Gamma"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+
+    products = wb.create_sheet("Products")
+    write_matrix(
+        products,
+        [
+            ["RowId", "ProductId"],
+            ["R1", 100],
+            ["R2", 200],
+            ["R3", 300],
+        ],
+    )
+    for cell in ("A1", "B1"):
+        products[cell].font = Font(bold=True)
+    return wb
+
+
+def build_rel_alias_client_customer(_seed: int) -> Workbook:
+    """ClientId aliases to customer and references Customers.CustomerId."""
+    wb = new_workbook(sheet_title="Customers")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["CustomerId", "Name"],
+            [1001, "Alpha"],
+            [1002, "Beta"],
+            [1003, "Gamma"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+
+    orders = wb.create_sheet("Orders")
+    write_matrix(
+        orders,
+        [
+            ["OrderId", "ClientId"],
+            [5001, 1001],
+            [5002, 1001],
+            [5003, 1002],
+        ],
+    )
+    for cell in ("A1", "B1"):
+        orders[cell].font = Font(bold=True)
+    return wb
+
+
+def build_rel_alias_article_product(_seed: int) -> Workbook:
+    """ArticleCode aliases to product and references Products.ProductCode."""
+    wb = new_workbook(sheet_title="Products")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["ProductCode", "Name"],
+            ["P-01", "Widget"],
+            ["P-02", "Gadget"],
+            ["P-03", "Doohickey"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+    for row in range(2, 5):
+        ws.cell(row, 1).number_format = "@"
+
+    lines = wb.create_sheet("OrderLines")
+    write_matrix(
+        lines,
+        [
+            ["LineId", "ArticleCode", "Qty"],
+            ["L1", "P-01", 2],
+            ["L2", "P-01", 1],
+            ["L3", "P-02", 4],
+            ["L4", "P-03", 1],
+        ],
+    )
+    for cell in ("A1", "B1", "C1"):
+        lines[cell].font = Font(bold=True)
+    for row in range(2, 6):
+        lines.cell(row, 2).number_format = "@"
+    return wb
+
+
+def build_rel_insufficient_bare_id_fk(_seed: int) -> Workbook:
+    """Bare Id overlapping CustomerId must not invent an FK (insufficient entity)."""
+    wb = new_workbook(sheet_title="Customers")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["CustomerId", "Name"],
+            [100, "Alpha"],
+            [200, "Beta"],
+            [300, "Gamma"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+
+    source = wb.create_sheet("Source")
+    write_matrix(
+        source,
+        [
+            ["Id", "Note"],
+            [100, "a"],
+            [200, "b"],
+            [100, "c"],
+        ],
+    )
+    for cell in ("A1", "B1"):
+        source[cell].font = Font(bold=True)
     return wb
 
 
@@ -686,6 +815,136 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
         },
     ),
     ScenarioSpec(
+        scenario_id="rel_incompatible_product_customer",
+        category="relationships",
+        description="ProductId into CustomerId rejected for incompatible entities",
+        relative_workbook="workbooks/relationships/rel_incompatible_product_customer.xlsx",
+        generator_name="relationship_scenarios.build_rel_incompatible_product_customer",
+        intentions=["Reject cross-entity identifier value coincidence"],
+        features=["relationships", "false_fk", "semantic_entity"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 2}},
+            "relationships": {
+                "sheets": [
+                    {
+                        "name": "Customers",
+                        "primary_keys": [
+                            {
+                                "column_index": 1,
+                                "accepted": True,
+                                "key_kind": "primary",
+                            }
+                        ],
+                    }
+                ],
+                "foreign_keys_accepted_max": 0,
+                "foreign_keys": [
+                    {
+                        "from_sheet": "Products",
+                        "from_column_index": 2,
+                        "to_sheet": "Customers",
+                        "to_column_index": 1,
+                        "accepted": False,
+                        "rejection_reason": "incompatible_reference_target_semantics",
+                    },
+                    {
+                        "from_sheet": "Customers",
+                        "from_column_index": 1,
+                        "to_sheet": "Products",
+                        "to_column_index": 2,
+                        "accepted": False,
+                        "rejection_reason": "incompatible_reference_target_semantics",
+                    },
+                ],
+            },
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="rel_alias_client_customer",
+        category="relationships",
+        description="ClientId aliases to customer and references CustomerId",
+        relative_workbook="workbooks/relationships/rel_alias_client_customer.xlsx",
+        generator_name="relationship_scenarios.build_rel_alias_client_customer",
+        intentions=["Accept declared customer/client alias"],
+        features=["relationships", "foreign_key", "semantic_alias"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 2}},
+            "relationships": {
+                "sheets": [
+                    {
+                        "name": "Customers",
+                        "primary_keys": [
+                            {
+                                "column_index": 1,
+                                "accepted": True,
+                                "key_kind": "primary",
+                            }
+                        ],
+                    }
+                ],
+                "foreign_keys": [
+                    {
+                        "from_sheet": "Orders",
+                        "from_column_index": 2,
+                        "to_sheet": "Customers",
+                        "to_column_index": 1,
+                        "accepted": True,
+                        "minimum_inclusion": 0.99,
+                    }
+                ],
+            },
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="rel_alias_article_product",
+        category="relationships",
+        description="ArticleCode aliases to product and references ProductCode",
+        relative_workbook="workbooks/relationships/rel_alias_article_product.xlsx",
+        generator_name="relationship_scenarios.build_rel_alias_article_product",
+        intentions=["Accept declared product/article alias"],
+        features=["relationships", "foreign_key", "semantic_alias"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 2}},
+            "relationships": {
+                "foreign_keys": [
+                    {
+                        "from_sheet": "OrderLines",
+                        "from_column_index": 2,
+                        "to_sheet": "Products",
+                        "to_column_index": 1,
+                        "accepted": True,
+                        "minimum_inclusion": 0.99,
+                    }
+                ],
+            },
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="rel_insufficient_bare_id_fk",
+        category="relationships",
+        description="Bare Id into CustomerId rejected for insufficient entity evidence",
+        relative_workbook="workbooks/relationships/rel_insufficient_bare_id_fk.xlsx",
+        generator_name="relationship_scenarios.build_rel_insufficient_bare_id_fk",
+        intentions=["Reject bare structural Id without entity token"],
+        features=["relationships", "false_fk", "semantic_insufficient"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 2}},
+            "relationships": {
+                "foreign_keys_accepted_max": 0,
+                "foreign_keys": [
+                    {
+                        "from_sheet": "Source",
+                        "from_column_index": 1,
+                        "to_sheet": "Customers",
+                        "to_column_index": 1,
+                        "accepted": False,
+                        "rejection_reason": "insufficient_reference_target_semantics",
+                    }
+                ],
+            },
+        },
+    ),
+    ScenarioSpec(
         scenario_id="rel_pk_ranking",
         category="relationships",
         description="Code ranks above unique free-text name",
@@ -736,5 +995,11 @@ BUILDERS = {
     "relationship_scenarios.build_rel_measure_into_identifier_no_fk": (
         build_rel_measure_into_identifier_no_fk
     ),
+    "relationship_scenarios.build_rel_incompatible_product_customer": (
+        build_rel_incompatible_product_customer
+    ),
+    "relationship_scenarios.build_rel_alias_client_customer": build_rel_alias_client_customer,
+    "relationship_scenarios.build_rel_alias_article_product": build_rel_alias_article_product,
+    "relationship_scenarios.build_rel_insufficient_bare_id_fk": (build_rel_insufficient_bare_id_fk),
     "relationship_scenarios.build_rel_pk_ranking": build_rel_pk_ranking,
 }

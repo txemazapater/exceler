@@ -10,8 +10,11 @@ from exceler.application.relationships.domain_compat import (
 )
 from exceler.application.relationships.evidence import confidence_from_evidence
 from exceler.application.relationships.identifier_signals import (
+    SemanticCompatibilityStatus,
+    extract_identifier_semantic_signal,
     has_child_reference_evidence,
     has_independent_identifier_evidence,
+    reference_target_semantically_compatible,
 )
 from exceler.application.relationships.value_index import ColumnValueSet
 from exceler.domain.relationships.enums import Exactness, RelationshipCardinality
@@ -210,6 +213,51 @@ def _score_fk(
             )
         )
 
+    # 2D.6: reference/target headers must describe a compatible entity.
+    child_signal = extract_identifier_semantic_signal(child.ref.effective_name)
+    parent_signal = extract_identifier_semantic_signal(parent.ref.effective_name)
+    semantic = reference_target_semantically_compatible(child_signal, parent_signal)
+    semantic_payload = {
+        "status": semantic.status.value,
+        "child_canonical_entity": child_signal.canonical_entity,
+        "parent_canonical_entity": parent_signal.canonical_entity,
+        "child_entity_tokens": list(child_signal.entity_tokens),
+        "parent_entity_tokens": list(parent_signal.entity_tokens),
+        "child_structural_tokens": list(child_signal.structural_tokens),
+        "parent_structural_tokens": list(parent_signal.structural_tokens),
+        "shared_entities": list(semantic.shared_entities),
+    }
+    if semantic.status is SemanticCompatibilityStatus.COMPATIBLE:
+        evidence.append(
+            RelationshipEvidenceItem(
+                "semantic_entity_compatibility",
+                options.weight_semantic_entity,
+                semantic.detail,
+                semantic_payload,
+            )
+        )
+    elif semantic.status is SemanticCompatibilityStatus.INCOMPATIBLE:
+        rejection_reasons.append("incompatible_reference_target_semantics")
+        evidence.append(
+            RelationshipEvidenceItem(
+                "semantic_entity_mismatch",
+                -options.weight_semantic_entity,
+                semantic.detail,
+                semantic_payload,
+            )
+        )
+    else:
+        if options.require_reference_target_semantics:
+            rejection_reasons.append("insufficient_reference_target_semantics")
+        evidence.append(
+            RelationshipEvidenceItem(
+                "insufficient_reference_target_semantics",
+                -0.1,
+                semantic.detail,
+                semantic_payload,
+            )
+        )
+
     # Symmetric unique domains with mutual inclusion and no clear orientation.
     if (
         parent_unique >= 0.98
@@ -233,7 +281,7 @@ def _score_fk(
             )
 
     penalty = options.truncation_penalty if truncated else 0.0
-    # Keep FK max weight stable (parent/child evidence bonuses are small additive signals).
+    # Parent/child identity bonuses are small additives outside the core FK weight budget.
     score = confidence_from_evidence(
         evidence,
         max_positive_weight=options.max_fk_positive_weight + 0.15,

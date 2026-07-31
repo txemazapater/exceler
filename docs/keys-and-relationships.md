@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile → relationships en una sola lectura de
 - Dominio: `exceler.domain.relationships`
 - Implementación: `DeterministicRelationshipAnalyzer`
 - `relationship_schema_version` = **1**
-- `relationship_engine_version` = **2D.5**
+- `relationship_engine_version` = **2D.6**
 - Conserva versiones de inspector / detector / profiler / regions / profiling
 
 Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling.workbook_hash`
@@ -46,7 +46,7 @@ Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling
 
 Composites: **pares** solamente (triples detrás de opción, default off).
 
-## Confianza y aceptación (2D.2–2D.5)
+## Confianza y aceptación (2D.2–2D.6)
 
 1. `score`/`confidence` se normalizan contra el **peso positivo máximo posible**
    (`RelationshipOptions.max_*_positive_weight`), no contra la evidencia presente.
@@ -62,11 +62,24 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 8. Fuentes FK requieren evidencia de referencia en el hijo (tipo preferido o token de
    encabezado con **límites de token**, no sufijos `id$` libres); una medida con
    inclusión en un identificador no basta (`insufficient_child_reference_evidence`, 2D.5).
+9. Origen y destino deben describir una **entidad compatible** tras quitar tokens
+   estructurales y aplicar aliases canónicos declarados (`customer`/`client`,
+   `product`/`article`, …). Incompatibles se rechazan siempre
+   (`incompatible_reference_target_semantics`); sin entidad suficiente (`Id`/`Code`)
+   se rechazan por defecto (`insufficient_reference_target_semantics`, 2D.6).
+
+## Semántica de referencia (2D.6)
+
+- Tokenización centralizada (`header_tokens`) compartida con 2D.5.
+- Tokens estructurales completos: `id`, `code`, `codigo`, `identifier`, `uuid`, …
+- Catálogo declarativo `ENTITY_ALIAS_GROUPS` (sin fuzzy matching ni ontología abierta).
+- Evidencias: `semantic_entity_compatibility` / `semantic_entity_mismatch`.
+- El nombre de hoja/tabla **no** sustituye la compatibilidad entre encabezados.
 
 ## Decisiones
 
 1. Sin señales de nombre de columna para ranking PK/FK entre pares; tokens de encabezado
-   controlados solo como evidencia de identidad/referencia (gate, no ranking).
+   controlados solo como evidencia de identidad/referencia/semántica (gate, no ranking).
 2. Sin openpyxl/Excel/pandas en `domain.relationships` ni `application.relationships`.
 3. MVP de un solo workbook; IDs de extremos permiten multi-workbook futuro.
 4. Pesos de evidencia centralizados en `RelationshipOptions`.
@@ -79,12 +92,14 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 `rel_customers_orders`, `rel_invoice_header_lines`, `rel_orphan_and_partial`,
 `rel_bridge_table`, `rel_integer_unique_not_surrogate`, `rel_numeric_customer_id_fk`,
 `rel_matching_measures_no_relation`, `rel_measure_into_identifier_no_fk`,
-`rel_pk_ranking` — expectativas parciales en `expectations.relationships`
-(incluye negativos, ranking, anti-circularidad 2D.4 y child-reference 2D.5).
+`rel_incompatible_product_customer`, `rel_alias_client_customer`,
+`rel_alias_article_product`, `rel_insufficient_bare_id_fk`, `rel_pk_ranking`.
 
-## Fuera de alcance
+## Fuera de alcance / diferido
 
+- Inferencia contextual con nombre de tabla, otras columnas, resolución iterativa
 - Relaciones entre workbooks distintos (diferido; antes “2E” del roadmap legacy)
-- Semántica de negocio / entidades nombradas
+- Semántica de negocio / entidades nombradas más allá del catálogo de aliases
 - Declaración automática de constraints definitivos
 - Evaluación de fórmulas
+- Embeddings, LLMs, Levenshtein o fuzzy matching

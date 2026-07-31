@@ -1,0 +1,16 @@
+{
+  "scenario_id": "rel_incompatible_product_customer",
+  "description": "ProductId into CustomerId rejected for incompatible entities",
+  "workbook": "workbooks/relationships/rel_incompatible_product_customer.xlsx",
+  "generator": "relationship_scenarios.build_rel_incompatible_product_customer",
+  "seed": 20260730,
+  "intentions": [
+    "Reject cross-entity identifier value coincidence"
+  ],
+  "features": [
+    "relationships",
+    "false_fk",
+    "semantic_entity"
+  ],
+  "versioned": true
+}

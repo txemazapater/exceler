@@ -6,6 +6,9 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Fase 2D.6: compatibilidad semántica referencia↔destino (`ENTITY_ALIAS_GROUPS`);
+  rechazo `ProductId→CustomerId`; aliases `ClientId`/`ArticleCode`; corpus
+  `rel_incompatible_product_customer`, `rel_alias_*`, `rel_insufficient_bare_id_fk`.
 - Fase 2D.5: evidencia de referencia en el hijo FK y límites de token en encabezados;
   rechazo `Sales.Amount → Customers.CustomerId` (`rel_measure_into_identifier_no_fk`)
   conservando `Orders.CustomerId → Customers.CustomerId`.
@@ -25,6 +28,8 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Relationship engine **2D.6**: FK acceptance requires reference-target semantic
+  compatibility; declared aliases only; insufficient entity headers do not accept.
 - Relationship engine **2D.5**: FK sources require child reference evidence; header
   identifier tokens use whole-token boundaries (no free `id$` suffix).
 - Relationship engine **2D.4**: FK destination requires independent identifier evidence;

@@ -1,0 +1,16 @@
+{
+  "scenario_id": "rel_insufficient_bare_id_fk",
+  "description": "Bare Id into CustomerId rejected for insufficient entity evidence",
+  "workbook": "workbooks/relationships/rel_insufficient_bare_id_fk.xlsx",
+  "generator": "relationship_scenarios.build_rel_insufficient_bare_id_fk",
+  "seed": 20260730,
+  "intentions": [
+    "Reject bare structural Id without entity token"
+  ],
+  "features": [
+    "relationships",
+    "false_fk",
+    "semantic_insufficient"
+  ],
+  "versioned": true
+}

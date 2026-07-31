@@ -41,6 +41,10 @@ REL_SCENARIO_IDS = {
     "rel_numeric_customer_id_fk",
     "rel_matching_measures_no_relation",
     "rel_measure_into_identifier_no_fk",
+    "rel_incompatible_product_customer",
+    "rel_alias_client_customer",
+    "rel_alias_article_product",
+    "rel_insufficient_bare_id_fk",
     "rel_pk_ranking",
 }
 
@@ -317,7 +321,25 @@ def test_measure_into_identifier_rejected_preserves_customer_fk() -> None:
 
 
 def test_header_token_boundaries_reject_suffix_false_positives() -> None:
-    from exceler.application.relationships.identifier_signals import header_suggests_identifier
+    from exceler.application.relationships.identifier_signals import (
+        SemanticCompatibilityStatus,
+        extract_identifier_semantic_signal,
+        header_suggests_identifier,
+        header_tokens,
+        reference_target_semantically_compatible,
+    )
+
+    assert header_tokens("CustomerId") == ("customer", "id")
+    assert header_tokens("customer_id") == ("customer", "id")
+    assert header_tokens("CUSTOMER-ID") == ("customer", "id")
+    assert header_tokens("IdCustomer") == ("id", "customer")
+    assert header_tokens("ClientIdentifier") == ("client", "identifier")
+    assert header_tokens("CodigoCliente") == ("codigo", "cliente")
+    assert header_tokens("PedidoCodigo") == ("pedido", "codigo")
+    assert header_tokens("Paid") == ("paid",)
+    assert header_tokens("Valid") == ("valid",)
+    assert header_tokens("Grid") == ("grid",)
+    assert header_tokens("Codec") == ("codec",)
 
     assert header_suggests_identifier("CustomerId") is True
     assert header_suggests_identifier("customer_id") is True
@@ -329,6 +351,164 @@ def test_header_token_boundaries_reject_suffix_false_positives() -> None:
     assert header_suggests_identifier("grid") is False
     assert header_suggests_identifier("Amount") is False
     assert header_suggests_identifier("Qty") is False
+    assert header_suggests_identifier("Codec") is False
+
+    customer = extract_identifier_semantic_signal("CustomerId")
+    assert customer.canonical_entity == "customer"
+    assert customer.entity_tokens == ("customer",)
+    assert customer.structural_tokens == ("id",)
+
+    id_customer = extract_identifier_semantic_signal("IdCustomer")
+    assert id_customer.canonical_entity == "customer"
+
+    codigo_cliente = extract_identifier_semantic_signal("CodigoCliente")
+    assert codigo_cliente.canonical_entity == "customer"
+
+    product = extract_identifier_semantic_signal("ProductId")
+    assert product.canonical_entity == "product"
+    assert (
+        reference_target_semantically_compatible(product, customer).status
+        is SemanticCompatibilityStatus.INCOMPATIBLE
+    )
+
+    client = extract_identifier_semantic_signal("ClientId")
+    assert (
+        reference_target_semantically_compatible(client, customer).status
+        is SemanticCompatibilityStatus.COMPATIBLE
+    )
+
+    article = extract_identifier_semantic_signal("ArticleCode")
+    product_code = extract_identifier_semantic_signal("ProductCode")
+    assert (
+        reference_target_semantically_compatible(article, product_code).status
+        is SemanticCompatibilityStatus.COMPATIBLE
+    )
+
+    bare_id = extract_identifier_semantic_signal("Id")
+    assert bare_id.has_entity_evidence is False
+    assert (
+        reference_target_semantically_compatible(bare_id, customer).status
+        is SemanticCompatibilityStatus.INSUFFICIENT
+    )
+
+
+def test_incompatible_product_customer_rejected_both_directions() -> None:
+    from exceler.domain.relationships.enums import GraphEdgeKind
+
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_incompatible_product_customer")
+    )
+    _i, _r, _p, result = _run(path)
+    customers = next(sheet for sheet in result.sheets if sheet.sheet_name == "Customers")
+    assert any(pk.accepted and pk.column.column_index == 1 for pk in customers.primary_keys)
+
+    forward = next(
+        fk
+        for fk in result.foreign_keys
+        if fk.from_column.sheet_name == "Products"
+        and fk.from_column.column_index == 2
+        and fk.to_column.sheet_name == "Customers"
+        and fk.to_column.column_index == 1
+    )
+    assert forward.accepted is False
+    assert "incompatible_reference_target_semantics" in forward.rejection_reasons
+    assert any(item.code == "semantic_entity_mismatch" for item in forward.evidence)
+
+    reverse_accepted = [
+        fk
+        for fk in result.foreign_keys
+        if fk.from_column.sheet_name == "Customers"
+        and fk.to_column.sheet_name == "Products"
+        and fk.accepted
+    ]
+    assert reverse_accepted == []
+    reverse = next(
+        fk
+        for fk in result.foreign_keys
+        if fk.from_column.sheet_name == "Customers"
+        and fk.to_column.sheet_name == "Products"
+        and fk.from_column.column_index == 1
+        and fk.to_column.column_index == 2
+    )
+    assert reverse.accepted is False
+    assert "incompatible_reference_target_semantics" in reverse.rejection_reasons
+    assert not any(
+        edge.kind in {GraphEdgeKind.CANDIDATE_FOREIGN_KEY, GraphEdgeKind.CANDIDATE_RELATIONSHIP}
+        for edge in result.graph.edges
+    )
+
+
+def test_alias_client_customer_accepted_with_semantic_evidence() -> None:
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "rel_alias_client_customer"))
+    _i, _r, _p, result = _run(path)
+    fk = next(
+        item
+        for item in result.foreign_keys
+        if item.from_column.sheet_name == "Orders"
+        and item.to_column.sheet_name == "Customers"
+        and item.accepted
+    )
+    assert fk.inclusion_ratio >= 0.99
+    evidence = next(item for item in fk.evidence if item.code == "semantic_entity_compatibility")
+    assert evidence.details["status"] == "compatible"
+    assert evidence.details["child_canonical_entity"] == "customer"
+    assert evidence.details["parent_canonical_entity"] == "customer"
+
+
+def test_alias_article_product_accepted() -> None:
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "rel_alias_article_product"))
+    _i, _r, _p, result = _run(path)
+    fk = next(
+        item
+        for item in result.foreign_keys
+        if item.from_column.sheet_name == "OrderLines"
+        and item.to_column.sheet_name == "Products"
+        and item.accepted
+    )
+    assert fk.inclusion_ratio >= 0.99
+    evidence = next(item for item in fk.evidence if item.code == "semantic_entity_compatibility")
+    assert evidence.details["shared_entities"] == ["product"]
+
+
+def test_insufficient_bare_id_rejected() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_insufficient_bare_id_fk")
+    )
+    _i, _r, _p, result = _run(path)
+    assert not any(fk.accepted for fk in result.foreign_keys)
+    fk = next(
+        item
+        for item in result.foreign_keys
+        if item.from_column.sheet_name == "Source" and item.to_column.sheet_name == "Customers"
+    )
+    assert "insufficient_reference_target_semantics" in fk.rejection_reasons
+
+
+def test_semantic_incompatibility_beats_perfect_inclusion() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_incompatible_product_customer")
+    )
+    _i, _r, _p, result = _run(path)
+    fk = next(
+        item
+        for item in result.foreign_keys
+        if item.from_column.effective_name == "ProductId"
+        and item.to_column.effective_name == "CustomerId"
+    )
+    assert fk.inclusion_ratio >= 0.99
+    assert fk.accepted is False
+    assert "incompatible_reference_target_semantics" in fk.rejection_reasons
+    assert fk.confidence < 1.0 or not fk.accepted
+
+
+def test_sheet_order_permutation_preserves_alias_result() -> None:
+    from exceler.application.relationships.serialization import relationships_to_dict
+
+    path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "rel_alias_client_customer"))
+    a = relationships_to_dict(_run(path)[3])
+    b = relationships_to_dict(_run(path)[3])
+    assert a == b
+    assert a["relationship_engine_version"] == "2D.6"
 
 
 def test_pk_ranking_prefers_code_over_text() -> None:

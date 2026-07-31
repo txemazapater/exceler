@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-RELATIONSHIP_ENGINE_VERSION = "2D.5"
+RELATIONSHIP_ENGINE_VERSION = "2D.6"
 RELATIONSHIP_SCHEMA_VERSION = 1
 
 
@@ -29,6 +29,8 @@ class RelationshipOptions:
     trim_values: bool = True
     exclude_header_rows: bool = True
     exclude_footer_rows: bool = True
+    # 2D.6: reject FK when entity semantics are incompatible or (by default) insufficient.
+    require_reference_target_semantics: bool = True
     # Evidence / confidence weights (centralized)
     weight_distinct: float = 0.35
     weight_non_null: float = 0.25
@@ -39,6 +41,7 @@ class RelationshipOptions:
     weight_parent_unique: float = 0.25
     weight_domain_compat: float = 0.20
     weight_type_compat: float = 0.10
+    weight_semantic_entity: float = 0.15
     weight_joint_unique: float = 0.55
     weight_parts_not_unique: float = 0.35
     truncation_penalty: float = 0.15
@@ -61,6 +64,7 @@ class RelationshipOptions:
             + self.weight_parent_unique
             + self.weight_domain_compat
             + self.weight_type_compat
+            + self.weight_semantic_entity
         )
 
     @property

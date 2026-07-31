@@ -1,0 +1,16 @@
+{
+  "scenario_id": "rel_alias_client_customer",
+  "description": "ClientId aliases to customer and references CustomerId",
+  "workbook": "workbooks/relationships/rel_alias_client_customer.xlsx",
+  "generator": "relationship_scenarios.build_rel_alias_client_customer",
+  "seed": 20260730,
+  "intentions": [
+    "Accept declared customer/client alias"
+  ],
+  "features": [
+    "relationships",
+    "foreign_key",
+    "semantic_alias"
+  ],
+  "versioned": true
+}

@@ -17,8 +17,9 @@ Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un comprom
 Las fases numeradas 3–12 del roadmap largo siguen vigentes como entregas de producto;
 2S/2A–2E son cortes de implementación que alimentan esas entregas sin solaparse en alcance.
 
-Estado actual: **Fase 2D entregada (2D.5)** — claves y relaciones estructurales intra-workbook.
-Siguiente corte: semántica / entidades (y relaciones inter-workbook más adelante).
+Estado actual: **Fase 2D entregada (2D.6)** — claves y relaciones estructurales intra-workbook.
+Siguiente corte: Integration Checkpoint 1 / semántica de entidades más amplia
+(y relaciones inter-workbook más adelante).
 
 ## Fase 0 — Fundamentos
 
@@ -119,6 +120,8 @@ Siguiente corte: semántica / entidades (y relaciones inter-workbook más adelan
 - `DeterministicRelationshipAnalyzer` consume solo inspection + regions + profiling.
 - Candidatos PK / compuestos (pares) / FK con inclusión, huérfanos y cardinalidad.
 - Grafo estructural; evidencias explícitas; sin ranking por nombres de columna.
+- **2D.6:** compatibilidad semántica referencia↔destino (entidades canónicas +
+  aliases declarados); rechazo `ProductId→CustomerId`; aliases `ClientId`/`ArticleCode`.
 - **2D.5:** evidencia de referencia en el hijo FK; tokens de encabezado con límites
   de token (no `id$` libre); corpus `rel_measure_into_identifier_no_fk`.
 - **2D.4:** evidencia independiente vs soporte relacional; sin circularidad
@@ -127,10 +130,10 @@ Siguiente corte: semántica / entidades (y relaciones inter-workbook más adelan
 - **2D.2:** confianza vs peso máximo, `accepted`/`rejection_reasons`, sin SURROGATE
   automático por INTEGER único; corpus negativo + ranking.
 - CLI `exceler workbook relationships`; expected `expectations.relationships`;
-  schema **1** / engine **2D.5**.
+  schema **1** / engine **2D.6**.
 - Documentación `docs/keys-and-relationships.md`.
 
-**Salida:** candidatos estructurales revisables (no constraints definitivos). **Cerrada (2D.5).**
+**Salida:** candidatos estructurales revisables (no constraints definitivos). **Cerrada (2D.6).**
 
 ## Relación inter-workbook (diferido)
 

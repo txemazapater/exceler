@@ -1,0 +1,16 @@
+{
+  "scenario_id": "rel_alias_article_product",
+  "description": "ArticleCode aliases to product and references ProductCode",
+  "workbook": "workbooks/relationships/rel_alias_article_product.xlsx",
+  "generator": "relationship_scenarios.build_rel_alias_article_product",
+  "seed": 20260730,
+  "intentions": [
+    "Accept declared product/article alias"
+  ],
+  "features": [
+    "relationships",
+    "foreign_key",
+    "semantic_alias"
+  ],
+  "versioned": true
+}
