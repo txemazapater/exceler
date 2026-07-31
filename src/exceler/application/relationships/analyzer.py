@@ -35,9 +35,10 @@ _LIMITATIONS = (
     "Column names are never used as ranking signals.",
     "Formula cells contribute no key values (unevaluated).",
     "Analyzer consumes inspection + regions + profiling only; never re-reads Excel.",
-    "Confidence is calibrated against max possible evidence weight (2D.2).",
+    "Confidence is calibrated against max possible evidence weight (2D.2+).",
     "INTEGER uniqueness alone never implies SURROGATE key kind.",
-    "Single-workbook analysis in 2D.2; multi-workbook support is reserved.",
+    "Numeric PKs require structural evidence (e.g. accepted FK parent reference) in 2D.3.",
+    "Single-workbook analysis in 2D.3; multi-workbook support is reserved.",
 )
 
 
@@ -91,9 +92,17 @@ class DeterministicRelationshipAnalyzer:
         for col in columns:
             warnings.extend(col.warnings)
 
-        primary_keys = discover_primary_keys(columns, options=opts)
-        composite_keys = discover_composite_keys(columns, options=opts)
+        # FK discovery first so numeric PK acceptance can use parent-reference evidence (2D.3).
         foreign_keys = discover_foreign_keys(columns, options=opts)
+        referenced_column_ids = frozenset(
+            fk.to_column.column_id for fk in foreign_keys if fk.accepted
+        )
+        primary_keys = discover_primary_keys(
+            columns,
+            options=opts,
+            referenced_column_ids=referenced_column_ids,
+        )
+        composite_keys = discover_composite_keys(columns, options=opts)
         relationships = relationships_from_foreign_keys(foreign_keys)
         graph = build_structural_graph(
             inspection, columns, primary_keys, composite_keys, foreign_keys

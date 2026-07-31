@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-RELATIONSHIP_ENGINE_VERSION = "2D.2"
+RELATIONSHIP_ENGINE_VERSION = "2D.3"
 RELATIONSHIP_SCHEMA_VERSION = 1
 
 
@@ -34,6 +34,7 @@ class RelationshipOptions:
     weight_non_null: float = 0.25
     weight_identifier: float = 0.25
     weight_logical_type: float = 0.15
+    weight_fk_parent_reference: float = 0.20
     weight_inclusion: float = 0.45
     weight_parent_unique: float = 0.25
     weight_domain_compat: float = 0.20
@@ -50,6 +51,7 @@ class RelationshipOptions:
             + self.weight_non_null
             + self.weight_identifier
             + self.weight_logical_type
+            + self.weight_fk_parent_reference
         )
 
     @property

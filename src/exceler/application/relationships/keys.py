@@ -41,14 +41,16 @@ def discover_primary_keys(
     columns: list[ColumnValueSet],
     *,
     options: RelationshipOptions,
+    referenced_column_ids: frozenset[str] | None = None,
 ) -> list[PrimaryKeyCandidate]:
+    referenced = referenced_column_ids or frozenset()
     by_region: dict[str, list[ColumnValueSet]] = {}
     for col in columns:
         by_region.setdefault(col.ref.region_id, []).append(col)
 
     results: list[PrimaryKeyCandidate] = []
     for _region_id, cols in sorted(by_region.items()):
-        scored = [_score_pk(col, options) for col in cols]
+        scored = [_score_pk(col, options, referenced_column_ids=referenced) for col in cols]
         accepted = [item for item in scored if item.accepted]
         rejected = [item for item in scored if not item.accepted]
         accepted.sort(
@@ -66,13 +68,19 @@ def discover_primary_keys(
     return results
 
 
-def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCandidate:
+def _score_pk(
+    col: ColumnValueSet,
+    options: RelationshipOptions,
+    *,
+    referenced_column_ids: frozenset[str],
+) -> PrimaryKeyCandidate:
     total = max(len(col.row_values), 1)
     distinct_ratio = len(col.distinct) / max(col.content_count, 1) if col.content_count else 0.0
     null_ratio = col.nullish_count / total
     non_null_ratio = 1.0 - null_ratio
     logical = col.profile.logical_type_inference.selected_type
     identifier = col.profile.identifier_analysis
+    is_fk_parent = col.ref.column_id in referenced_column_ids
 
     evidence: list[RelationshipEvidenceItem] = []
     warnings = list(col.warnings)
@@ -141,16 +149,27 @@ def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCa
         )
     if col.content_count < 1:
         rejection_reasons.append("no_content_values")
-    # Unique numerics are scored but not accepted as PK in 2D.2 (no SURROGATE shortcut).
+
+    # Numeric uniqueness alone is insufficient; FK-parent reference is structural evidence (2D.3).
     if logical in _NUMERIC_TYPES:
-        rejection_reasons.append("numeric_logical_type_not_accepted")
-        evidence.append(
-            RelationshipEvidenceItem(
-                "numeric_not_accepted_as_pk",
-                -0.15,
-                "numeric uniqueness alone is not accepted as primary key",
+        if is_fk_parent:
+            evidence.append(
+                RelationshipEvidenceItem(
+                    "fk_parent_reference",
+                    options.weight_fk_parent_reference,
+                    "column is referenced by an accepted foreign key",
+                    {"column_id": col.ref.column_id},
+                )
             )
-        )
+        else:
+            rejection_reasons.append("numeric_without_structural_evidence")
+            evidence.append(
+                RelationshipEvidenceItem(
+                    "numeric_without_structural_evidence",
+                    -0.15,
+                    "numeric uniqueness alone is not accepted as primary key",
+                )
+            )
 
     penalty = options.truncation_penalty if col.exactness is Exactness.TRUNCATED else 0.0
     score = confidence_from_evidence(
@@ -162,10 +181,9 @@ def _score_pk(col: ColumnValueSet, options: RelationshipOptions) -> PrimaryKeyCa
         rejection_reasons.append("below_min_pk_score")
 
     accepted = not rejection_reasons
-    # confidence mirrors score for ranking; acceptance is orthogonal.
     confidence = score
 
-    # INTEGER + unique alone is never treated as SURROGATE (reserved for stronger evidence).
+    # INTEGER + unique alone never implies SURROGATE (even with FK-parent evidence).
     key_kind = KeyKind.PRIMARY
     if logical in {LogicalValueType.CODE, LogicalValueType.IDENTIFIER, LogicalValueType.UUID}:
         key_kind = KeyKind.NATURAL

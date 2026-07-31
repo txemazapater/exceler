@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_numeric_customer_id_fk",
+  "workbook": "workbooks/relationships/rel_numeric_customer_id_fk.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 2
+      }
+    },
+    "relationships": {
+      "sheets": [
+        {
+          "name": "Customers",
+          "primary_keys": [
+            {
+              "column_index": 1,
+              "accepted": true,
+              "key_kind": "primary",
+              "key_kind_not": "surrogate",
+              "minimum_score": 0.45
+            }
+          ]
+        }
+      ],
+      "foreign_keys": [
+        {
+          "from_sheet": "Orders",
+          "from_column_index": 2,
+          "to_sheet": "Customers",
+          "to_column_index": 1,
+          "accepted": true,
+          "minimum_inclusion": 0.99
+        }
+      ]
+    }
+  }
+}

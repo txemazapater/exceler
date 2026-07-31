@@ -200,20 +200,53 @@ def build_rel_bridge_table(_seed: int) -> Workbook:
 
 
 def build_rel_integer_unique_not_surrogate(_seed: int) -> Workbook:
+    """Accidentally unique integers (RowNum/Qty-like) without FK reference evidence."""
     wb = new_workbook(sheet_title="Rows")
     ws = wb.active
     assert ws is not None
     write_matrix(
         ws,
         [
-            ["RowNum", "Label"],
-            [1, "a"],
-            [2, "b"],
-            [3, "c"],
-            [4, "d"],
+            ["Qty", "Label"],
+            [10, "a"],
+            [5, "b"],
+            [7, "c"],
+            [3, "d"],
         ],
     )
     bold_header(ws, 1, 2)
+    return wb
+
+
+def build_rel_numeric_customer_id_fk(_seed: int) -> Workbook:
+    """Numeric CustomerId PK accepted via Orders.CustomerId FK parent reference."""
+    wb = new_workbook(sheet_title="Customers")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["CustomerId", "Name"],
+            [1001, "Alpha"],
+            [1002, "Beta"],
+            [1003, "Gamma"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+
+    orders = wb.create_sheet("Orders")
+    write_matrix(
+        orders,
+        [
+            ["OrderId", "CustomerId", "Amount"],
+            ["O-1", 1001, 100],
+            ["O-2", 1001, 50],
+            ["O-3", 1002, 80],
+            ["O-4", 1003, 20],
+        ],
+    )
+    for cell in ("A1", "B1", "C1"):
+        orders[cell].font = Font(bold=True)
     return wb
 
 
@@ -309,6 +342,13 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                     {
                         "name": "Lines",
                         "composite_keys_min": 1,
+                        "primary_keys": [
+                            {
+                                "column_index": 3,
+                                "accepted": False,
+                                "rejection_reason": "numeric_without_structural_evidence",
+                            }
+                        ],
                     }
                 ]
             },
@@ -404,28 +444,67 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
     ScenarioSpec(
         scenario_id="rel_integer_unique_not_surrogate",
         category="relationships",
-        description="Unique integers are not auto-labeled SURROGATE",
+        description="Accidentally unique Qty is rejected; never SURROGATE",
         relative_workbook="workbooks/relationships/rel_integer_unique_not_surrogate.xlsx",
         generator_name="relationship_scenarios.build_rel_integer_unique_not_surrogate",
-        intentions=["INTEGER+unique must not imply SURROGATE"],
-        features=["relationships", "key_kind"],
+        intentions=["INTEGER+unique without structural evidence is rejected"],
+        features=["relationships", "key_kind", "false_pk"],
         expected_skeleton={
             "inspection": {"workbook": {"worksheet_count": 1}},
             "relationships": {
                 "sheets": [
                     {
                         "name": "Rows",
+                        "accepted_primary_keys_max": 0,
                         "primary_keys": [
                             {
                                 "column_index": 1,
                                 "accepted": False,
                                 "key_kind": "primary",
                                 "key_kind_not": "surrogate",
-                                "rejection_reason": "numeric_logical_type_not_accepted",
+                                "rejection_reason": "numeric_without_structural_evidence",
                             }
                         ],
                     }
                 ]
+            },
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="rel_numeric_customer_id_fk",
+        category="relationships",
+        description="Numeric CustomerId accepted via Orders FK reference",
+        relative_workbook="workbooks/relationships/rel_numeric_customer_id_fk.xlsx",
+        generator_name="relationship_scenarios.build_rel_numeric_customer_id_fk",
+        intentions=["Numeric PK with FK-parent structural evidence"],
+        features=["relationships", "numeric_identifier", "foreign_key"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 2}},
+            "relationships": {
+                "sheets": [
+                    {
+                        "name": "Customers",
+                        "primary_keys": [
+                            {
+                                "column_index": 1,
+                                "accepted": True,
+                                "key_kind": "primary",
+                                "key_kind_not": "surrogate",
+                                "minimum_score": 0.45,
+                            }
+                        ],
+                    }
+                ],
+                "foreign_keys": [
+                    {
+                        "from_sheet": "Orders",
+                        "from_column_index": 2,
+                        "to_sheet": "Customers",
+                        "to_column_index": 1,
+                        "accepted": True,
+                        "minimum_inclusion": 0.99,
+                    }
+                ],
             },
         },
     ),
@@ -473,5 +552,6 @@ BUILDERS = {
     "relationship_scenarios.build_rel_integer_unique_not_surrogate": (
         build_rel_integer_unique_not_surrogate
     ),
+    "relationship_scenarios.build_rel_numeric_customer_id_fk": build_rel_numeric_customer_id_fk,
     "relationship_scenarios.build_rel_pk_ranking": build_rel_pk_ranking,
 }

@@ -6,6 +6,8 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Fase 2D.3: evidencia estructural para PKs numéricas (`fk_parent_reference`);
+  escenario `rel_numeric_customer_id_fk`; Qty único accidental sigue rechazado.
 - Fase 2D.2: calibración de confianza vs peso máximo, aceptación/rechazo explícito,
   sin SURROGATE automático por INTEGER único, corpus negativo/ranking
   (`rel_integer_unique_not_surrogate`, `rel_pk_ranking`).
@@ -18,6 +20,8 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Relationship engine **2D.3**: FK discovery before PK scoring; numeric acceptance
+  gated on structural FK-parent evidence.
 - Relationship engine **2D.2**: score/accepted separados; grafo solo con candidatos accepted.
 - Roadmap: 2D = keys **and** relationships; inter-workbook diferido (antes “2E”).
 - Profiler **2C.3**: matriz explícita DATE/DATETIME/TIME (un `09:30` ya no es

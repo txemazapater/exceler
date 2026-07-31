@@ -38,6 +38,7 @@ REL_SCENARIO_IDS = {
     "rel_orphan_and_partial",
     "rel_bridge_table",
     "rel_integer_unique_not_surrogate",
+    "rel_numeric_customer_id_fk",
     "rel_pk_ranking",
 }
 
@@ -148,7 +149,27 @@ def test_integer_unique_not_surrogate() -> None:
     assert pk.key_kind.value == "primary"
     assert pk.key_kind.value != "surrogate"
     assert pk.accepted is False
-    assert "numeric_logical_type_not_accepted" in pk.rejection_reasons
+    assert "numeric_without_structural_evidence" in pk.rejection_reasons
+
+
+def test_numeric_customer_id_accepted_via_fk_parent() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_numeric_customer_id_fk")
+    )
+    _i, _r, _p, result = _run(path)
+    customers = next(sheet for sheet in result.sheets if sheet.sheet_name == "Customers")
+    pk = next(item for item in customers.primary_keys if item.column.column_index == 1)
+    assert pk.accepted is True
+    assert pk.key_kind.value == "primary"
+    assert pk.key_kind.value != "surrogate"
+    assert any(item.code == "fk_parent_reference" for item in pk.evidence)
+    fk = next(
+        item
+        for item in result.foreign_keys
+        if item.from_column.sheet_name == "Orders" and item.to_column.sheet_name == "Customers"
+    )
+    assert fk.accepted is True
+    assert fk.inclusion_ratio >= 0.99
 
 
 def test_pk_ranking_prefers_code_over_text() -> None:

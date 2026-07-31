@@ -50,6 +50,7 @@
     "rel_orphan_and_partial",
     "rel_bridge_table",
     "rel_integer_unique_not_surrogate",
+    "rel_numeric_customer_id_fk",
     "rel_pk_ranking",
     "hell_erp_clientes",
     "hell_erp_articulos",
@@ -106,6 +107,7 @@
     "workbooks/relationships/rel_orphan_and_partial.xlsx",
     "workbooks/relationships/rel_bridge_table.xlsx",
     "workbooks/relationships/rel_integer_unique_not_surrogate.xlsx",
+    "workbooks/relationships/rel_numeric_customer_id_fk.xlsx",
     "workbooks/relationships/rel_pk_ranking.xlsx",
     "workbooks/scenarios/hell_erp/clientes.xlsx",
     "workbooks/scenarios/hell_erp/articulos.xlsx",
@@ -113,5 +115,5 @@
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 54
+  "count": 55
 }

@@ -13,7 +13,14 @@
       "sheets": [
         {
           "name": "Lines",
-          "composite_keys_min": 1
+          "composite_keys_min": 1,
+          "primary_keys": [
+            {
+              "column_index": 3,
+              "accepted": false,
+              "rejection_reason": "numeric_without_structural_evidence"
+            }
+          ]
         }
       ]
     }

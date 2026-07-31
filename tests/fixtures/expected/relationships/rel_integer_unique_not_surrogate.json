@@ -13,13 +13,14 @@
       "sheets": [
         {
           "name": "Rows",
+          "accepted_primary_keys_max": 0,
           "primary_keys": [
             {
               "column_index": 1,
               "accepted": false,
               "key_kind": "primary",
               "key_kind_not": "surrogate",
-              "rejection_reason": "numeric_logical_type_not_accepted"
+              "rejection_reason": "numeric_without_structural_evidence"
             }
           ]
         }

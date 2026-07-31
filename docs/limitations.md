@@ -35,16 +35,17 @@
 - El profiler no relee Excel ni importa openpyxl.
 - `unique_ratio` mide singletons/content; la unicidad de identificador usa `distinct_ratio`.
 
-## Keys & relationships (Phase 2D) — MVP (2D.2)
+## Keys & relationships (Phase 2D) — MVP (2D.3)
 
 - Claves y relaciones son **candidatos estructurales**, no constraints definitivos.
-- Solo intra-workbook; relaciones entre libros quedan fuera de 2D.2.
+- Solo intra-workbook; relaciones entre libros quedan fuera de 2D.3.
 - Sin ranking por nombre de columna; headers son etiquetas humanas.
 - Fórmulas no aportan dominio de clave (sin evaluación).
 - Sets truncados (`max_distinct_values_tracked`) degradan inclusión/confianza.
 - Composites: pares solamente (triples opt-in, default off).
 - Confianza calibrada contra peso máximo posible; aceptación separada del score.
 - `INTEGER` único no se etiqueta automáticamente como `SURROGATE`.
-- Tipos lógicos penalizados (p. ej. TEXT) y numéricos se rechazan como PK accepted
-  aunque sean únicos (2D.2).
+- Tipos lógicos penalizados (p. ej. TEXT) se rechazan como PK aunque sean únicos.
+- Numéricos únicos sin evidencia estructural (p. ej. Qty) se rechazan; con evidencia
+  de padre FK pueden aceptarse como `primary` (2D.3).
 - El analyzer consume solo inspection + regions + profiling; no relee Excel.

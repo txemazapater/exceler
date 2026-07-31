@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile → relationships en una sola lectura de
 - Dominio: `exceler.domain.relationships`
 - Implementación: `DeterministicRelationshipAnalyzer`
 - `relationship_schema_version` = **1**
-- `relationship_engine_version` = **2D.2**
+- `relationship_engine_version` = **2D.3**
 - Conserva versiones de inspector / detector / profiler / regions / profiling
 
 Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling.workbook_hash`
@@ -46,7 +46,7 @@ Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling
 
 Composites: **pares** solamente (triples detrás de opción, default off).
 
-## Confianza y aceptación (2D.2)
+## Confianza y aceptación (2D.2 / 2D.3)
 
 1. `score`/`confidence` se normalizan contra el **peso positivo máximo posible**
    (`RelationshipOptions.max_*_positive_weight`), no contra la evidencia presente.
@@ -54,8 +54,8 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 3. Candidatos rechazados pueden emitirse marcados (`accepted=false`) para inspección.
 4. `INTEGER` + unicidad **no** implica `SURROGATE`; ese kind queda reservado a evidencia más fuerte.
 5. Tipos `TEXT`/`BOOLEAN`/… penalizados se rechazan como PK aunque sean únicos.
-6. `INTEGER`/`NUMBER`/`DECIMAL` únicos se puntúan pero **no se aceptan** como PK en 2D.2
-   (y nunca se etiquetan `SURROGATE` solo por unicidad).
+6. `INTEGER`/`NUMBER`/`DECIMAL` únicos se rechazan **salvo** evidencia estructural adicional
+   (p. ej. ser padre de un FK accepted → `fk_parent_reference`); tampoco se etiquetan `SURROGATE`.
 
 ## Decisiones
 
@@ -70,8 +70,9 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 
 `rel_simple_primary_key`, `rel_duplicate_identifier`, `rel_composite_key`,
 `rel_customers_orders`, `rel_invoice_header_lines`, `rel_orphan_and_partial`,
-`rel_bridge_table`, `rel_integer_unique_not_surrogate`, `rel_pk_ranking` —
-expectativas parciales en `expectations.relationships` (incluye negativos y ranking).
+`rel_bridge_table`, `rel_integer_unique_not_surrogate`, `rel_numeric_customer_id_fk`,
+`rel_pk_ranking` — expectativas parciales en `expectations.relationships`
+(incluye negativos, ranking y numéricos con evidencia FK).
 
 ## Fuera de alcance
 
