@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile → relationships en una sola lectura de
 - Dominio: `exceler.domain.relationships`
 - Implementación: `DeterministicRelationshipAnalyzer`
 - `relationship_schema_version` = **1**
-- `relationship_engine_version` = **2D.4**
+- `relationship_engine_version` = **2D.5**
 - Conserva versiones de inspector / detector / profiler / regions / profiling
 
 Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling.workbook_hash`
@@ -46,7 +46,7 @@ Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling
 
 Composites: **pares** solamente (triples detrás de opción, default off).
 
-## Confianza y aceptación (2D.2 / 2D.3)
+## Confianza y aceptación (2D.2–2D.5)
 
 1. `score`/`confidence` se normalizan contra el **peso positivo máximo posible**
    (`RelationshipOptions.max_*_positive_weight`), no contra la evidencia presente.
@@ -59,10 +59,14 @@ Composites: **pares** solamente (triples detrás de opción, default off).
    el soporte FK (`has_relationship_support`) solo refuerza, no crea la aceptación (2D.4).
 7. Destinos FK sin evidencia independiente y pares simétricos únicos quedan rechazados
    (`insufficient_independent_identifier_evidence` / `ambiguous_relationship_direction`).
+8. Fuentes FK requieren evidencia de referencia en el hijo (tipo preferido o token de
+   encabezado con **límites de token**, no sufijos `id$` libres); una medida con
+   inclusión en un identificador no basta (`insufficient_child_reference_evidence`, 2D.5).
 
 ## Decisiones
 
-1. Sin señales de nombre de columna para ranking PK/FK (headers solo en salida humana).
+1. Sin señales de nombre de columna para ranking PK/FK entre pares; tokens de encabezado
+   controlados solo como evidencia de identidad/referencia (gate, no ranking).
 2. Sin openpyxl/Excel/pandas en `domain.relationships` ni `application.relationships`.
 3. MVP de un solo workbook; IDs de extremos permiten multi-workbook futuro.
 4. Pesos de evidencia centralizados en `RelationshipOptions`.
@@ -74,8 +78,9 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 `rel_simple_primary_key`, `rel_duplicate_identifier`, `rel_composite_key`,
 `rel_customers_orders`, `rel_invoice_header_lines`, `rel_orphan_and_partial`,
 `rel_bridge_table`, `rel_integer_unique_not_surrogate`, `rel_numeric_customer_id_fk`,
-`rel_matching_measures_no_relation`, `rel_pk_ranking` — expectativas parciales en
-`expectations.relationships` (incluye negativos, ranking y anti-circularidad 2D.4).
+`rel_matching_measures_no_relation`, `rel_measure_into_identifier_no_fk`,
+`rel_pk_ranking` — expectativas parciales en `expectations.relationships`
+(incluye negativos, ranking, anti-circularidad 2D.4 y child-reference 2D.5).
 
 ## Fuera de alcance
 

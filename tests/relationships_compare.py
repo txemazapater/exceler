@@ -225,3 +225,12 @@ def compare_relationship_expectations(
             )
         if fk_exp.get("has_orphans") and fk.orphan_count <= 0:
             raise ExpectationMismatchError(scenario_id, f"{fpath}.has_orphans", True, False)
+        if "rejection_reason" in fk_exp:
+            reason = fk_exp["rejection_reason"]
+            if reason not in fk.rejection_reasons:
+                raise ExpectationMismatchError(
+                    scenario_id,
+                    f"{fpath}.rejection_reason",
+                    reason,
+                    list(fk.rejection_reasons),
+                )

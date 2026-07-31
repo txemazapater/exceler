@@ -40,6 +40,7 @@ REL_SCENARIO_IDS = {
     "rel_integer_unique_not_surrogate",
     "rel_numeric_customer_id_fk",
     "rel_matching_measures_no_relation",
+    "rel_measure_into_identifier_no_fk",
     "rel_pk_ranking",
 }
 
@@ -285,6 +286,49 @@ def test_analysis_order_deterministic_for_measures() -> None:
     a = relationships_to_dict(_run(path)[3])
     b = relationships_to_dict(_run(path)[3])
     assert a == b
+
+
+def test_measure_into_identifier_rejected_preserves_customer_fk() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_measure_into_identifier_no_fk")
+    )
+    _i, _r, _p, result = _run(path)
+    amount_fk = next(
+        item
+        for item in result.foreign_keys
+        if item.from_column.sheet_name == "Sales"
+        and item.from_column.column_index == 2
+        and item.to_column.sheet_name == "Customers"
+        and item.to_column.column_index == 1
+    )
+    assert amount_fk.accepted is False
+    assert "insufficient_child_reference_evidence" in amount_fk.rejection_reasons
+
+    customer_fk = next(
+        item
+        for item in result.foreign_keys
+        if item.from_column.sheet_name == "Orders"
+        and item.from_column.column_index == 2
+        and item.to_column.sheet_name == "Customers"
+        and item.to_column.column_index == 1
+        and item.accepted
+    )
+    assert customer_fk.inclusion_ratio >= 0.99
+
+
+def test_header_token_boundaries_reject_suffix_false_positives() -> None:
+    from exceler.application.relationships.identifier_signals import header_suggests_identifier
+
+    assert header_suggests_identifier("CustomerId") is True
+    assert header_suggests_identifier("customer_id") is True
+    assert header_suggests_identifier("PersonCode") is True
+    assert header_suggests_identifier("Código") is True
+    assert header_suggests_identifier("Id") is True
+    assert header_suggests_identifier("paid") is False
+    assert header_suggests_identifier("valid") is False
+    assert header_suggests_identifier("grid") is False
+    assert header_suggests_identifier("Amount") is False
+    assert header_suggests_identifier("Qty") is False
 
 
 def test_pk_ranking_prefers_code_over_text() -> None:

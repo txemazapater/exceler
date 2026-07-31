@@ -283,6 +283,53 @@ def build_rel_matching_measures_no_relation(_seed: int) -> Workbook:
     return wb
 
 
+def build_rel_measure_into_identifier_no_fk(_seed: int) -> Workbook:
+    """Sales.Amount ⊆ Customers.CustomerId must not invent an FK; Orders.CustomerId must."""
+    wb = new_workbook(sheet_title="Customers")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["CustomerId", "Name"],
+            [100, "Alpha"],
+            [200, "Beta"],
+            [300, "Gamma"],
+            [400, "Delta"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+
+    sales = wb.create_sheet("Sales")
+    write_matrix(
+        sales,
+        [
+            ["SaleId", "Amount"],
+            ["S-1", 100],
+            ["S-2", 200],
+            ["S-3", 300],
+            ["S-4", 150],
+        ],
+    )
+    for cell in ("A1", "B1"):
+        sales[cell].font = Font(bold=True)
+
+    orders = wb.create_sheet("Orders")
+    write_matrix(
+        orders,
+        [
+            ["OrderId", "CustomerId", "Amount"],
+            ["O-1", 100, 50],
+            ["O-2", 100, 75],
+            ["O-3", 200, 90],
+            ["O-4", 300, 40],
+        ],
+    )
+    for cell in ("A1", "B1", "C1"):
+        orders[cell].font = Font(bold=True)
+    return wb
+
+
 def build_rel_pk_ranking(_seed: int) -> Workbook:
     """Code + unique free-text names: code must rank first among accepted PKs."""
     wb = new_workbook(sheet_title="People")
@@ -607,6 +654,38 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
         },
     ),
     ScenarioSpec(
+        scenario_id="rel_measure_into_identifier_no_fk",
+        category="relationships",
+        description="Amount into CustomerId rejected; Orders.CustomerId FK preserved",
+        relative_workbook="workbooks/relationships/rel_measure_into_identifier_no_fk.xlsx",
+        generator_name="relationship_scenarios.build_rel_measure_into_identifier_no_fk",
+        intentions=["Child reference evidence for FK sources"],
+        features=["relationships", "false_fk", "child_reference"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 3}},
+            "relationships": {
+                "foreign_keys": [
+                    {
+                        "from_sheet": "Orders",
+                        "from_column_index": 2,
+                        "to_sheet": "Customers",
+                        "to_column_index": 1,
+                        "accepted": True,
+                        "minimum_inclusion": 0.99,
+                    },
+                    {
+                        "from_sheet": "Sales",
+                        "from_column_index": 2,
+                        "to_sheet": "Customers",
+                        "to_column_index": 1,
+                        "accepted": False,
+                        "rejection_reason": "insufficient_child_reference_evidence",
+                    },
+                ],
+            },
+        },
+    ),
+    ScenarioSpec(
         scenario_id="rel_pk_ranking",
         category="relationships",
         description="Code ranks above unique free-text name",
@@ -653,6 +732,9 @@ BUILDERS = {
     "relationship_scenarios.build_rel_numeric_customer_id_fk": build_rel_numeric_customer_id_fk,
     "relationship_scenarios.build_rel_matching_measures_no_relation": (
         build_rel_matching_measures_no_relation
+    ),
+    "relationship_scenarios.build_rel_measure_into_identifier_no_fk": (
+        build_rel_measure_into_identifier_no_fk
     ),
     "relationship_scenarios.build_rel_pk_ranking": build_rel_pk_ranking,
 }

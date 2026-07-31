@@ -10,6 +10,7 @@ from exceler.application.relationships.domain_compat import (
 )
 from exceler.application.relationships.evidence import confidence_from_evidence
 from exceler.application.relationships.identifier_signals import (
+    has_child_reference_evidence,
     has_independent_identifier_evidence,
 )
 from exceler.application.relationships.value_index import ColumnValueSet
@@ -125,6 +126,7 @@ def _score_fk(
     cardinality = _infer_cardinality(child, parent)
     truncated = child.exactness is Exactness.TRUNCATED or parent.exactness is Exactness.TRUNCATED
     parent_independent = has_independent_identifier_evidence(parent)
+    child_reference = has_child_reference_evidence(child)
     child_independent = has_independent_identifier_evidence(child)
     reverse_inclusion = (
         len(parent_values & child_values) / max(len(parent_values), 1) if parent_values else 0.0
@@ -187,6 +189,27 @@ def _score_fk(
             )
         )
 
+    # 2D.5: child must look like a reference (header/type), not a measure.
+    if not child_reference:
+        rejection_reasons.append("insufficient_child_reference_evidence")
+        evidence.append(
+            RelationshipEvidenceItem(
+                "insufficient_child_reference_evidence",
+                -0.2,
+                "source lacks child reference evidence",
+                {"has_child_reference_evidence": False},
+            )
+        )
+    else:
+        evidence.append(
+            RelationshipEvidenceItem(
+                "child_reference_evidence",
+                0.05,
+                "source has child reference evidence",
+                {"has_child_reference_evidence": True},
+            )
+        )
+
     # Symmetric unique domains with mutual inclusion and no clear orientation.
     if (
         parent_unique >= 0.98
@@ -210,10 +233,10 @@ def _score_fk(
             )
 
     penalty = options.truncation_penalty if truncated else 0.0
-    # Keep FK max weight stable (parent_independent bonus is small additive signal).
+    # Keep FK max weight stable (parent/child evidence bonuses are small additive signals).
     score = confidence_from_evidence(
         evidence,
-        max_positive_weight=options.max_fk_positive_weight + 0.1,
+        max_positive_weight=options.max_fk_positive_weight + 0.15,
         penalty=penalty,
     )
     if score < options.min_fk_score:

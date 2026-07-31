@@ -35,12 +35,12 @@
 - El profiler no relee Excel ni importa openpyxl.
 - `unique_ratio` mide singletons/content; la unicidad de identificador usa `distinct_ratio`.
 
-## Keys & relationships (Phase 2D) — MVP (2D.4)
+## Keys & relationships (Phase 2D) — MVP (2D.5)
 
 - Claves y relaciones son **candidatos estructurales**, no constraints definitivos.
-- Solo intra-workbook; relaciones entre libros quedan fuera de 2D.4.
+- Solo intra-workbook; relaciones entre libros quedan fuera de 2D.5.
 - Sin ranking por nombre de columna entre pares; tokens de encabezado controlados
-  pueden actuar como evidencia de identidad independiente.
+  (con límites de token) pueden actuar como evidencia de identidad/referencia.
 - Fórmulas no aportan dominio de clave (sin evaluación).
 - Sets truncados (`max_distinct_values_tracked`) degradan inclusión/confianza.
 - Composites: pares solamente (triples opt-in, default off).
@@ -49,4 +49,6 @@
 - Tipos lógicos penalizados (p. ej. TEXT) se rechazan como PK aunque sean únicos.
 - Numéricos sin evidencia independiente (p. ej. Qty/Amount) se rechazan; el soporte FK
   no puede crear la aceptación por sí solo (2D.4).
+- Una columna medida cuyo dominio ⊆ un identificador no se acepta como FK
+  (`Sales.Amount → Customers.CustomerId`); hace falta evidencia de referencia en el hijo (2D.5).
 - El analyzer consume solo inspection + regions + profiling; no relee Excel.

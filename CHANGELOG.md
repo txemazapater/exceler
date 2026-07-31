@@ -6,6 +6,9 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Fase 2D.5: evidencia de referencia en el hijo FK y límites de token en encabezados;
+  rechazo `Sales.Amount → Customers.CustomerId` (`rel_measure_into_identifier_no_fk`)
+  conservando `Orders.CustomerId → Customers.CustomerId`.
 - Fase 2D.4: evidencia independiente vs soporte relacional; rechazo de medidas
   coincidentes (`rel_matching_measures_no_relation`); sin circularidad FK↔PK.
 - Fase 2D.3: evidencia estructural para PKs numéricas (`fk_parent_reference`);
@@ -22,6 +25,8 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Relationship engine **2D.5**: FK sources require child reference evidence; header
+  identifier tokens use whole-token boundaries (no free `id$` suffix).
 - Relationship engine **2D.4**: FK destination requires independent identifier evidence;
   relationship support cannot alone accept numeric PKs.
 - Relationship engine **2D.3**: FK discovery before PK scoring; numeric acceptance

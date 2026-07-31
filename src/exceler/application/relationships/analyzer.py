@@ -33,13 +33,14 @@ from exceler.domain.workbook.models import WorkbookInspection
 _LIMITATIONS = (
     "Keys and relationships are structural candidates, not definitive constraints.",
     "Column names are never used as ranking signals among peers.",
-    "Controlled header tokens may gate independent identifier evidence (2D.4).",
+    "Controlled header tokens may gate identity/reference evidence (token boundaries, 2D.5).",
     "Formula cells contribute no key values (unevaluated).",
     "Analyzer consumes inspection + regions + profiling only; never re-reads Excel.",
     "Confidence is calibrated against max possible evidence weight (2D.2+).",
     "INTEGER uniqueness alone never implies SURROGATE key kind.",
     "Numeric PKs require independent identity evidence; FK support cannot create them (2D.4).",
-    "Single-workbook analysis in 2D.4; multi-workbook support is reserved.",
+    "FK sources require child reference evidence; value inclusion alone is insufficient (2D.5).",
+    "Single-workbook analysis in 2D.5; multi-workbook support is reserved.",
 )
 
 

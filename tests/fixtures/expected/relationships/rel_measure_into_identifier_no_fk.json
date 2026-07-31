@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_measure_into_identifier_no_fk",
+  "workbook": "workbooks/relationships/rel_measure_into_identifier_no_fk.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 3
+      }
+    },
+    "relationships": {
+      "foreign_keys": [
+        {
+          "from_sheet": "Orders",
+          "from_column_index": 2,
+          "to_sheet": "Customers",
+          "to_column_index": 1,
+          "accepted": true,
+          "minimum_inclusion": 0.99
+        },
+        {
+          "from_sheet": "Sales",
+          "from_column_index": 2,
+          "to_sheet": "Customers",
+          "to_column_index": 1,
+          "accepted": false,
+          "rejection_reason": "insufficient_child_reference_evidence"
+        }
+      ]
+    }
+  }
+}
