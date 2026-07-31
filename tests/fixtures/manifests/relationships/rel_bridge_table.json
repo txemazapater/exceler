@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_bridge_table",
+  "description": "Enrollment bridge between students and courses",
+  "workbook": "workbooks/relationships/rel_bridge_table.xlsx",
+  "generator": "relationship_scenarios.build_rel_bridge_table",
+  "seed": 20260730,
+  "intentions": [
+    "Structural N:M / bridge"
+  ],
+  "features": [
+    "relationships",
+    "many_to_many"
+  ],
+  "versioned": true
+}

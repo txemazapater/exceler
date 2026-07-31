@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_duplicate_identifier",
+  "workbook": "workbooks/relationships/rel_duplicate_identifier.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "relationships": {
+      "sheets": [
+        {
+          "name": "Dup",
+          "primary_keys": [
+            {
+              "column_index": 1,
+              "maximum_confidence": 0.7
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

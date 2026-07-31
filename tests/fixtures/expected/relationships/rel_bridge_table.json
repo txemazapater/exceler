@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_bridge_table",
+  "workbook": "workbooks/relationships/rel_bridge_table.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 3
+      }
+    },
+    "relationships": {
+      "foreign_keys_min": 1
+    }
+  }
+}

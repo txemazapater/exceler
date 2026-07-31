@@ -6,12 +6,16 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Fase 2D: claves y relaciones estructurales intra-workbook (`DeterministicRelationshipAnalyzer`,
+  CLI `workbook relationships`, `expectations.relationships`, corpus `rel_*`).
+- Documentación `docs/keys-and-relationships.md`.
 - Fase 2C: perfilado e inferencia de tipos estructurales (`DeterministicRegionProfiler`, CLI
   `workbook profile`, `expectations.profiling`, corpus de tipos/anomalías/ids).
 - Documentación `docs/profiling-and-type-inference.md`.
 
 ### Changed
 
+- Roadmap: 2D = keys **and** relationships; inter-workbook diferido (antes “2E”).
 - Profiler **2C.3**: matriz explícita DATE/DATETIME/TIME (un `09:30` ya no es
   compatible con DATE; DATE sí promociona a DATETIME).
 - Profiler **2C.2**: parseo numérico sin locale fija, enteros/decimales como texto,

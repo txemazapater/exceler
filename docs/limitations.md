@@ -34,3 +34,13 @@
 - Identifier/categorical son candidatos, no claves/FK definitivas.
 - El profiler no relee Excel ni importa openpyxl.
 - `unique_ratio` mide singletons/content; la unicidad de identificador usa `distinct_ratio`.
+
+## Keys & relationships (Phase 2D) — MVP
+
+- Claves y relaciones son **candidatos estructurales**, no constraints definitivos.
+- Solo intra-workbook; relaciones entre libros quedan fuera de 2D.1.
+- Sin ranking por nombre de columna; headers son etiquetas humanas.
+- Fórmulas no aportan dominio de clave (sin evaluación).
+- Sets truncados (`max_distinct_values_tracked`) degradan inclusión/confianza.
+- Composites: pares solamente (triples opt-in, default off).
+- El analyzer consume solo inspection + regions + profiling; no relee Excel.

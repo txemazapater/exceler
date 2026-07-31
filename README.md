@@ -6,8 +6,8 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 2C entregada:** perfilado e inferencia de tipos estructurales desde inspección + regiones.
-Siguiente: **2D** (entidades / semántica); aún **no** hay claves ni relaciones definitivas.
+**Fase 2D entregada:** claves y relaciones estructurales intra-workbook desde inspección + regiones + profiling.
+Candidatos solo (no constraints definitivos). Siguiente: semántica / entidades e inter-workbook.
 
 CI: GitHub Actions (`quality` + unit + fixture verify, `integration` + Postgres, `docker` build + Compose smoke).
 Local sin Docker: `pytest -m "not integration and not docker"`.
@@ -16,6 +16,7 @@ Fixtures: `uv run exceler dev fixtures generate|verify`.
 Inspección: `uv run exceler workbook inspect path.xlsx [--format json]`.
 Regiones: `uv run exceler workbook regions path.xlsx [--format json]`.
 Perfilado: `uv run exceler workbook profile path.xlsx [--format json]`.
+Relaciones: `uv run exceler workbook relationships path.xlsx [--format json]`.
 
 ## Arranque rápido (Docker Compose)
 
@@ -86,6 +87,7 @@ CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint
 | [docs/workbook-inspection.md](docs/workbook-inspection.md) | Inspección factual (Fase 2A) |
 | [docs/region-detection.md](docs/region-detection.md) | Detección de regiones (Fase 2B) |
 | [docs/profiling-and-type-inference.md](docs/profiling-and-type-inference.md) | Perfilado e inferencia (Fase 2C) |
+| [docs/keys-and-relationships.md](docs/keys-and-relationships.md) | Claves y relaciones (Fase 2D) |
 | [docs/limitations.md](docs/limitations.md) | Limitaciones conocidas |
 | [docs/staging.md](docs/staging.md) | Staging manual en SAPIENS |
 | [docs/decisions/](docs/decisions/README.md) | ADRs |
@@ -119,6 +121,8 @@ exceler workbook regions archivo.xlsx
 exceler workbook regions archivo.xlsx --format json --pretty
 exceler workbook profile archivo.xlsx
 exceler workbook profile archivo.xlsx --format json --pretty
+exceler workbook relationships archivo.xlsx
+exceler workbook relationships archivo.xlsx --format json --pretty
 exceler dev fixtures generate
 exceler dev fixtures verify
 ```

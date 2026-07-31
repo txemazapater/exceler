@@ -1,0 +1,215 @@
+"""Foreign key and relationship discovery (Phase 2D)."""
+
+from __future__ import annotations
+
+from collections import Counter
+
+from exceler.application.relationships.domain_compat import (
+    domain_compatibility_score,
+    logical_types_compatible,
+)
+from exceler.application.relationships.evidence import clamp, confidence_from_evidence
+from exceler.application.relationships.value_index import ColumnValueSet
+from exceler.domain.relationships.enums import Exactness, RelationshipCardinality
+from exceler.domain.relationships.models import (
+    ForeignKeyCandidate,
+    RelationshipCandidate,
+    RelationshipEvidenceItem,
+)
+from exceler.domain.relationships.options import RelationshipOptions
+
+
+def discover_foreign_keys(
+    columns: list[ColumnValueSet],
+    *,
+    options: RelationshipOptions,
+) -> list[ForeignKeyCandidate]:
+    candidates: list[ForeignKeyCandidate] = []
+    comparisons = 0
+    # Prefer parent-like columns (high uniqueness) as targets.
+    parents = sorted(
+        columns,
+        key=lambda col: (
+            -(len(col.distinct) / max(col.content_count, 1)),
+            col.ref.sheet_name,
+            col.ref.region_id,
+            col.ref.column_index,
+        ),
+    )
+    children = sorted(
+        columns,
+        key=lambda col: (col.ref.sheet_name, col.ref.region_id, col.ref.column_index),
+    )
+
+    for child in children:
+        if child.content_count < 1 or not child.distinct:
+            continue
+        child_type = child.profile.logical_type_inference.selected_type
+        child_ratio = len(child.distinct) / max(child.content_count, 1)
+        for parent in parents:
+            if comparisons >= options.max_fk_pair_comparisons:
+                break
+            if child.ref.column_id == parent.ref.column_id:
+                continue
+            if child.ref.region_id == parent.ref.region_id:
+                continue
+            if not parent.distinct:
+                continue
+            parent_type = parent.profile.logical_type_inference.selected_type
+            if not logical_types_compatible(child_type, parent_type):
+                continue
+            domain_score = domain_compatibility_score(child, parent)
+            if domain_score < options.min_domain_compat_score:
+                continue
+            comparisons += 1
+            parent_ratio = len(parent.distinct) / max(parent.content_count, 1)
+            # Parent side should look key-like for directed FK candidates.
+            if parent_ratio < options.min_fk_parent_distinct_ratio:
+                continue
+            # Unique smaller set ⊆ larger set is almost always reversed direction
+            # (true orphans make the child domain larger than the parent key).
+            if (
+                child.distinct <= parent.distinct
+                and len(parent.distinct) > len(child.distinct)
+                and child_ratio >= 0.98
+            ):
+                continue
+            candidate = _score_fk(child, parent, domain_score, options)
+            if candidate is None:
+                continue
+            # Prefer child less unique than parent for classic FK direction.
+            if child_ratio > parent_ratio + 0.05 and candidate.inclusion_ratio < 0.99:
+                continue
+            candidates.append(candidate)
+        if comparisons >= options.max_fk_pair_comparisons:
+            break
+
+    candidates.sort(
+        key=lambda item: (
+            -item.confidence,
+            -item.inclusion_ratio,
+            item.from_column.column_id,
+            item.to_column.column_id,
+        )
+    )
+    return candidates[: options.max_fk_candidates]
+
+
+def _score_fk(
+    child: ColumnValueSet,
+    parent: ColumnValueSet,
+    domain_score: float,
+    options: RelationshipOptions,
+) -> ForeignKeyCandidate | None:
+    child_values = {v for v in child.distinct}
+    parent_values = parent.distinct
+    if not child_values:
+        return None
+
+    orphans = sorted(child_values - parent_values)
+    included = len(child_values) - len(orphans)
+    inclusion = included / max(len(child_values), 1)
+    if inclusion < options.min_fk_inclusion_ratio:
+        return None
+
+    # Coverage: how much of the parent domain is referenced.
+    coverage = len(child_values & parent_values) / max(len(parent_values), 1)
+    orphan_ratio = len(orphans) / max(len(child_values), 1)
+    parent_unique = len(parent.distinct) / max(parent.content_count, 1)
+
+    cardinality = _infer_cardinality(child, parent)
+    truncated = (
+        child.exactness is Exactness.TRUNCATED or parent.exactness is Exactness.TRUNCATED
+    )
+
+    evidence = [
+        RelationshipEvidenceItem(
+            "inclusion_ratio",
+            options.weight_inclusion * inclusion,
+            f"inclusion_ratio={inclusion:.4f}",
+            {"inclusion_ratio": inclusion},
+        ),
+        RelationshipEvidenceItem(
+            "parent_uniqueness",
+            options.weight_parent_unique * parent_unique,
+            f"parent_distinct_ratio={parent_unique:.4f}",
+        ),
+        RelationshipEvidenceItem(
+            "domain_compatibility",
+            options.weight_domain_compat * domain_score,
+            f"domain_compat={domain_score:.4f}",
+        ),
+        RelationshipEvidenceItem(
+            "logical_type_compatible",
+            options.weight_type_compat,
+            "logical types compatible",
+        ),
+    ]
+    if orphan_ratio > 0:
+        evidence.append(
+            RelationshipEvidenceItem(
+                "orphans_present",
+                -options.orphan_penalty_factor * orphan_ratio,
+                f"orphan_ratio={orphan_ratio:.4f} orphan_count={len(orphans)}",
+            )
+        )
+
+    penalty = options.truncation_penalty if truncated else 0.0
+    confidence = confidence_from_evidence(evidence, penalty=penalty)
+
+    return ForeignKeyCandidate(
+        from_column=child.ref,
+        to_column=parent.ref,
+        confidence=clamp(confidence),
+        inclusion_ratio=inclusion,
+        coverage_ratio=coverage,
+        orphan_ratio=orphan_ratio,
+        orphan_count=len(orphans),
+        orphan_sample=tuple(orphans[: options.orphan_sample_limit]),
+        cardinality=cardinality,
+        exactness=Exactness.TRUNCATED if truncated else Exactness.EXACT,
+        evidence=tuple(evidence),
+        warnings=tuple(dict.fromkeys([*child.warnings, *parent.warnings])),
+    )
+
+
+def _infer_cardinality(
+    child: ColumnValueSet,
+    parent: ColumnValueSet,
+) -> RelationshipCardinality:
+    child_ratio = len(child.distinct) / max(child.content_count, 1)
+    parent_ratio = len(parent.distinct) / max(parent.content_count, 1)
+    # Multiplicity on child side: value frequency
+    freqs = Counter(v for v in child.row_values if v is not None)
+    max_freq = max(freqs.values()) if freqs else 1
+
+    if parent_ratio >= 0.98 and child_ratio >= 0.98 and max_freq == 1:
+        return RelationshipCardinality.ONE_TO_ONE
+    if parent_ratio >= 0.95 and max_freq > 1:
+        return RelationshipCardinality.ONE_TO_MANY
+    # Mutual non-uniqueness + strong overlap suggests bridge / M:N
+    overlap = len(child.distinct & parent.distinct) / max(len(child.distinct | parent.distinct), 1)
+    if child_ratio < 0.95 and parent_ratio < 0.95 and overlap >= 0.5:
+        return RelationshipCardinality.MANY_TO_MANY
+    if parent_ratio >= 0.9:
+        return RelationshipCardinality.ONE_TO_MANY
+    return RelationshipCardinality.UNKNOWN
+
+
+def relationships_from_foreign_keys(
+    foreign_keys: list[ForeignKeyCandidate],
+) -> list[RelationshipCandidate]:
+    results: list[RelationshipCandidate] = []
+    for fk in foreign_keys:
+        results.append(
+            RelationshipCandidate(
+                from_column=fk.from_column,
+                to_column=fk.to_column,
+                cardinality=fk.cardinality,
+                confidence=fk.confidence,
+                foreign_key=fk,
+                evidence=fk.evidence,
+                warnings=fk.warnings,
+            )
+        )
+    return results

@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_customers_orders",
+  "description": "Orders.CustomerCode references Customers.CustomerCode",
+  "workbook": "workbooks/relationships/rel_customers_orders.xlsx",
+  "generator": "relationship_scenarios.build_rel_customers_orders",
+  "seed": 20260730,
+  "intentions": [
+    "Detect FK inclusion"
+  ],
+  "features": [
+    "relationships",
+    "foreign_key"
+  ],
+  "versioned": true
+}

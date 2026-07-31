@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_invoice_header_lines",
+  "workbook": "workbooks/relationships/rel_invoice_header_lines.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 2
+      }
+    },
+    "relationships": {
+      "foreign_keys": [
+        {
+          "from_sheet": "InvoiceLines",
+          "from_column_index": 1,
+          "to_sheet": "Invoices",
+          "to_column_index": 1,
+          "cardinality": "one_to_many"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_simple_primary_key",
+  "description": "Unique non-null code as PK candidate",
+  "workbook": "workbooks/relationships/rel_simple_primary_key.xlsx",
+  "generator": "relationship_scenarios.build_rel_simple_primary_key",
+  "seed": 20260730,
+  "intentions": [
+    "Detect primary key candidate"
+  ],
+  "features": [
+    "relationships",
+    "primary_key"
+  ],
+  "versioned": true
+}

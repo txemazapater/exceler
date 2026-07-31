@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_orphan_and_partial",
+  "description": "Orphan and nullable FK values",
+  "workbook": "workbooks/relationships/rel_orphan_and_partial.xlsx",
+  "generator": "relationship_scenarios.build_rel_orphan_and_partial",
+  "seed": 20260730,
+  "intentions": [
+    "Surface orphans and uncertainty"
+  ],
+  "features": [
+    "relationships",
+    "orphans"
+  ],
+  "versioned": true
+}

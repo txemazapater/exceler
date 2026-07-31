@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_composite_key",
+  "workbook": "workbooks/relationships/rel_composite_key.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "relationships": {
+      "sheets": [
+        {
+          "name": "Lines",
+          "composite_keys_min": 1
+        }
+      ]
+    }
+  }
+}

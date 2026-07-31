@@ -8,6 +8,7 @@ from tests.generators import (
     inspection_scenarios,
     profiling_scenarios,
     region_scenarios,
+    relationship_scenarios,
     structural_scenarios,
 )
 from tests.generators.workbook_factory import ScenarioSpec
@@ -20,6 +21,7 @@ ALL_SPECS: list[ScenarioSpec] = [
     *region_scenarios.REGION_SPECS,
     *inspection_scenarios.INSPECTION_SPECS,
     *profiling_scenarios.PROFILE_SPECS,
+    *relationship_scenarios.RELATIONSHIP_SPECS,
     *corporate_scenarios.CORPORATE_SPECS,
 ]
 
@@ -31,6 +33,8 @@ for name, fn in region_scenarios.BUILDERS.items():
 for name, fn in inspection_scenarios.BUILDERS.items():
     ALL_BUILDERS[name] = fn  # type: ignore[assignment]
 for name, fn in profiling_scenarios.BUILDERS.items():
+    ALL_BUILDERS[name] = fn  # type: ignore[assignment]
+for name, fn in relationship_scenarios.BUILDERS.items():
     ALL_BUILDERS[name] = fn  # type: ignore[assignment]
 for name, fn in corporate_scenarios.BUILDERS.items():
     ALL_BUILDERS[name] = fn  # type: ignore[assignment]

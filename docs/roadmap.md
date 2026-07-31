@@ -11,14 +11,14 @@ Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un comprom
 | **2A** | Workbook Inspection | Lectura estructural factual |
 | **2B** | Region and Table Detection | Regiones y tablas lógicas |
 | **2C** | Profiling and Type Inference | Perfilado e inferencia de tipos |
-| **2D** | Key Detection | Candidatos a clave |
-| **2E** | Relationship Detection | Relaciones intra/inter-libro |
+| **2D** | Keys & Relationships | Claves y relaciones intra-workbook |
+| **2E** | Inter-workbook relations *(diferido)* | Relaciones entre libros |
 
 Las fases numeradas 3–12 del roadmap largo siguen vigentes como entregas de producto;
 2S/2A–2E son cortes de implementación que alimentan esas entregas sin solaparse en alcance.
 
-Estado actual: **Fase 2C entregada** — perfilado e inferencia de tipos estructurales.
-Siguiente corte: **2D** (entidades / significado).
+Estado actual: **Fase 2D entregada** — claves y relaciones estructurales intra-workbook.
+Siguiente corte: semántica / entidades (y relaciones inter-workbook más adelante).
 
 ## Fase 0 — Fundamentos
 
@@ -112,15 +112,23 @@ Siguiente corte: **2D** (entidades / significado).
 - CLI `exceler workbook profile`; expected `expectations.profiling`; schema **1** / profiler **2C.3**.
 - Documentación `docs/profiling-and-type-inference.md`.
 
-**Salida:** perfiles estructurales explicables sin semántica 2D–2E. **Cerrada (2C.3).**
+**Salida:** perfiles estructurales explicables sin semántica de claves/relaciones. **Cerrada (2C.3).**
 
-## Fase 2D — Key Detection
+## Fase 2D — Keys & Relationships (intra-workbook)
 
-Antes: unicidad, casi unicidad, duplicados, claves compuestas y falsos candidatos.
+- `DeterministicRelationshipAnalyzer` consume solo inspection + regions + profiling.
+- Candidatos PK / compuestos (pares) / FK con inclusión, huérfanos y cardinalidad.
+- Grafo estructural; evidencias explícitas; sin ranking por nombres de columna.
+- CLI `exceler workbook relationships`; expected `expectations.relationships`;
+  schema **1** / engine **2D.1**.
+- Documentación `docs/keys-and-relationships.md`.
 
-## Fase 2E — Relationship Detection
+**Salida:** candidatos estructurales revisables (no constraints definitivos). **Cerrada (2D.1).**
 
-Antes: coincidencias exactas, parciales, normalizadas, ambiguas y falsas relaciones.
+## Relación inter-workbook (diferido)
+
+Antes etiquetado como “2E Relationship Detection”: coincidencias entre libros distintos,
+normalizaciones y ambigüedad multi-origen. Queda fuera de 2D.1.
 
 ## Fase 3 — Inventario y ejecuciones de descubrimiento
 
@@ -243,8 +251,8 @@ flowchart LR
   F2S --> F3[3 Inventario]
   F2A --> F2B[2B Regions]
   F2B --> F2C[2C Profiling]
-  F2C --> F2D[2D Keys]
-  F2D --> F2E[2E Relations]
+  F2C --> F2D[2D Keys+Rels]
+  F2D --> F2E[Inter-workbook / semantics]
   F3 --> F4[4 SMB]
   F3 --> F6[6 Inspector prod.]
   F4 --> F5[5 SPO/OD]

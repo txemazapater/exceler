@@ -12,11 +12,16 @@ from exceler.application.profiling.profiler import DeterministicRegionProfiler
 from exceler.application.profiling.serialization import profile_to_dict
 from exceler.application.regions.heuristic_detector import HeuristicRegionDetector
 from exceler.application.regions.serialization import regions_to_dict
+from exceler.application.relationships.analyzer import DeterministicRelationshipAnalyzer
+from exceler.application.relationships.serialization import relationships_to_dict
 from exceler.application.workbook.serialization import inspection_to_dict
 from exceler.domain.profiling.errors import ProfilingError
 from exceler.domain.profiling.models import ProfilingResult
 from exceler.domain.profiling.options import ProfilingOptions
 from exceler.domain.regions.models import RegionDetectionResult
+from exceler.domain.relationships.errors import RelationshipError
+from exceler.domain.relationships.models import RelationshipAnalysisResult
+from exceler.domain.relationships.options import RelationshipOptions
 from exceler.domain.workbook.enums import InspectionCompletionStatus
 from exceler.domain.workbook.errors import (
     EncryptedWorkbookError,
@@ -146,8 +151,38 @@ def _print_profile_human(result: ProfilingResult) -> None:
                 )
 
 
+def _print_relationships_human(result: RelationshipAnalysisResult) -> None:
+    typer.echo(f"Workbook hash: {result.workbook_hash}")
+    typer.echo(f"Engine: {result.relationship_engine_version}")
+    typer.echo(f"Schema: {result.relationship_schema_version}")
+    if result.warnings:
+        for warning in result.warnings:
+            typer.echo(f"Warning: {warning}")
+    typer.echo("")
+    for sheet in result.sheets:
+        typer.echo(f"[{sheet.sheet_index}] {sheet.sheet_name}")
+        for pk in sheet.primary_keys[:8]:
+            typer.echo(
+                f"  PK {pk.column.column_letter} {pk.column.effective_name}: "
+                f"conf={pk.confidence:.2f} kind={pk.key_kind.value} "
+                f"distinct_ratio={pk.statistics.distinct_ratio:.3f}"
+            )
+        for ck in sheet.composite_keys[:5]:
+            names = "+".join(f"{c.column_letter}:{c.effective_name}" for c in ck.columns)
+            typer.echo(f"  Composite {names}: conf={ck.confidence:.2f}")
+    if result.foreign_keys:
+        typer.echo("Foreign keys:")
+        for fk in result.foreign_keys[:12]:
+            typer.echo(
+                f"  {fk.from_column.sheet_name}.{fk.from_column.effective_name} → "
+                f"{fk.to_column.sheet_name}.{fk.to_column.effective_name} "
+                f"incl={fk.inclusion_ratio:.3f} orphans={fk.orphan_count} "
+                f"card={fk.cardinality.value} conf={fk.confidence:.2f}"
+            )
+
+
 def register_workbook_commands(app: typer.Typer) -> None:
-    workbook_app = typer.Typer(help="Workbook inspection, regions, and profiling")
+    workbook_app = typer.Typer(help="Workbook inspection, regions, profiling, and relationships")
     app.add_typer(workbook_app, name="workbook")
 
     @workbook_app.command("inspect")
@@ -461,6 +496,106 @@ def register_workbook_commands(app: typer.Typer) -> None:
                 _write(buf.getvalue(), output)
             else:
                 _print_profile_human(result)
+
+        if inspection.completion_status is InspectionCompletionStatus.PARTIAL:
+            raise typer.Exit(EXIT_PARTIAL)
+
+    @workbook_app.command("relationships")
+    def workbook_relationships(
+        path: PathArg,
+        format: FormatOpt = "text",
+        pretty: PrettyOpt = False,
+        output: OutputOpt = None,
+        max_cells: MaxCellsOpt = None,
+        max_cells_scanned: MaxScannedOpt = None,
+    ) -> None:
+        """Inspect, detect regions, profile, then analyze keys/relationships (Phase 2D)."""
+        as_json = format.lower() == "json"
+        if format.lower() not in {"text", "json"}:
+            payload = _error_payload("INVALID_ARGS", "format must be text or json")
+            if as_json:
+                typer.echo(json.dumps(payload))
+            else:
+                err = payload["error"]
+                assert isinstance(err, dict)
+                typer.echo(str(err["message"]))
+            raise typer.Exit(EXIT_INVALID_ARGS)
+
+        inspect_options = WorkbookInspectionOptions()
+        if max_cells is not None or max_cells_scanned is not None:
+            inspect_options = WorkbookInspectionOptions(
+                include_empty_formatted_cells=inspect_options.include_empty_formatted_cells,
+                include_comments=inspect_options.include_comments,
+                include_hyperlinks=inspect_options.include_hyperlinks,
+                include_external_links=inspect_options.include_external_links,
+                max_worksheets=inspect_options.max_worksheets,
+                max_cells_observed=(
+                    max_cells if max_cells is not None else inspect_options.max_cells_observed
+                ),
+                max_cells_scanned=(
+                    max_cells_scanned
+                    if max_cells_scanned is not None
+                    else inspect_options.max_cells_scanned
+                ),
+                max_file_size_bytes=inspect_options.max_file_size_bytes,
+            )
+
+        reader = OpenPyxlWorkbookReader()
+        detector = HeuristicRegionDetector()
+        profiler = DeterministicRegionProfiler()
+        analyzer = DeterministicRelationshipAnalyzer()
+        try:
+            source = LocalWorkbookSource(path)
+            inspection = reader.inspect(source, inspect_options)
+            regions = detector.detect(inspection)
+            profiling = profiler.profile(inspection, regions, ProfilingOptions())
+            result = analyzer.analyze(inspection, regions, profiling, RelationshipOptions())
+        except WorkbookNotFoundError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_NOT_FOUND) from exc
+        except WorkbookAccessDeniedError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_NOT_FOUND) from exc
+        except UnsupportedWorkbookFormatError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_UNSUPPORTED) from exc
+        except (InvalidWorkbookError, EncryptedWorkbookError) as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_INVALID) from exc
+        except WorkbookLimitExceededError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_LIMIT) from exc
+        except (ProfilingError, RelationshipError) as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_INVALID) from exc
+        except WorkbookInspectionError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_UNEXPECTED) from exc
+        except Exception as exc:  # noqa: BLE001
+            _emit_error(
+                "UNEXPECTED_ERROR",
+                "Unexpected relationship analysis failure.",
+                as_json=as_json,
+                pretty=pretty,
+                output=output,
+            )
+            raise typer.Exit(EXIT_UNEXPECTED) from exc
+
+        if as_json:
+            text = json.dumps(
+                {"ok": True, **relationships_to_dict(result)},
+                indent=2 if pretty else None,
+                ensure_ascii=False,
+            )
+            _write(text, output)
+        else:
+            if output is not None:
+                buf = StringIO()
+                with contextlib.redirect_stdout(buf):
+                    _print_relationships_human(result)
+                _write(buf.getvalue(), output)
+            else:
+                _print_relationships_human(result)
 
         if inspection.completion_status is InspectionCompletionStatus.PARTIAL:
             raise typer.Exit(EXIT_PARTIAL)

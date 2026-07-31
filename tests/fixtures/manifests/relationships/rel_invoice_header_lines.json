@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_invoice_header_lines",
+  "description": "Invoice header to lines 1:N",
+  "workbook": "workbooks/relationships/rel_invoice_header_lines.xlsx",
+  "generator": "relationship_scenarios.build_rel_invoice_header_lines",
+  "seed": 20260730,
+  "intentions": [
+    "1:N cardinality"
+  ],
+  "features": [
+    "relationships",
+    "one_to_many"
+  ],
+  "versioned": true
+}

@@ -42,6 +42,13 @@
     "profile_mixed_and_anomalies",
     "profile_id_and_category",
     "profile_headers",
+    "rel_simple_primary_key",
+    "rel_duplicate_identifier",
+    "rel_composite_key",
+    "rel_customers_orders",
+    "rel_invoice_header_lines",
+    "rel_orphan_and_partial",
+    "rel_bridge_table",
     "hell_erp_clientes",
     "hell_erp_articulos",
     "hell_erp_pedidos",
@@ -89,11 +96,18 @@
     "workbooks/types/profile_mixed_and_anomalies.xlsx",
     "workbooks/types/profile_id_and_category.xlsx",
     "workbooks/types/profile_headers.xlsx",
+    "workbooks/relationships/rel_simple_primary_key.xlsx",
+    "workbooks/relationships/rel_duplicate_identifier.xlsx",
+    "workbooks/relationships/rel_composite_key.xlsx",
+    "workbooks/relationships/rel_customers_orders.xlsx",
+    "workbooks/relationships/rel_invoice_header_lines.xlsx",
+    "workbooks/relationships/rel_orphan_and_partial.xlsx",
+    "workbooks/relationships/rel_bridge_table.xlsx",
     "workbooks/scenarios/hell_erp/clientes.xlsx",
     "workbooks/scenarios/hell_erp/articulos.xlsx",
     "workbooks/scenarios/hell_erp/pedidos.xlsx",
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 45
+  "count": 52
 }

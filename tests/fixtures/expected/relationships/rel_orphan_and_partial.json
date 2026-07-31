@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_orphan_and_partial",
+  "workbook": "workbooks/relationships/rel_orphan_and_partial.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 2
+      }
+    },
+    "relationships": {
+      "foreign_keys": [
+        {
+          "from_sheet": "Children",
+          "from_column_index": 2,
+          "to_sheet": "Parents",
+          "to_column_index": 1,
+          "has_orphans": true
+        }
+      ]
+    }
+  }
+}

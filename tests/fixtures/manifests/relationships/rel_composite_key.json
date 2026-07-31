@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_composite_key",
+  "description": "OrderId+LineNo composite uniqueness",
+  "workbook": "workbooks/relationships/rel_composite_key.xlsx",
+  "generator": "relationship_scenarios.build_rel_composite_key",
+  "seed": 20260730,
+  "intentions": [
+    "Detect composite key"
+  ],
+  "features": [
+    "relationships",
+    "composite_key"
+  ],
+  "versioned": true
+}

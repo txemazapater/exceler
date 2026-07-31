@@ -1,0 +1,15 @@
+{
+  "scenario_id": "rel_duplicate_identifier",
+  "description": "Duplicated codes should not be strong PK",
+  "workbook": "workbooks/relationships/rel_duplicate_identifier.xlsx",
+  "generator": "relationship_scenarios.build_rel_duplicate_identifier",
+  "seed": 20260730,
+  "intentions": [
+    "Reject duplicate identifier as PK"
+  ],
+  "features": [
+    "relationships",
+    "false_pk"
+  ],
+  "versioned": true
+}

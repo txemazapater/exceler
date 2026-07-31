@@ -52,11 +52,12 @@ Sirve para aceptar de forma segura la extensión; no contiene macros ejecutables
 
 ## Cortes posteriores (nomenclatura B)
 
-**2A** inspection (activa) → **2B** regions → **2C** profiling → **2D** keys → **2E** relationships.
+**2A** inspection → **2B** regions → **2C** profiling → **2D** keys & relationships → (inter-workbook / semántica posterior).
 **2S** es inventario filesystem (paralelo). Ver [roadmap.md](roadmap.md).
 
-Durante 2A/2B/2C se validan `expectations.inspection`, `expectations.regions` y, cuando existe,
-`expectations.profiling`. Secciones `relationships` / keys pueden existir como reservadas.
+Durante 2A–2D se validan `expectations.inspection`, `expectations.regions`,
+`expectations.profiling` y `expectations.relationships` cuando existan.
+Corpus 2D: `rel_*` bajo `workbooks/relationships/`.
 
 ## Restricción
 
