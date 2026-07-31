@@ -109,9 +109,7 @@ class DeterministicRelationshipAnalyzer:
                 SheetRelationshipAnalysis(
                     sheet_name=name,
                     sheet_index=sheet_index.get(name, -1),
-                    primary_keys=tuple(
-                        pk for pk in primary_keys if pk.column.sheet_name == name
-                    ),
+                    primary_keys=tuple(pk for pk in primary_keys if pk.column.sheet_name == name),
                     composite_keys=tuple(
                         ck
                         for ck in composite_keys

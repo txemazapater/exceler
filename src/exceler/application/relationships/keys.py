@@ -235,9 +235,7 @@ def _score_pair(
     ]
     penalty = options.truncation_penalty if truncated else 0.0
     confidence = confidence_from_evidence(evidence, penalty=penalty)
-    cols = tuple(
-        sorted([left.ref, right.ref], key=lambda ref: (ref.column_index, ref.column_id))
-    )
+    cols = tuple(sorted([left.ref, right.ref], key=lambda ref: (ref.column_index, ref.column_id)))
     return CompositeKeyCandidate(
         columns=cols,
         confidence=clamp(confidence),

@@ -222,7 +222,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         ],
                     }
                 ]
-            }
+            },
         },
     ),
     ScenarioSpec(
@@ -247,7 +247,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         ],
                     }
                 ]
-            }
+            },
         },
     ),
     ScenarioSpec(
@@ -267,7 +267,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         "composite_keys_min": 1,
                     }
                 ]
-            }
+            },
         },
     ),
     ScenarioSpec(
@@ -291,7 +291,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         "minimum_confidence": 0.5,
                     }
                 ]
-            }
+            },
         },
     ),
     ScenarioSpec(
@@ -314,7 +314,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         "cardinality": "one_to_many",
                     }
                 ]
-            }
+            },
         },
     ),
     ScenarioSpec(
@@ -337,7 +337,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         "has_orphans": True,
                     }
                 ]
-            }
+            },
         },
     ),
     ScenarioSpec(
@@ -352,7 +352,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
             "inspection": {"workbook": {"worksheet_count": 3}},
             "relationships": {
                 "foreign_keys_min": 1,
-            }
+            },
         },
     ),
 ]

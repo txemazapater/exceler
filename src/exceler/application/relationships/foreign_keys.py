@@ -118,9 +118,7 @@ def _score_fk(
     parent_unique = len(parent.distinct) / max(parent.content_count, 1)
 
     cardinality = _infer_cardinality(child, parent)
-    truncated = (
-        child.exactness is Exactness.TRUNCATED or parent.exactness is Exactness.TRUNCATED
-    )
+    truncated = child.exactness is Exactness.TRUNCATED or parent.exactness is Exactness.TRUNCATED
 
     evidence = [
         RelationshipEvidenceItem(

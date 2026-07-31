@@ -55,9 +55,7 @@ def build_column_value_sets(
         for region in sheet.regions:
             region_by_id[region.id] = region
 
-    cell_indexes = {
-        name: _sheet_index(ws) for name, ws in ws_by_name.items()
-    }
+    cell_indexes = {name: _sheet_index(ws) for name, ws in ws_by_name.items()}
     profile_opts = _profile_options(options)
     results: list[ColumnValueSet] = []
 
