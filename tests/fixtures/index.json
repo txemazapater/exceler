@@ -37,6 +37,11 @@
     "cross_sheet_formula",
     "named_range_formula",
     "xlsm_with_vba_stub",
+    "profile_core_types",
+    "profile_logical_specials",
+    "profile_mixed_and_anomalies",
+    "profile_id_and_category",
+    "profile_headers",
     "hell_erp_clientes",
     "hell_erp_articulos",
     "hell_erp_pedidos",
@@ -79,11 +84,16 @@
     "workbooks/types/cross_sheet_formula.xlsx",
     "workbooks/types/named_range_formula.xlsx",
     "workbooks/structural/xlsm_with_vba_stub.xlsm",
+    "workbooks/types/profile_core_types.xlsx",
+    "workbooks/types/profile_logical_specials.xlsx",
+    "workbooks/types/profile_mixed_and_anomalies.xlsx",
+    "workbooks/types/profile_id_and_category.xlsx",
+    "workbooks/types/profile_headers.xlsx",
     "workbooks/scenarios/hell_erp/clientes.xlsx",
     "workbooks/scenarios/hell_erp/articulos.xlsx",
     "workbooks/scenarios/hell_erp/pedidos.xlsx",
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 40
+  "count": 45
 }

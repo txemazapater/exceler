@@ -22,3 +22,11 @@
 - Huecos vacíos interiores se fusionan solo con score de continuidad (bordes/fill); gaps fuertes o bandas título↔tabla no se unen.
 - **Ocupación en capas:** `observed` ≠ `content` ≠ `visual`; la densidad contractual usa contenido.
 - **Tablas estructuradas:** reservan su interior; la heurística no compite dentro del ref Excel.
+
+## Profiling (Phase 2C) — MVP
+
+- Tipos lógicos son estructurales, no entidades de negocio.
+- Las fórmulas se cuentan sin evaluar; no hay valores cacheados de 2A.
+- Fechas ambiguas (DD/MM vs MM/DD) bajan confianza en lugar de imponer locale.
+- Identifier/categorical son candidatos, no claves/FK definitivas.
+- El profiler no relee Excel ni importa openpyxl.

@@ -1,0 +1,18 @@
+{
+  "scenario_id": "profile_mixed_and_anomalies",
+  "description": "Mezclas, fechas ambiguas, errores Excel, fórmulas, blank vs empty",
+  "workbook": "workbooks/types/profile_mixed_and_anomalies.xlsx",
+  "generator": "profiling_scenarios.build_profile_mixed_and_anomalies",
+  "seed": 20260730,
+  "intentions": [
+    "Anomalías estructurales",
+    "Fórmulas sin evaluar"
+  ],
+  "features": [
+    "profiling",
+    "anomalies",
+    "formulas",
+    "ambiguous_dates"
+  ],
+  "versioned": true
+}

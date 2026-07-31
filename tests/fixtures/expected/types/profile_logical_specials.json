@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "scenario_id": "profile_logical_specials",
+  "workbook": "workbooks/types/profile_logical_specials.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "profiling": {
+      "sheets": [
+        {
+          "name": "Specials",
+          "regions": [
+            {
+              "columns": [
+                {
+                  "column_index": 1,
+                  "logical_type": "percentage",
+                  "minimum_confidence": 0.4
+                },
+                {
+                  "column_index": 3,
+                  "logical_type": "uuid",
+                  "minimum_confidence": 0.5
+                },
+                {
+                  "column_index": 4,
+                  "logical_type": "email",
+                  "minimum_confidence": 0.5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

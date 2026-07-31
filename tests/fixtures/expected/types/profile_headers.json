@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "scenario_id": "profile_headers",
+  "workbook": "workbooks/types/profile_headers.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 2
+      }
+    },
+    "profiling": {
+      "sheets": [
+        {
+          "name": "Headers",
+          "region_count_min": 1
+        },
+        {
+          "name": "NoHeader",
+          "region_count_min": 1
+        }
+      ]
+    }
+  }
+}

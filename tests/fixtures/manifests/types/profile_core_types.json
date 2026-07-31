@@ -1,0 +1,17 @@
+{
+  "scenario_id": "profile_core_types",
+  "description": "Columnas homogéneas: code/decimal/bool/date/datetime/time/text",
+  "workbook": "workbooks/types/profile_core_types.xlsx",
+  "generator": "profiling_scenarios.build_profile_core_types",
+  "seed": 20260730,
+  "intentions": [
+    "Inferir tipos físicos y lógicos básicos",
+    "Conservar ceros iniciales"
+  ],
+  "features": [
+    "profiling",
+    "leading_zeroes",
+    "dates"
+  ],
+  "versioned": true
+}

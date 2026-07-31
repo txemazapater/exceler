@@ -17,8 +17,8 @@ Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un comprom
 Las fases numeradas 3–12 del roadmap largo siguen vigentes como entregas de producto;
 2S/2A–2E son cortes de implementación que alimentan esas entregas sin solaparse en alcance.
 
-Estado actual: **Fase 2B cerrada** — detección de regiones lógicas sobre `WorkbookInspection` (schema inspección 3).
-Siguiente corte: **2C** (perfilado e inferencia de tipos).
+Estado actual: **Fase 2C entregada** — perfilado e inferencia de tipos estructurales.
+Siguiente corte: **2D** (entidades / significado).
 
 ## Fase 0 — Fundamentos
 
@@ -106,7 +106,13 @@ Siguiente corte: **2C** (perfilado e inferencia de tipos).
 
 ## Fase 2C — Profiling and Type Inference
 
-Antes: columnas inequívocas, ambiguas, mixtas y semánticas.
+- Corpus de tipos homogéneos, lógicos, anomalías, identifiers/categories y cabeceras.
+- `DeterministicRegionProfiler` consume solo `WorkbookInspection` + `RegionDetectionResult`.
+- Perfiles por columna: ocupación, cardinalidad, tipos físicos/lógicos, evidencias, anomalías.
+- CLI `exceler workbook profile`; expected `expectations.profiling`; schema **1** / profiler **2C.1**.
+- Documentación `docs/profiling-and-type-inference.md`.
+
+**Salida:** perfiles estructurales explicables sin semántica 2D–2E. **Entregada (MVP).**
 
 ## Fase 2D — Key Detection
 

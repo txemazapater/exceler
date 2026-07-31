@@ -6,8 +6,8 @@ EXCELER aborda un problema habitual en empresas y organizaciones: la proliferaci
 
 ## Estado del proyecto
 
-**Fase 2B cerrada:** regiones lógicas desde inspección factual (sin reabrir Excel).
-Siguiente: **2C** (perfilado / tipos); aún **no** hay inferencia de claves ni relaciones.
+**Fase 2C entregada:** perfilado e inferencia de tipos estructurales desde inspección + regiones.
+Siguiente: **2D** (entidades / semántica); aún **no** hay claves ni relaciones definitivas.
 
 CI: GitHub Actions (`quality` + unit + fixture verify, `integration` + Postgres, `docker` build + Compose smoke).
 Local sin Docker: `pytest -m "not integration and not docker"`.
@@ -15,6 +15,7 @@ Staging manual: [docs/staging.md](docs/staging.md).
 Fixtures: `uv run exceler dev fixtures generate|verify`.
 Inspección: `uv run exceler workbook inspect path.xlsx [--format json]`.
 Regiones: `uv run exceler workbook regions path.xlsx [--format json]`.
+Perfilado: `uv run exceler workbook profile path.xlsx [--format json]`.
 
 ## Arranque rápido (Docker Compose)
 
@@ -84,6 +85,7 @@ CRUD de negocio / SPA / app de escritorio; edición de orígenes; SMB/SharePoint
 | [docs/fixtures.md](docs/fixtures.md) | Corpus sintético Excel (Fase 2.0) |
 | [docs/workbook-inspection.md](docs/workbook-inspection.md) | Inspección factual (Fase 2A) |
 | [docs/region-detection.md](docs/region-detection.md) | Detección de regiones (Fase 2B) |
+| [docs/profiling-and-type-inference.md](docs/profiling-and-type-inference.md) | Perfilado e inferencia (Fase 2C) |
 | [docs/limitations.md](docs/limitations.md) | Limitaciones conocidas |
 | [docs/staging.md](docs/staging.md) | Staging manual en SAPIENS |
 | [docs/decisions/](docs/decisions/README.md) | ADRs |
@@ -115,6 +117,8 @@ exceler workbook inspect archivo.xlsx
 exceler workbook inspect archivo.xlsx --format json --pretty
 exceler workbook regions archivo.xlsx
 exceler workbook regions archivo.xlsx --format json --pretty
+exceler workbook profile archivo.xlsx
+exceler workbook profile archivo.xlsx --format json --pretty
 exceler dev fixtures generate
 exceler dev fixtures verify
 ```

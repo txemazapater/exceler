@@ -1,0 +1,18 @@
+{
+  "scenario_id": "profile_logical_specials",
+  "description": "Porcentaje, moneda, uuid, email, url, phone, postal",
+  "workbook": "workbooks/types/profile_logical_specials.xlsx",
+  "generator": "profiling_scenarios.build_profile_logical_specials",
+  "seed": 20260730,
+  "intentions": [
+    "Tipos lógicos estructurales vía formato y patrón"
+  ],
+  "features": [
+    "profiling",
+    "percentage",
+    "currency",
+    "uuid",
+    "email"
+  ],
+  "versioned": true
+}

@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "scenario_id": "profile_core_types",
+  "workbook": "workbooks/types/profile_core_types.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "regions": {
+      "sheets": [
+        {
+          "name": "Core",
+          "region_count_min": 1
+        }
+      ]
+    },
+    "profiling": {
+      "sheets": [
+        {
+          "name": "Core",
+          "regions": [
+            {
+              "columns": [
+                {
+                  "column_index": 1,
+                  "logical_type": "code",
+                  "minimum_confidence": 0.5,
+                  "identifier_candidate": true
+                },
+                {
+                  "column_index": 2,
+                  "logical_type": "number",
+                  "minimum_confidence": 0.5
+                },
+                {
+                  "column_index": 3,
+                  "logical_type": "boolean",
+                  "minimum_confidence": 0.5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

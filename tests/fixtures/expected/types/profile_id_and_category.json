@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "scenario_id": "profile_id_and_category",
+  "workbook": "workbooks/types/profile_id_and_category.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "profiling": {
+      "sheets": [
+        {
+          "name": "Keys",
+          "regions": [
+            {
+              "columns": [
+                {
+                  "column_index": 1,
+                  "identifier_candidate": true,
+                  "minimum_confidence": 0.5
+                },
+                {
+                  "column_index": 2,
+                  "identifier_candidate": false
+                },
+                {
+                  "column_index": 4,
+                  "categorical_candidate": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

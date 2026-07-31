@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "scenario_id": "profile_mixed_and_anomalies",
+  "workbook": "workbooks/types/profile_mixed_and_anomalies.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 1
+      }
+    },
+    "profiling": {
+      "sheets": [
+        {
+          "name": "Mixed",
+          "regions": [
+            {
+              "columns": [
+                {
+                  "column_index": 1,
+                  "logical_type": "date",
+                  "has_anomalies": true,
+                  "minimum_confidence": 0.3
+                },
+                {
+                  "column_index": 4,
+                  "has_anomalies": true
+                },
+                {
+                  "column_index": 5,
+                  "formula_count_min": 1
+                },
+                {
+                  "column_index": 6,
+                  "categorical_candidate": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "scenario_id": "profile_headers",
+  "description": "Cabecera multi-fila y hoja sin cabecera",
+  "workbook": "workbooks/types/profile_headers.xlsx",
+  "generator": "profiling_scenarios.build_profile_headers",
+  "seed": 20260730,
+  "intentions": [
+    "Separar headers de datos",
+    "effective_name sin cabecera"
+  ],
+  "features": [
+    "profiling",
+    "headers"
+  ],
+  "versioned": true
+}

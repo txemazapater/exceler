@@ -1,0 +1,16 @@
+{
+  "scenario_id": "profile_id_and_category",
+  "description": "Identificadores únicos/duplicados y categoría de baja cardinalidad",
+  "workbook": "workbooks/types/profile_id_and_category.xlsx",
+  "generator": "profiling_scenarios.build_profile_id_and_category",
+  "seed": 20260730,
+  "intentions": [
+    "Candidatos a identifier y categorical"
+  ],
+  "features": [
+    "profiling",
+    "identifier",
+    "categorical"
+  ],
+  "versioned": true
+}

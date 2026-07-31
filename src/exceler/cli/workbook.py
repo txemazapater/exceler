@@ -8,9 +8,14 @@ from typing import Annotated
 
 import typer
 
+from exceler.application.profiling.profiler import DeterministicRegionProfiler
+from exceler.application.profiling.serialization import profile_to_dict
 from exceler.application.regions.heuristic_detector import HeuristicRegionDetector
 from exceler.application.regions.serialization import regions_to_dict
 from exceler.application.workbook.serialization import inspection_to_dict
+from exceler.domain.profiling.errors import ProfilingError
+from exceler.domain.profiling.models import ProfilingResult
+from exceler.domain.profiling.options import ProfilingOptions
 from exceler.domain.regions.models import RegionDetectionResult
 from exceler.domain.workbook.enums import InspectionCompletionStatus
 from exceler.domain.workbook.errors import (
@@ -49,6 +54,21 @@ MaxCellsOpt = Annotated[
 MaxScannedOpt = Annotated[
     int | None,
     typer.Option("--max-cells-scanned", help="Override max_cells_scanned safety limit"),
+]
+SampleSizeOpt = Annotated[
+    int | None,
+    typer.Option("--sample-size", help="Override profiling sample_size"),
+]
+TopValuesOpt = Annotated[
+    int | None,
+    typer.Option("--top-values-limit", help="Override profiling top_values_limit"),
+]
+IncludeUnknownOpt = Annotated[
+    bool | None,
+    typer.Option(
+        "--include-unknown-regions/--no-include-unknown-regions",
+        help="Profile UNKNOWN regions that meet minimum shape",
+    ),
 ]
 
 
@@ -102,8 +122,32 @@ def _print_regions_human(result: RegionDetectionResult) -> None:
             )
 
 
+def _print_profile_human(result: ProfilingResult) -> None:
+    typer.echo(f"Workbook hash: {result.workbook_hash}")
+    typer.echo(f"Profiler: {result.profiler_version}")
+    typer.echo(f"Schema: {result.profiling_schema_version}")
+    if result.warnings:
+        for warning in result.warnings:
+            typer.echo(f"Warning: {warning}")
+    typer.echo("")
+    for sheet in result.sheets:
+        typer.echo(f"[{sheet.sheet_index}] {sheet.sheet_name}")
+        for region in sheet.region_profiles:
+            typer.echo(
+                f"  {region.region_id} ({region.region_type.value}) "
+                f"status={region.profiling_status.value} cols={len(region.columns)}"
+            )
+            for col in region.columns:
+                infer = col.logical_type_inference
+                typer.echo(
+                    f"    {col.column_letter} {col.effective_name}: "
+                    f"{infer.selected_type.value} conf={infer.confidence:.2f} "
+                    f"distinct={col.statistics.distinct_count}"
+                )
+
+
 def register_workbook_commands(app: typer.Typer) -> None:
-    workbook_app = typer.Typer(help="Workbook inspection and region detection")
+    workbook_app = typer.Typer(help="Workbook inspection, regions, and profiling")
     app.add_typer(workbook_app, name="workbook")
 
     @workbook_app.command("inspect")
@@ -286,6 +330,137 @@ def register_workbook_commands(app: typer.Typer) -> None:
                 _write(buf.getvalue(), output)
             else:
                 _print_regions_human(result)
+
+        if inspection.completion_status is InspectionCompletionStatus.PARTIAL:
+            raise typer.Exit(EXIT_PARTIAL)
+
+    @workbook_app.command("profile")
+    def workbook_profile(
+        path: PathArg,
+        format: FormatOpt = "text",
+        pretty: PrettyOpt = False,
+        output: OutputOpt = None,
+        max_cells: MaxCellsOpt = None,
+        max_cells_scanned: MaxScannedOpt = None,
+        sample_size: SampleSizeOpt = None,
+        top_values_limit: TopValuesOpt = None,
+        include_unknown_regions: IncludeUnknownOpt = None,
+    ) -> None:
+        """Inspect, detect regions, then profile columns (Phase 2C; no Excel re-read)."""
+        as_json = format.lower() == "json"
+        if format.lower() not in {"text", "json"}:
+            payload = _error_payload("INVALID_ARGS", "format must be text or json")
+            if as_json:
+                typer.echo(json.dumps(payload))
+            else:
+                err = payload["error"]
+                assert isinstance(err, dict)
+                typer.echo(str(err["message"]))
+            raise typer.Exit(EXIT_INVALID_ARGS)
+
+        inspect_options = WorkbookInspectionOptions()
+        if max_cells is not None or max_cells_scanned is not None:
+            inspect_options = WorkbookInspectionOptions(
+                include_empty_formatted_cells=inspect_options.include_empty_formatted_cells,
+                include_comments=inspect_options.include_comments,
+                include_hyperlinks=inspect_options.include_hyperlinks,
+                include_external_links=inspect_options.include_external_links,
+                max_worksheets=inspect_options.max_worksheets,
+                max_cells_observed=(
+                    max_cells if max_cells is not None else inspect_options.max_cells_observed
+                ),
+                max_cells_scanned=(
+                    max_cells_scanned
+                    if max_cells_scanned is not None
+                    else inspect_options.max_cells_scanned
+                ),
+                max_file_size_bytes=inspect_options.max_file_size_bytes,
+            )
+
+        base_prof = ProfilingOptions()
+        profile_options = ProfilingOptions(
+            include_unknown_regions=(
+                include_unknown_regions
+                if include_unknown_regions is not None
+                else base_prof.include_unknown_regions
+            ),
+            minimum_region_confidence=base_prof.minimum_region_confidence,
+            minimum_rows_for_inference=base_prof.minimum_rows_for_inference,
+            sample_size=sample_size if sample_size is not None else base_prof.sample_size,
+            top_values_limit=(
+                top_values_limit if top_values_limit is not None else base_prof.top_values_limit
+            ),
+            anomaly_sample_limit=base_prof.anomaly_sample_limit,
+            max_distinct_values_tracked=base_prof.max_distinct_values_tracked,
+            max_values_profiled_per_column=base_prof.max_values_profiled_per_column,
+            trim_strings_for_analysis=base_prof.trim_strings_for_analysis,
+            case_sensitive_cardinality=base_prof.case_sensitive_cardinality,
+            exclude_header_rows=base_prof.exclude_header_rows,
+            exclude_footer_rows=base_prof.exclude_footer_rows,
+            high_compatibility_ratio=base_prof.high_compatibility_ratio,
+            identifier_unique_ratio=base_prof.identifier_unique_ratio,
+            identifier_non_null_ratio=base_prof.identifier_non_null_ratio,
+            categorical_max_distinct=base_prof.categorical_max_distinct,
+            categorical_max_distinct_ratio=base_prof.categorical_max_distinct_ratio,
+            sample_sufficiency_full_at=base_prof.sample_sufficiency_full_at,
+            min_unknown_region_rows=base_prof.min_unknown_region_rows,
+            min_unknown_region_cols=base_prof.min_unknown_region_cols,
+        )
+
+        reader = OpenPyxlWorkbookReader()
+        detector = HeuristicRegionDetector()
+        profiler = DeterministicRegionProfiler()
+        try:
+            source = LocalWorkbookSource(path)
+            inspection = reader.inspect(source, inspect_options)
+            regions = detector.detect(inspection)
+            result = profiler.profile(inspection, regions, profile_options)
+        except WorkbookNotFoundError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_NOT_FOUND) from exc
+        except WorkbookAccessDeniedError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_NOT_FOUND) from exc
+        except UnsupportedWorkbookFormatError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_UNSUPPORTED) from exc
+        except (InvalidWorkbookError, EncryptedWorkbookError) as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_INVALID) from exc
+        except WorkbookLimitExceededError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_LIMIT) from exc
+        except ProfilingError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_INVALID) from exc
+        except WorkbookInspectionError as exc:
+            _emit_error(exc.code, exc.message, as_json=as_json, pretty=pretty, output=output)
+            raise typer.Exit(EXIT_UNEXPECTED) from exc
+        except Exception as exc:  # noqa: BLE001
+            _emit_error(
+                "UNEXPECTED_ERROR",
+                "Unexpected profiling failure.",
+                as_json=as_json,
+                pretty=pretty,
+                output=output,
+            )
+            raise typer.Exit(EXIT_UNEXPECTED) from exc
+
+        if as_json:
+            text = json.dumps(
+                {"ok": True, **profile_to_dict(result)},
+                indent=2 if pretty else None,
+                ensure_ascii=False,
+            )
+            _write(text, output)
+        else:
+            if output is not None:
+                buf = StringIO()
+                with contextlib.redirect_stdout(buf):
+                    _print_profile_human(result)
+                _write(buf.getvalue(), output)
+            else:
+                _print_profile_human(result)
 
         if inspection.completion_status is InspectionCompletionStatus.PARTIAL:
             raise typer.Exit(EXIT_PARTIAL)
