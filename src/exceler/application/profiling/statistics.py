@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import statistics
 from collections import Counter
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from exceler.application.profiling.normalization import (
     NormalizedValue,
     abstract_pattern,
-    detect_date_pattern,
 )
+from exceler.application.profiling.numeric_parse import (
+    infer_decimal_separator,
+    parse_numeric_text,
+)
+from exceler.application.profiling.temporal_parse import parse_temporal_value
 from exceler.domain.profiling.enums import StatisticExactness
 from exceler.domain.profiling.models import (
     ColumnStatistics,
@@ -70,35 +75,36 @@ def _text_stats(values: list[NormalizedValue]) -> TextStatistics | None:
     )
 
 
-def _to_decimal(item: NormalizedValue) -> Decimal | None:
-    if item.kind is CellValueKind.INTEGER and item.original is not None:
-        try:
-            return Decimal(item.original)
-        except InvalidOperation:
-            return None
-    if item.kind is CellValueKind.DECIMAL and item.original is not None:
-        try:
-            return Decimal(item.original)
-        except InvalidOperation:
-            return None
+def _physical_decimal(item: NormalizedValue) -> Decimal | None:
+    if item.original is None:
+        return None
+    try:
+        return Decimal(item.original)
+    except InvalidOperation:
+        return None
+
+
+def _to_decimal(item: NormalizedValue, *, decimal_separator: str | None) -> Decimal | None:
+    if item.kind is CellValueKind.INTEGER:
+        return _physical_decimal(item)
+    if item.kind is CellValueKind.DECIMAL:
+        return _physical_decimal(item)
     if item.kind is CellValueKind.STRING and item.trimmed:
-        text = item.trimmed
-        is_pct = text.endswith("%")
-        for sym in ("€", "$", "£", "¥"):
-            text = text.replace(sym, "")
-        text = text.replace("%", "").replace(",", "").strip()
-        try:
-            value = Decimal(text)
-        except InvalidOperation:
-            return None
-        # Textual "35%" → 0.35 so stats align with Excel percentage storage (0–1).
-        if is_pct:
-            value = value / Decimal(100)
-        return value
+        parsed = parse_numeric_text(item.trimmed, decimal_separator=decimal_separator)
+        if parsed.ok:
+            return parsed.value
+        return None
     return None
 
 
 def _numeric_stats(values: list[NormalizedValue]) -> NumericStatistics | None:
+    string_texts = [
+        item.trimmed
+        for item in values
+        if item.kind is CellValueKind.STRING and item.trimmed and item.has_content
+    ]
+    decimal_separator = infer_decimal_separator([text for text in string_texts if text])
+
     nums: list[Decimal] = []
     excluded = 0
     candidates = [
@@ -108,8 +114,9 @@ def _numeric_stats(values: list[NormalizedValue]) -> NumericStatistics | None:
         and item.has_content
     ]
     for item in candidates:
-        parsed = _to_decimal(item)
+        parsed = _to_decimal(item, decimal_separator=decimal_separator)
         if parsed is None:
+            # Ambiguous locale forms are excluded, not forced.
             excluded += 1
         else:
             nums.append(parsed)
@@ -138,33 +145,56 @@ def _numeric_stats(values: list[NormalizedValue]) -> NumericStatistics | None:
 
 
 def _temporal_stats(values: list[NormalizedValue]) -> TemporalStatistics | None:
-    stamps: list[str] = []
+    parsed_rows: list[tuple[NormalizedValue, datetime]] = []
     patterns: Counter[str] = Counter()
+    ambiguous_count = 0
+
     for item in values:
-        if item.kind in {CellValueKind.DATE, CellValueKind.DATETIME, CellValueKind.TIME}:
-            if item.original:
-                stamps.append(item.original)
-                patterns[item.kind.value] += 1
-        elif item.kind is CellValueKind.STRING and item.trimmed:
-            pattern, _ambiguous = detect_date_pattern(item.trimmed)
-            if pattern:
-                stamps.append(item.trimmed)
-                patterns[pattern] += 1
-    if not stamps:
+        if not item.has_content and item.kind not in {
+            CellValueKind.DATE,
+            CellValueKind.DATETIME,
+            CellValueKind.TIME,
+        }:
+            continue
+        result = parse_temporal_value(kind=item.kind, original=item.original or item.trimmed)
+        if result is None:
+            continue
+        if result.ambiguous:
+            ambiguous_count += 1
+            if result.pattern:
+                patterns[result.pattern] += 1
+            continue
+        if result.sort_key is None:
+            continue
+        parsed_rows.append((item, result.sort_key))
+        patterns[result.pattern or item.kind.value] += 1
+
+    if not parsed_rows:
         return None
-    ordered = sorted(stamps)
+
+    ordered = sorted(parsed_rows, key=lambda pair: pair[1])
+    min_item, min_key = ordered[0]
+    max_item, max_key = ordered[-1]
+
     chrono = None
-    if len(stamps) > 1:
-        pairs = sum(1 for i in range(1, len(stamps)) if stamps[i] >= stamps[i - 1])
-        chrono = pairs / (len(stamps) - 1)
+    if len(parsed_rows) > 1:
+        pairs = sum(
+            1 for i in range(1, len(parsed_rows)) if parsed_rows[i][1] >= parsed_rows[i - 1][1]
+        )
+        chrono = pairs / (len(parsed_rows) - 1)
+
     dominant = patterns.most_common(1)[0][0] if patterns else None
+    min_original = min_item.original or min_item.trimmed or str(min_key)
+    max_original = max_item.original or max_item.trimmed or str(max_key)
     return TemporalStatistics(
-        minimum=ordered[0],
-        maximum=ordered[-1],
-        range_label=f"{ordered[0]}..{ordered[-1]}",
-        distinct_count=len(set(stamps)),
+        minimum=min_original,
+        maximum=max_original,
+        range_label=f"{min_original}..{max_original}",
+        distinct_count=len({key for _, key in parsed_rows}),
         chronological_order_ratio=chrono,
-        dominant_pattern=dominant,
+        dominant_pattern=dominant
+        if ambiguous_count == 0
+        else (f"{dominant}|ambiguous" if dominant else "ambiguous"),
     )
 
 
@@ -211,6 +241,9 @@ def build_column_statistics(
     duplicates = sum(count - 1 for count in counter.values() if count > 1)
     exactness = StatisticExactness.TRUNCATED if truncated else StatisticExactness.EXACT
 
+    # distinct_ratio: cardinality vs observed content.
+    # unique_ratio: share of content values that appear exactly once (singletons / content).
+    # Previously unique/distinct inflated uniqueness for sparse duplicate keys.
     stats = ColumnStatistics(
         total_row_count=total,
         observed_count=observed_count,
@@ -225,7 +258,7 @@ def build_column_statistics(
         distinct_ratio=distinct / content_for_ratio,
         duplicate_count=duplicates,
         unique_count=unique,
-        unique_ratio=unique / max(distinct, 1),
+        unique_ratio=unique / content_for_ratio,
         exactness=exactness,
         text=_text_stats(data_values),
         numeric=_numeric_stats(data_values),

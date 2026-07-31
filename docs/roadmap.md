@@ -109,10 +109,10 @@ Siguiente corte: **2D** (entidades / significado).
 - Corpus de tipos homogéneos, lógicos, anomalías, identifiers/categories y cabeceras.
 - `DeterministicRegionProfiler` consume solo `WorkbookInspection` + `RegionDetectionResult`.
 - Perfiles por columna: ocupación, cardinalidad, tipos físicos/lógicos, evidencias, anomalías.
-- CLI `exceler workbook profile`; expected `expectations.profiling`; schema **1** / profiler **2C.1**.
+- CLI `exceler workbook profile`; expected `expectations.profiling`; schema **1** / profiler **2C.2**.
 - Documentación `docs/profiling-and-type-inference.md`.
 
-**Salida:** perfiles estructurales explicables sin semántica 2D–2E. **Entregada (MVP).**
+**Salida:** perfiles estructurales explicables sin semántica 2D–2E. **Entregada (MVP + 2C.2).**
 
 ## Fase 2D — Key Detection
 

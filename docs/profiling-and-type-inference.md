@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile en una sola lectura.
 - Dominio: `exceler.domain.profiling`
 - Implementación: `DeterministicRegionProfiler`
 - `profiling_schema_version` = **1**
-- `profiler_version` = **2C.1**
+- `profiler_version` = **2C.2**
 - Conserva `inspector_version`, `region_detector_version`, `regions_schema_version`
 
 Hash de workbook debe coincidir entre 2A y 2B (`ProfilingInputMismatchError` si no).
@@ -52,12 +52,21 @@ Sin entidades de negocio ni PK definitivas.
 
 1. Celdas vía **bbox + índice de inspección** (no exige `cell_coordinates`).
 2. Sin tipo `MIXED`: distribución física + baja confianza / unknown.
-3. Locale ambigua (`03/04/2026`) reduce confianza; no se impone DD/MM ni MM/DD.
+3. Locale ambigua (`03/04/2026`, `1.234`) reduce confianza / excluye del parseo;
+   no se impone DD/MM, MM/DD ni separador decimal anglosajón.
 4. Formato Excel es evidencia, no verdad.
 5. Identifiers/categories son **candidatos**.
 6. Confianza ≈ compatibilidad × suficiencia de muestra × penalización por anomalías
    (`sample_sufficiency_full_at`, `high_compatibility_ratio`, `moderate_compatibility_ratio`).
 7. `PERCENTAGE` / `CURRENCY` ganan a `DECIMAL`/`NUMBER` cuando hay señal de formato/símbolo.
+8. `distinct_ratio` = distinct / content; `unique_ratio` = singletons / content.
+   La candidatura a identificador usa `distinct_ratio`.
+9. Enteros/decimales como texto cuentan si el parseo es inequívoco; ceros iniciales
+   no se promocionan a INTEGER.
+10. Compatibilidad y anomalías comparten `check_compatibility` (un solo criterio por tipo).
+11. Estadísticas temporales ordenan por valor parseado, no por orden lexicográfico del texto.
+
+`profiler_version` = **2C.2** (algoritmo; schema sigue en 1).
 
 ## Escenarios de corpus
 

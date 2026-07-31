@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from collections import Counter
 
+from exceler.application.profiling.compatibility import (
+    CompatibilityStatus,
+    check_compatibility,
+    is_incompatible,
+)
 from exceler.application.profiling.normalization import (
     NormalizedValue,
     detect_date_pattern,
@@ -17,6 +22,11 @@ from exceler.application.profiling.normalization import (
     looks_postal,
     looks_url,
     looks_uuid,
+)
+from exceler.application.profiling.numeric_parse import (
+    NumericKind,
+    infer_decimal_separator,
+    parse_numeric_text,
 )
 from exceler.domain.profiling.enums import (
     AnomalySeverity,
@@ -50,6 +60,44 @@ def _sample_sufficiency(n: int, options: ProfilingOptions) -> float:
     return _clamp(0.6 + 0.4 * (n / options.sample_sufficiency_full_at))
 
 
+def _column_decimal_separator(content: list[NormalizedValue]) -> str | None:
+    texts = [item.trimmed for item in content if item.kind is CellValueKind.STRING and item.trimmed]
+    return infer_decimal_separator(texts)
+
+
+def _effective_numeric_ratios(
+    content: list[NormalizedValue],
+    *,
+    decimal_separator: str | None,
+) -> tuple[float, float, float]:
+    """Physical + unambiguous textual numbers (leading-zero codes excluded)."""
+    n = len(content)
+    if n == 0:
+        return 0.0, 0.0, 0.0
+    ints = 0
+    decs = 0
+    for item in content:
+        if item.kind is CellValueKind.INTEGER:
+            ints += 1
+            continue
+        if item.kind is CellValueKind.DECIMAL:
+            decs += 1
+            continue
+        if item.kind is CellValueKind.STRING and item.trimmed:
+            parsed = parse_numeric_text(
+                item.trimmed,
+                decimal_separator=decimal_separator,
+                allow_leading_zero_integers=False,
+            )
+            if not parsed.ok or parsed.kind is None:
+                continue
+            if parsed.kind is NumericKind.INTEGER:
+                ints += 1
+            else:
+                decs += 1
+    return ints / n, decs / n, (ints + decs) / n
+
+
 def infer_logical_type(
     values: list[NormalizedValue],
     *,
@@ -63,6 +111,7 @@ def infer_logical_type(
     sufficiency = _sample_sufficiency(n, options)
     evidence: list[ProfilingEvidenceItem] = []
     scores: dict[LogicalValueType, float] = {LogicalValueType.UNKNOWN: 0.15}
+    decimal_separator = _column_decimal_separator(content)
 
     if n == 0:
         selected = LogicalValueType.EMPTY if formulas == 0 else LogicalValueType.UNKNOWN
@@ -84,8 +133,9 @@ def infer_logical_type(
         )
 
     kind_counts = Counter(item.kind for item in content)
-    int_ratio = kind_counts[CellValueKind.INTEGER] / n
-    dec_ratio = kind_counts[CellValueKind.DECIMAL] / n
+    int_ratio, dec_ratio, _num_effective = _effective_numeric_ratios(
+        content, decimal_separator=decimal_separator
+    )
     bool_ratio = kind_counts[CellValueKind.BOOLEAN] / n
     date_ratio = kind_counts[CellValueKind.DATE] / n
     dt_ratio = kind_counts[CellValueKind.DATETIME] / n
@@ -104,7 +154,9 @@ def infer_logical_type(
         scores[LogicalValueType.INTEGER] = int_score
         evidence.append(
             ProfilingEvidenceItem(
-                "physical_integer_ratio", int_ratio, f"integer_ratio={int_ratio:.3f}"
+                "integer_ratio",
+                int_ratio,
+                f"integer_ratio={int_ratio:.3f} (physical+textual)",
             )
         )
     dec_score = _physical_score(dec_ratio)
@@ -112,7 +164,9 @@ def infer_logical_type(
         scores[LogicalValueType.DECIMAL] = dec_score
         evidence.append(
             ProfilingEvidenceItem(
-                "physical_decimal_ratio", dec_ratio, f"decimal_ratio={dec_ratio:.3f}"
+                "decimal_ratio",
+                dec_ratio,
+                f"decimal_ratio={dec_ratio:.3f} (physical+textual)",
             )
         )
     num_ratio = int_ratio + dec_ratio
@@ -125,6 +179,14 @@ def infer_logical_type(
                 "INTEGER+DECIMAL promoted to NUMBER",
             )
         )
+    elif (
+        num_ratio >= options.high_compatibility_ratio
+        and LogicalValueType.INTEGER not in scores
+        and LogicalValueType.DECIMAL not in scores
+    ):
+        # Pure textual numeric column with mixed int/dec parse results.
+        scores[LogicalValueType.NUMBER] = 0.85 * sufficiency
+
     bool_score = _physical_score(bool_ratio)
     if bool_score is not None:
         scores[LogicalValueType.BOOLEAN] = bool_score
@@ -137,13 +199,19 @@ def infer_logical_type(
     time_score = _physical_score(time_ratio)
     if time_score is not None:
         scores[LogicalValueType.TIME] = time_score
-    if (
-        date_ratio
-        and dt_ratio
-        and date_ratio + dt_ratio >= options.moderate_compatibility_ratio
-    ):
+    if date_ratio and dt_ratio and date_ratio + dt_ratio >= options.moderate_compatibility_ratio:
         scores[LogicalValueType.DATETIME] = max(
             scores.get(LogicalValueType.DATETIME, 0.0), 0.88 * sufficiency
+        )
+
+    if decimal_separator:
+        evidence.append(
+            ProfilingEvidenceItem(
+                "decimal_separator_consensus",
+                0.4,
+                f"column decimal separator inferred as {decimal_separator!r}",
+                details={"decimal_separator": decimal_separator},
+            )
         )
 
     # Format / text signals
@@ -209,6 +277,8 @@ def infer_logical_type(
                         "leading_zeroes", leading0, "leading zeroes preserved as text/code"
                     )
                 )
+                # Do not let textual integer win over codes with leading zeroes.
+                scores.pop(LogicalValueType.INTEGER, None)
         if date_ok >= options.moderate_compatibility_ratio:
             conf = 0.9 * sufficiency * (1.0 - 0.35 * ambiguous)
             scores[LogicalValueType.DATE] = max(scores.get(LogicalValueType.DATE, 0.0), conf)
@@ -269,8 +339,11 @@ def infer_logical_type(
         if conf >= 0.3 and type_ is not selected_type
     )
 
-    # Incompatible vs selected
-    incompatible = _count_incompatible(content, selected_type)
+    incompatible = sum(
+        1
+        for item in content
+        if is_incompatible(item, selected_type, decimal_separator=decimal_separator)
+    )
     anomaly_penalty = _clamp(1.0 - (incompatible / max(n, 1)))
     confidence = _clamp(selected_conf * anomaly_penalty)
     return LogicalTypeInference(
@@ -282,46 +355,23 @@ def infer_logical_type(
     )
 
 
-def _count_incompatible(content: list[NormalizedValue], selected: LogicalValueType) -> int:
-    bad = 0
-    for item in content:
-        text = item.trimmed or ""
-        if selected is LogicalValueType.INTEGER and item.kind not in {
-            CellValueKind.INTEGER,
-            CellValueKind.NULL,
-        }:
-            if item.kind is CellValueKind.STRING and text.isdigit():
-                continue
-            bad += 1
-        elif selected is LogicalValueType.UUID and not looks_uuid(text):
-            bad += 1
-        elif selected is LogicalValueType.EMAIL and not looks_email(text):
-            bad += 1
-        elif selected is LogicalValueType.URL and not looks_url(text):
-            bad += 1
-        elif selected is LogicalValueType.DATE:
-            if item.kind is CellValueKind.DATE:
-                continue
-            pattern, _ = detect_date_pattern(text) if text else (None, False)
-            if not pattern:
-                bad += 1
-    return bad
-
-
 def analyze_identifier(
-    stats_unique_ratio: float,
+    distinct_ratio: float,
     stats_non_null_ratio: float,
     logical: LogicalTypeInference,
     *,
     options: ProfilingOptions,
     leading_zero_ratio: float = 0.0,
+    unique_ratio: float | None = None,
 ) -> IdentifierAnalysis:
+    """Identifier candidacy uses distinct_ratio (cardinality), not singleton/distinct."""
     reasons: list[str] = []
     warnings: list[str] = []
     score = 0.0
-    if stats_unique_ratio >= options.identifier_unique_ratio:
+    reported_unique = unique_ratio if unique_ratio is not None else distinct_ratio
+    if distinct_ratio >= options.identifier_unique_ratio:
         score += 0.45
-        reasons.append("high_unique_ratio")
+        reasons.append("high_distinct_ratio")
     if stats_non_null_ratio >= options.identifier_non_null_ratio:
         score += 0.35
         reasons.append("high_non_null_ratio")
@@ -343,13 +393,13 @@ def analyze_identifier(
     }:
         score -= 0.4
         warnings.append("logical_type_unlikely_for_identifier")
-    if stats_unique_ratio < 0.9:
+    if distinct_ratio < 0.9:
         warnings.append("duplicates_present")
     candidate = score >= 0.7
     return IdentifierAnalysis(
         is_candidate=candidate,
         confidence=_clamp(score),
-        unique_ratio=stats_unique_ratio,
+        unique_ratio=reported_unique,
         non_null_ratio=stats_non_null_ratio,
         reasons=tuple(reasons),
         warnings=tuple(warnings),
@@ -370,10 +420,7 @@ def analyze_categorical(
     candidate = (
         0 < distinct <= options.categorical_max_distinct
         and content_count >= options.minimum_rows_for_inference
-        and (
-            ratio <= options.categorical_max_distinct_ratio
-            or (distinct <= 5 and has_repetition)
-        )
+        and (ratio <= options.categorical_max_distinct_ratio or (distinct <= 5 and has_repetition))
     )
     conf = 0.0
     if candidate:
@@ -395,60 +442,30 @@ def collect_anomalies(
     selected: LogicalValueType,
     *,
     limit: int,
+    decimal_separator: str | None = None,
 ) -> tuple[ColumnAnomaly, ...]:
     anomalies: list[ColumnAnomaly] = []
     for item in values:
-        if item.is_error:
-            anomalies.append(
-                ColumnAnomaly(
-                    coordinate=item.coordinate,
-                    original_value=item.original,
-                    anomaly_type=AnomalyType.EXCEL_ERROR,
-                    message="Excel error value",
-                    expected_type=selected,
-                    severity=AnomalySeverity.ERROR,
-                )
-            )
+        result = check_compatibility(item, selected, decimal_separator=decimal_separator)
+        if result.status is CompatibilityStatus.SKIP:
             continue
-        if not item.has_content or item.is_formula:
+        if result.status is CompatibilityStatus.COMPATIBLE:
             continue
-        text = item.trimmed or item.original or ""
-        mismatch = False
-        if selected is LogicalValueType.DATE:
-            if item.kind is CellValueKind.DATE:
-                continue
-            pattern, amb = detect_date_pattern(text)
-            if not pattern:
-                mismatch = True
-            elif amb:
-                anomalies.append(
-                    ColumnAnomaly(
-                        coordinate=item.coordinate,
-                        original_value=item.original,
-                        anomaly_type=AnomalyType.AMBIGUOUS_VALUE,
-                        message="Ambiguous date ordering",
-                        expected_type=selected,
-                        severity=AnomalySeverity.WARNING,
-                    )
-                )
-        elif selected is LogicalValueType.UUID and not looks_uuid(text):
-            mismatch = True
-        elif selected is LogicalValueType.EMAIL and not looks_email(text):
-            mismatch = True
-        elif selected is LogicalValueType.INTEGER:
-            if item.kind not in {CellValueKind.INTEGER} and not text.isdigit():
-                mismatch = True
-        if mismatch:
-            anomalies.append(
-                ColumnAnomaly(
-                    coordinate=item.coordinate,
-                    original_value=item.original,
-                    anomaly_type=AnomalyType.TYPE_MISMATCH,
-                    message=f"Value incompatible with {selected.value}",
-                    expected_type=selected,
-                    severity=AnomalySeverity.WARNING,
-                )
+        anomaly_type = result.anomaly_type or AnomalyType.TYPE_MISMATCH
+        severity = result.severity
+        if result.status is CompatibilityStatus.AMBIGUOUS:
+            anomaly_type = AnomalyType.AMBIGUOUS_VALUE
+            severity = AnomalySeverity.WARNING
+        anomalies.append(
+            ColumnAnomaly(
+                coordinate=item.coordinate,
+                original_value=item.original,
+                anomaly_type=anomaly_type,
+                message=result.message or f"Value incompatible with {selected.value}",
+                expected_type=selected,
+                severity=severity,
             )
+        )
         if len(anomalies) >= limit:
             break
     anomalies.sort(

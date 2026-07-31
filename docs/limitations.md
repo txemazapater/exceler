@@ -28,5 +28,7 @@
 - Tipos lógicos son estructurales, no entidades de negocio.
 - Las fórmulas se cuentan sin evaluar; no hay valores cacheados de 2A.
 - Fechas ambiguas (DD/MM vs MM/DD) bajan confianza en lugar de imponer locale.
+- Separadores numéricos ambiguos (`1.234` / `1,234`) no se convierten sin consenso de columna.
 - Identifier/categorical son candidatos, no claves/FK definitivas.
 - El profiler no relee Excel ni importa openpyxl.
+- `unique_ratio` mide singletons/content; la unicidad de identificador usa `distinct_ratio`.

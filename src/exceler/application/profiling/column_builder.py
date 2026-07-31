@@ -13,6 +13,7 @@ from exceler.application.profiling.normalization import (
     has_leading_zeroes,
     normalize_cell,
 )
+from exceler.application.profiling.numeric_parse import infer_decimal_separator
 from exceler.application.profiling.statistics import (
     build_column_statistics,
     build_physical_distribution,
@@ -162,15 +163,22 @@ def profile_column(
         )
 
     identifier = analyze_identifier(
-        stats.unique_ratio,
+        stats.distinct_ratio,
         non_null_ratio,
         logical,
         options=options,
         leading_zero_ratio=leading0,
+        unique_ratio=stats.unique_ratio,
     )
     categorical = analyze_categorical(counter, stats.content_count, options=options)
+    decimal_separator = infer_decimal_separator(
+        [item.trimmed for item in data_values if item.trimmed]
+    )
     anomalies = collect_anomalies(
-        data_values, logical.selected_type, limit=options.anomaly_sample_limit
+        data_values,
+        logical.selected_type,
+        limit=options.anomaly_sample_limit,
+        decimal_separator=decimal_separator,
     )
     sample = _sample_values(
         data_values,

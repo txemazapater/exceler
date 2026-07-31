@@ -188,6 +188,7 @@ def test_partial_inspection_marks_partial_status() -> None:
     assert statuses
     assert "partial" in statuses or "insufficient_data" in statuses
 
+
 def test_distinct_limit_marks_truncated() -> None:
     path = workbook_path(next(s for s in ALL_SPECS if s.scenario_id == "profile_id_and_category"))
     _i, _r, result = _run(path, max_distinct_values_tracked=2)

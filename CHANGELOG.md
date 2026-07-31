@@ -12,6 +12,9 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Profiler **2C.2**: parseo numérico sin locale fija, enteros/decimales como texto,
+  `unique_ratio` = singletons/content, fechas ordenadas por valor parseado, compatibilidad
+  centralizada para inferencia y anomalías.
 - Fase 2B contrato endurecido (`regions_schema_version` 2 / detector `2B.2`): ocupación en capas
   (observed/content/visual) y tablas estructuradas que reservan su interior ante solapes parciales.
 - Roadmap/README: siguiente corte **2D**.
