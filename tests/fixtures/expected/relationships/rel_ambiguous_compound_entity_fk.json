@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_ambiguous_compound_entity_fk",
+  "workbook": "workbooks/relationships/rel_ambiguous_compound_entity_fk.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 3
+      }
+    },
+    "relationships": {
+      "foreign_keys_accepted_max": 0,
+      "foreign_keys": [
+        {
+          "from_sheet": "Links",
+          "from_column_index": 2,
+          "to_sheet": "Customers",
+          "to_column_index": 1,
+          "accepted": false,
+          "rejection_reason": "ambiguous_reference_target_semantics"
+        },
+        {
+          "from_sheet": "Links",
+          "from_column_index": 2,
+          "to_sheet": "Products",
+          "to_column_index": 1,
+          "accepted": false,
+          "rejection_reason": "ambiguous_reference_target_semantics"
+        }
+      ]
+    }
+  }
+}

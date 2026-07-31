@@ -6,6 +6,9 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Fase 2D.7: compatibilidad solo entre entidades simples inequívocas; rechazo de
+  solape parcial en encabezados compuestos (`CustomerProductId→CustomerId/ProductId`);
+  razón `ambiguous_reference_target_semantics`.
 - Fase 2D.6: compatibilidad semántica referencia↔destino (`ENTITY_ALIAS_GROUPS`);
   rechazo `ProductId→CustomerId`; aliases `ClientId`/`ArticleCode`; corpus
   `rel_incompatible_product_customer`, `rel_alias_*`, `rel_insufficient_bare_id_fk`.
@@ -28,6 +31,7 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Relationship engine **2D.7**: multi-entity headers are ambiguous, not partially compatible.
 - Relationship engine **2D.6**: FK acceptance requires reference-target semantic
   compatibility; declared aliases only; insufficient entity headers do not accept.
 - Relationship engine **2D.5**: FK sources require child reference evidence; header

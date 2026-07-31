@@ -459,6 +459,51 @@ def build_rel_insufficient_bare_id_fk(_seed: int) -> Workbook:
     return wb
 
 
+def build_rel_ambiguous_compound_entity_fk(_seed: int) -> Workbook:
+    """CustomerProductId must not FK to CustomerId or ProductId via partial overlap."""
+    wb = new_workbook(sheet_title="Customers")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["CustomerId", "Name"],
+            [100, "Alpha"],
+            [200, "Beta"],
+            [300, "Gamma"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+
+    products = wb.create_sheet("Products")
+    write_matrix(
+        products,
+        [
+            ["ProductId", "Name"],
+            [100, "Widget"],
+            [200, "Gadget"],
+            [300, "Doohickey"],
+        ],
+    )
+    for cell in ("A1", "B1"):
+        products[cell].font = Font(bold=True)
+
+    links = wb.create_sheet("Links")
+    write_matrix(
+        links,
+        [
+            ["LinkId", "CustomerProductId"],
+            ["L1", 100],
+            ["L2", 200],
+            ["L3", 100],
+            ["L4", 300],
+        ],
+    )
+    for cell in ("A1", "B1"):
+        links[cell].font = Font(bold=True)
+    return wb
+
+
 def build_rel_pk_ranking(_seed: int) -> Workbook:
     """Code + unique free-text names: code must rank first among accepted PKs."""
     wb = new_workbook(sheet_title="People")
@@ -945,6 +990,39 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
         },
     ),
     ScenarioSpec(
+        scenario_id="rel_ambiguous_compound_entity_fk",
+        category="relationships",
+        description="CustomerProductId rejects partial FK to CustomerId and ProductId",
+        relative_workbook="workbooks/relationships/rel_ambiguous_compound_entity_fk.xlsx",
+        generator_name="relationship_scenarios.build_rel_ambiguous_compound_entity_fk",
+        intentions=["Reject multi-entity header partial overlap"],
+        features=["relationships", "false_fk", "semantic_ambiguous"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 3}},
+            "relationships": {
+                "foreign_keys_accepted_max": 0,
+                "foreign_keys": [
+                    {
+                        "from_sheet": "Links",
+                        "from_column_index": 2,
+                        "to_sheet": "Customers",
+                        "to_column_index": 1,
+                        "accepted": False,
+                        "rejection_reason": "ambiguous_reference_target_semantics",
+                    },
+                    {
+                        "from_sheet": "Links",
+                        "from_column_index": 2,
+                        "to_sheet": "Products",
+                        "to_column_index": 1,
+                        "accepted": False,
+                        "rejection_reason": "ambiguous_reference_target_semantics",
+                    },
+                ],
+            },
+        },
+    ),
+    ScenarioSpec(
         scenario_id="rel_pk_ranking",
         category="relationships",
         description="Code ranks above unique free-text name",
@@ -1001,5 +1079,8 @@ BUILDERS = {
     "relationship_scenarios.build_rel_alias_client_customer": build_rel_alias_client_customer,
     "relationship_scenarios.build_rel_alias_article_product": build_rel_alias_article_product,
     "relationship_scenarios.build_rel_insufficient_bare_id_fk": (build_rel_insufficient_bare_id_fk),
+    "relationship_scenarios.build_rel_ambiguous_compound_entity_fk": (
+        build_rel_ambiguous_compound_entity_fk
+    ),
     "relationship_scenarios.build_rel_pk_ranking": build_rel_pk_ranking,
 }

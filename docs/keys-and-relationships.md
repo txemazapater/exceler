@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile → relationships en una sola lectura de
 - Dominio: `exceler.domain.relationships`
 - Implementación: `DeterministicRelationshipAnalyzer`
 - `relationship_schema_version` = **1**
-- `relationship_engine_version` = **2D.6**
+- `relationship_engine_version` = **2D.7**
 - Conserva versiones de inspector / detector / profiler / regions / profiling
 
 Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling.workbook_hash`
@@ -62,11 +62,12 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 8. Fuentes FK requieren evidencia de referencia en el hijo (tipo preferido o token de
    encabezado con **límites de token**, no sufijos `id$` libres); una medida con
    inclusión en un identificador no basta (`insufficient_child_reference_evidence`, 2D.5).
-9. Origen y destino deben describir una **entidad compatible** tras quitar tokens
-   estructurales y aplicar aliases canónicos declarados (`customer`/`client`,
-   `product`/`article`, …). Incompatibles se rechazan siempre
-   (`incompatible_reference_target_semantics`); sin entidad suficiente (`Id`/`Code`)
-   se rechazan por defecto (`insufficient_reference_target_semantics`, 2D.6).
+9. Origen y destino deben describir una **entidad simple inequívoca** compatible
+   tras quitar tokens estructurales y aplicar aliases canónicos declarados.
+   Incompatibles → `incompatible_reference_target_semantics`; sin entidad
+   (`Id`/`Code`) → `insufficient_reference_target_semantics`; encabezados con
+   varias entidades (`CustomerProductId`) → `ambiguous_reference_target_semantics`
+   aunque haya solape parcial (2D.6/2D.7).
 
 ## Semántica de referencia (2D.6)
 
@@ -93,7 +94,8 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 `rel_bridge_table`, `rel_integer_unique_not_surrogate`, `rel_numeric_customer_id_fk`,
 `rel_matching_measures_no_relation`, `rel_measure_into_identifier_no_fk`,
 `rel_incompatible_product_customer`, `rel_alias_client_customer`,
-`rel_alias_article_product`, `rel_insufficient_bare_id_fk`, `rel_pk_ranking`.
+`rel_alias_article_product`, `rel_insufficient_bare_id_fk`,
+`rel_ambiguous_compound_entity_fk`, `rel_pk_ranking`.
 
 ## Fuera de alcance / diferido
 

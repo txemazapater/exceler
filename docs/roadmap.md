@@ -17,7 +17,7 @@ Roadmap incremental. Las fases son orden de aprendizaje y entrega, no un comprom
 Las fases numeradas 3–12 del roadmap largo siguen vigentes como entregas de producto;
 2S/2A–2E son cortes de implementación que alimentan esas entregas sin solaparse en alcance.
 
-Estado actual: **Fase 2D entregada (2D.6)** — claves y relaciones estructurales intra-workbook.
+Estado actual: **Fase 2D entregada (2D.7)** — claves y relaciones estructurales intra-workbook.
 Siguiente corte: Integration Checkpoint 1 / semántica de entidades más amplia
 (y relaciones inter-workbook más adelante).
 
@@ -120,6 +120,8 @@ Siguiente corte: Integration Checkpoint 1 / semántica de entidades más amplia
 - `DeterministicRelationshipAnalyzer` consume solo inspection + regions + profiling.
 - Candidatos PK / compuestos (pares) / FK con inclusión, huérfanos y cardinalidad.
 - Grafo estructural; evidencias explícitas; sin ranking por nombres de columna.
+- **2D.7:** solo entidades simples inequívocas son compatibles; encabezados
+  multi-entidad → `ambiguous_reference_target_semantics` (sin inferencia por tabla).
 - **2D.6:** compatibilidad semántica referencia↔destino (entidades canónicas +
   aliases declarados); rechazo `ProductId→CustomerId`; aliases `ClientId`/`ArticleCode`.
 - **2D.5:** evidencia de referencia en el hijo FK; tokens de encabezado con límites
@@ -130,10 +132,10 @@ Siguiente corte: Integration Checkpoint 1 / semántica de entidades más amplia
 - **2D.2:** confianza vs peso máximo, `accepted`/`rejection_reasons`, sin SURROGATE
   automático por INTEGER único; corpus negativo + ranking.
 - CLI `exceler workbook relationships`; expected `expectations.relationships`;
-  schema **1** / engine **2D.6**.
+  schema **1** / engine **2D.7**.
 - Documentación `docs/keys-and-relationships.md`.
 
-**Salida:** candidatos estructurales revisables (no constraints definitivos). **Cerrada (2D.6).**
+**Salida:** candidatos estructurales revisables (no constraints definitivos). **Cerrada (2D.7).**
 
 ## Relación inter-workbook (diferido)
 

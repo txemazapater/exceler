@@ -34,7 +34,7 @@ _LIMITATIONS = (
     "Keys and relationships are structural candidates, not definitive constraints.",
     "Column names are never used as ranking signals among peers.",
     "Controlled header tokens may gate identity/reference evidence (token boundaries, 2D.5).",
-    "FK acceptance requires reference-target semantic compatibility of header entities (2D.6).",
+    "FK acceptance requires unambiguous reference-target entity compatibility (2D.6/2D.7).",
     "Formula cells contribute no key values (unevaluated).",
     "Analyzer consumes inspection + regions + profiling only; never re-reads Excel.",
     "Confidence is calibrated against max possible evidence weight (2D.2+).",
@@ -42,8 +42,9 @@ _LIMITATIONS = (
     "Numeric PKs require independent identity evidence; FK support cannot create them (2D.4).",
     "FK sources require child reference evidence; value inclusion alone is insufficient (2D.5).",
     "Headers without entity tokens (Id/Code) do not invent relations from value overlap alone.",
-    "Sheet/table names are not used to override incompatible column entities.",
-    "Single-workbook analysis in 2D.6; multi-workbook support is reserved.",
+    "Multi-entity headers (e.g. CustomerProductId) are ambiguous without table/context inference.",
+    "Sheet/table names are not used to override incompatible or ambiguous column entities.",
+    "Single-workbook analysis in 2D.7; multi-workbook support is reserved.",
 )
 
 

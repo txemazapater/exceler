@@ -89,6 +89,7 @@ class SemanticCompatibilityStatus(StrEnum):
     COMPATIBLE = "compatible"
     INCOMPATIBLE = "incompatible"
     INSUFFICIENT = "insufficient"
+    AMBIGUOUS = "ambiguous"
 
 
 @dataclass(frozen=True)
@@ -103,12 +104,15 @@ class IdentifierSemanticSignal:
     has_entity_evidence: bool
 
     @property
+    def is_unambiguous_entity(self) -> bool:
+        """True when exactly one canonical entity remains after structural removal."""
+        return len(self.canonical_entities) == 1
+
+    @property
     def canonical_entity(self) -> str | None:
-        if not self.canonical_entities:
-            return None
         if len(self.canonical_entities) == 1:
             return self.canonical_entities[0]
-        return "+".join(self.canonical_entities)
+        return None
 
 
 @dataclass(frozen=True)
@@ -189,7 +193,11 @@ def reference_target_semantically_compatible(
     child_signal: IdentifierSemanticSignal,
     parent_signal: IdentifierSemanticSignal,
 ) -> SemanticCompatibilityResult:
-    """Compare reference/target entity signals (deterministic, alias-aware)."""
+    """Compare reference/target entity signals (deterministic, alias-aware).
+
+    2D.7: only unambiguous simple entities may be compatible. Multi-entity headers
+    never accept via partial overlap with a simple parent/child.
+    """
     if not child_signal.has_entity_evidence or not parent_signal.has_entity_evidence:
         return SemanticCompatibilityResult(
             status=SemanticCompatibilityStatus.INSUFFICIENT,
@@ -198,19 +206,34 @@ def reference_target_semantically_compatible(
             shared_entities=(),
             detail="one or both headers lack entity tokens after structural removal",
         )
+
     shared = tuple(
         sorted(set(child_signal.canonical_entities) & set(parent_signal.canonical_entities))
     )
-    if shared:
+
+    if not child_signal.is_unambiguous_entity or not parent_signal.is_unambiguous_entity:
+        return SemanticCompatibilityResult(
+            status=SemanticCompatibilityStatus.AMBIGUOUS,
+            child=child_signal,
+            parent=parent_signal,
+            shared_entities=shared,
+            detail=(
+                "compound or multi-entity header cannot resolve to a single "
+                "canonical entity without table/context inference; "
+                f"child={list(child_signal.canonical_entities)} "
+                f"parent={list(parent_signal.canonical_entities)}"
+            ),
+        )
+
+    if child_signal.canonical_entity == parent_signal.canonical_entity:
         return SemanticCompatibilityResult(
             status=SemanticCompatibilityStatus.COMPATIBLE,
             child=child_signal,
             parent=parent_signal,
             shared_entities=shared,
-            detail=(
-                f"shared canonical entit{'y' if len(shared) == 1 else 'ies'}: {', '.join(shared)}"
-            ),
+            detail=f"shared canonical entity: {child_signal.canonical_entity}",
         )
+
     return SemanticCompatibilityResult(
         status=SemanticCompatibilityStatus.INCOMPATIBLE,
         child=child_signal,

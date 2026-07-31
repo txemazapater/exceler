@@ -246,6 +246,16 @@ def _score_fk(
                 semantic_payload,
             )
         )
+    elif semantic.status is SemanticCompatibilityStatus.AMBIGUOUS:
+        rejection_reasons.append("ambiguous_reference_target_semantics")
+        evidence.append(
+            RelationshipEvidenceItem(
+                "ambiguous_reference_target_semantics",
+                -0.15,
+                semantic.detail,
+                semantic_payload,
+            )
+        )
     else:
         if options.require_reference_target_semantics:
             rejection_reasons.append("insufficient_reference_target_semantics")

@@ -1,0 +1,16 @@
+{
+  "scenario_id": "rel_ambiguous_compound_entity_fk",
+  "description": "CustomerProductId rejects partial FK to CustomerId and ProductId",
+  "workbook": "workbooks/relationships/rel_ambiguous_compound_entity_fk.xlsx",
+  "generator": "relationship_scenarios.build_rel_ambiguous_compound_entity_fk",
+  "seed": 20260730,
+  "intentions": [
+    "Reject multi-entity header partial overlap"
+  ],
+  "features": [
+    "relationships",
+    "false_fk",
+    "semantic_ambiguous"
+  ],
+  "versioned": true
+}

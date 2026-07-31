@@ -57,6 +57,7 @@
     "rel_alias_client_customer",
     "rel_alias_article_product",
     "rel_insufficient_bare_id_fk",
+    "rel_ambiguous_compound_entity_fk",
     "rel_pk_ranking",
     "hell_erp_clientes",
     "hell_erp_articulos",
@@ -120,6 +121,7 @@
     "workbooks/relationships/rel_alias_client_customer.xlsx",
     "workbooks/relationships/rel_alias_article_product.xlsx",
     "workbooks/relationships/rel_insufficient_bare_id_fk.xlsx",
+    "workbooks/relationships/rel_ambiguous_compound_entity_fk.xlsx",
     "workbooks/relationships/rel_pk_ranking.xlsx",
     "workbooks/scenarios/hell_erp/clientes.xlsx",
     "workbooks/scenarios/hell_erp/articulos.xlsx",
@@ -127,5 +129,5 @@
     "workbooks/scenarios/hell_erp/lineas_pedido.xlsx",
     "workbooks/scenarios/hell_erp/facturas.xlsx"
   ],
-  "count": 61
+  "count": 62
 }

@@ -45,6 +45,7 @@ REL_SCENARIO_IDS = {
     "rel_alias_client_customer",
     "rel_alias_article_product",
     "rel_insufficient_bare_id_fk",
+    "rel_ambiguous_compound_entity_fk",
     "rel_pk_ranking",
 }
 
@@ -391,6 +392,19 @@ def test_header_token_boundaries_reject_suffix_false_positives() -> None:
         is SemanticCompatibilityStatus.INSUFFICIENT
     )
 
+    compound = extract_identifier_semantic_signal("CustomerProductId")
+    assert compound.canonical_entities == ("customer", "product")
+    assert compound.is_unambiguous_entity is False
+    assert compound.canonical_entity is None
+    assert (
+        reference_target_semantically_compatible(compound, customer).status
+        is SemanticCompatibilityStatus.AMBIGUOUS
+    )
+    assert (
+        reference_target_semantically_compatible(compound, product).status
+        is SemanticCompatibilityStatus.AMBIGUOUS
+    )
+
 
 def test_incompatible_product_customer_rejected_both_directions() -> None:
     from exceler.domain.relationships.enums import GraphEdgeKind
@@ -501,6 +515,35 @@ def test_semantic_incompatibility_beats_perfect_inclusion() -> None:
     assert fk.confidence < 1.0 or not fk.accepted
 
 
+def test_ambiguous_compound_entity_rejects_partial_parents() -> None:
+    from exceler.domain.relationships.enums import GraphEdgeKind
+
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_ambiguous_compound_entity_fk")
+    )
+    _i, _r, _p, result = _run(path)
+    to_customer = next(
+        fk
+        for fk in result.foreign_keys
+        if fk.from_column.effective_name == "CustomerProductId"
+        and fk.to_column.effective_name == "CustomerId"
+    )
+    to_product = next(
+        fk
+        for fk in result.foreign_keys
+        if fk.from_column.effective_name == "CustomerProductId"
+        and fk.to_column.effective_name == "ProductId"
+    )
+    assert to_customer.accepted is False
+    assert to_product.accepted is False
+    assert "ambiguous_reference_target_semantics" in to_customer.rejection_reasons
+    assert "ambiguous_reference_target_semantics" in to_product.rejection_reasons
+    assert not any(
+        edge.kind in {GraphEdgeKind.CANDIDATE_FOREIGN_KEY, GraphEdgeKind.CANDIDATE_RELATIONSHIP}
+        for edge in result.graph.edges
+    )
+
+
 def test_sheet_order_permutation_preserves_alias_result() -> None:
     from exceler.application.relationships.serialization import relationships_to_dict
 
@@ -508,7 +551,7 @@ def test_sheet_order_permutation_preserves_alias_result() -> None:
     a = relationships_to_dict(_run(path)[3])
     b = relationships_to_dict(_run(path)[3])
     assert a == b
-    assert a["relationship_engine_version"] == "2D.6"
+    assert a["relationship_engine_version"] == "2D.7"
 
 
 def test_pk_ranking_prefers_code_over_text() -> None:
