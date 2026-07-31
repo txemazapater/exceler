@@ -7,7 +7,6 @@ from enum import StrEnum
 
 from exceler.application.profiling.normalization import (
     NormalizedValue,
-    detect_date_pattern,
     has_currency_signal,
     has_leading_zeroes,
     has_percentage_format,
@@ -20,7 +19,11 @@ from exceler.application.profiling.normalization import (
     looks_uuid,
 )
 from exceler.application.profiling.numeric_parse import NumericKind, parse_numeric_text
-from exceler.application.profiling.temporal_parse import parse_temporal_text
+from exceler.application.profiling.temporal_parse import (
+    TemporalKind,
+    parse_temporal_text,
+    temporal_kind_compatible,
+)
 from exceler.domain.profiling.enums import AnomalySeverity, AnomalyType, LogicalValueType
 from exceler.domain.workbook.enums import CellValueKind
 
@@ -156,15 +159,29 @@ def check_compatibility(
         )
 
     if selected in {LogicalValueType.DATE, LogicalValueType.DATETIME, LogicalValueType.TIME}:
-        if selected is LogicalValueType.DATE and item.kind is CellValueKind.DATE:
-            return CompatibilityResult(CompatibilityStatus.COMPATIBLE)
-        if selected is LogicalValueType.DATETIME and item.kind in {
-            CellValueKind.DATETIME,
-            CellValueKind.DATE,
-        }:
-            return CompatibilityResult(CompatibilityStatus.COMPATIBLE)
-        if selected is LogicalValueType.TIME and item.kind is CellValueKind.TIME:
-            return CompatibilityResult(CompatibilityStatus.COMPATIBLE)
+        selected_kind = {
+            LogicalValueType.DATE: TemporalKind.DATE,
+            LogicalValueType.DATETIME: TemporalKind.DATETIME,
+            LogicalValueType.TIME: TemporalKind.TIME,
+        }[selected]
+
+        physical_kind: TemporalKind | None = None
+        if item.kind is CellValueKind.DATE:
+            physical_kind = TemporalKind.DATE
+        elif item.kind is CellValueKind.DATETIME:
+            physical_kind = TemporalKind.DATETIME
+        elif item.kind is CellValueKind.TIME:
+            physical_kind = TemporalKind.TIME
+
+        if physical_kind is not None:
+            if temporal_kind_compatible(selected_kind, physical_kind):
+                return CompatibilityResult(CompatibilityStatus.COMPATIBLE)
+            return CompatibilityResult(
+                CompatibilityStatus.INCOMPATIBLE,
+                AnomalyType.TYPE_MISMATCH,
+                f"Physical {physical_kind.value} incompatible with {selected.value}",
+            )
+
         parsed = parse_temporal_text(text)
         if parsed.ambiguous:
             return CompatibilityResult(
@@ -172,17 +189,14 @@ def check_compatibility(
                 AnomalyType.AMBIGUOUS_VALUE,
                 "Ambiguous date ordering",
             )
-        if parsed.ok:
-            return CompatibilityResult(CompatibilityStatus.COMPATIBLE)
-        pattern, amb = detect_date_pattern(text)
-        if amb:
+        if parsed.ok and parsed.kind is not None:
+            if temporal_kind_compatible(selected_kind, parsed.kind):
+                return CompatibilityResult(CompatibilityStatus.COMPATIBLE)
             return CompatibilityResult(
-                CompatibilityStatus.AMBIGUOUS,
-                AnomalyType.AMBIGUOUS_VALUE,
-                "Ambiguous date ordering",
+                CompatibilityStatus.INCOMPATIBLE,
+                AnomalyType.TYPE_MISMATCH,
+                f"Parsed {parsed.kind.value} incompatible with {selected.value}",
             )
-        if pattern:
-            return CompatibilityResult(CompatibilityStatus.COMPATIBLE)
         return CompatibilityResult(
             CompatibilityStatus.INCOMPATIBLE,
             AnomalyType.TYPE_MISMATCH,

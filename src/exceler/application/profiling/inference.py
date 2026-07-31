@@ -28,6 +28,7 @@ from exceler.application.profiling.numeric_parse import (
     infer_decimal_separator,
     parse_numeric_text,
 )
+from exceler.application.profiling.temporal_parse import TemporalKind, parse_temporal_text
 from exceler.domain.profiling.enums import (
     AnomalySeverity,
     AnomalyType,
@@ -244,11 +245,19 @@ def infer_logical_type(
         postal_r = sum(1 for item in strings if looks_postal(item.trimmed or "")) / sn
         code_r = sum(1 for item in strings if looks_code(item.trimmed or "")) / sn
         leading0 = sum(1 for item in strings if has_leading_zeroes(item.trimmed or "")) / sn
+        temporal_parsed = [parse_temporal_text(item.trimmed or "") for item in strings]
+        date_ok = sum(1 for parsed in temporal_parsed if parsed.kind is TemporalKind.DATE) / sn
+        datetime_ok = (
+            sum(1 for parsed in temporal_parsed if parsed.kind is TemporalKind.DATETIME) / sn
+        )
+        time_ok = sum(1 for parsed in temporal_parsed if parsed.kind is TemporalKind.TIME) / sn
+        ambiguous = sum(1 for parsed in temporal_parsed if parsed.ambiguous) / sn
+        # Legacy slash-date detector still contributes date evidence when TemporalKind.DATE.
         date_patterns = [
             detect_date_pattern(item.trimmed or "") for item in strings if item.trimmed
         ]
-        date_ok = sum(1 for pattern, _ in date_patterns if pattern) / sn
-        ambiguous = sum(1 for pattern, amb in date_patterns if amb) / sn
+        slash_date_ok = sum(1 for pattern, _ in date_patterns if pattern) / sn
+        date_ok = max(date_ok, slash_date_ok)
 
         if uuid_r >= 0.8:
             scores[LogicalValueType.UUID] = 0.95 * sufficiency
@@ -295,6 +304,36 @@ def infer_logical_type(
                         "ambiguous day/month ordering",
                     )
                 )
+        if datetime_ok >= options.moderate_compatibility_ratio:
+            conf = 0.9 * sufficiency * (1.0 - 0.35 * ambiguous)
+            scores[LogicalValueType.DATETIME] = max(
+                scores.get(LogicalValueType.DATETIME, 0.0), conf
+            )
+            evidence.append(
+                ProfilingEvidenceItem(
+                    "textual_datetime_ratio",
+                    datetime_ok,
+                    f"parseable_datetime_ratio={datetime_ok:.3f}",
+                )
+            )
+        if time_ok >= options.moderate_compatibility_ratio:
+            scores[LogicalValueType.TIME] = max(
+                scores.get(LogicalValueType.TIME, 0.0), 0.9 * sufficiency
+            )
+            evidence.append(
+                ProfilingEvidenceItem(
+                    "textual_time_ratio", time_ok, f"parseable_time_ratio={time_ok:.3f}"
+                )
+            )
+        # DATE+DATETIME textual mix promotes to DATETIME.
+        if (
+            date_ok
+            and datetime_ok
+            and date_ok + datetime_ok >= options.moderate_compatibility_ratio
+        ):
+            scores[LogicalValueType.DATETIME] = max(
+                scores.get(LogicalValueType.DATETIME, 0.0), 0.88 * sufficiency
+            )
         # TEXT is a weak fallback — keep score below specialized majority types.
         if str_ratio >= 0.8 and LogicalValueType.TEXT not in scores:
             scores[LogicalValueType.TEXT] = 0.45 * sufficiency

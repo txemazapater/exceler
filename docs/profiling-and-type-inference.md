@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile en una sola lectura.
 - Dominio: `exceler.domain.profiling`
 - Implementación: `DeterministicRegionProfiler`
 - `profiling_schema_version` = **1**
-- `profiler_version` = **2C.2**
+- `profiler_version` = **2C.3**
 - Conserva `inspector_version`, `region_detector_version`, `regions_schema_version`
 
 Hash de workbook debe coincidir entre 2A y 2B (`ProfilingInputMismatchError` si no).
@@ -65,8 +65,10 @@ Sin entidades de negocio ni PK definitivas.
    no se promocionan a INTEGER.
 10. Compatibilidad y anomalías comparten `check_compatibility` (un solo criterio por tipo).
 11. Estadísticas temporales ordenan por valor parseado, no por orden lexicográfico del texto.
+12. Matriz temporal: DATE←DATE; DATETIME←DATE|DATETIME; TIME←TIME.
+    Un valor `HH:MM:SS` no es compatible con DATE; un DATETIME no es compatible con TIME.
 
-`profiler_version` = **2C.2** (algoritmo; schema sigue en 1).
+`profiler_version` = **2C.3** (algoritmo; schema sigue en 1).
 
 ## Escenarios de corpus
 

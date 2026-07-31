@@ -12,6 +12,8 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Profiler **2C.3**: matriz explícita DATE/DATETIME/TIME (un `09:30` ya no es
+  compatible con DATE; DATE sí promociona a DATETIME).
 - Profiler **2C.2**: parseo numérico sin locale fija, enteros/decimales como texto,
   `unique_ratio` = singletons/content, fechas ordenadas por valor parseado, compatibilidad
   centralizada para inferencia y anomalías.

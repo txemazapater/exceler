@@ -134,3 +134,45 @@ def test_compatibility_shared_for_date_mismatch() -> None:
     bad = _nv("error")
     result = check_compatibility(bad, LogicalValueType.DATE)
     assert result.status is CompatibilityStatus.INCOMPATIBLE
+
+
+def test_time_not_compatible_with_date() -> None:
+    clock = _nv("09:30:00")
+    assert (
+        check_compatibility(clock, LogicalValueType.DATE).status is CompatibilityStatus.INCOMPATIBLE
+    )
+    assert (
+        check_compatibility(clock, LogicalValueType.TIME).status is CompatibilityStatus.COMPATIBLE
+    )
+
+
+def test_date_compatible_with_datetime_but_not_time() -> None:
+    day = _nv("2026-01-01")
+    assert (
+        check_compatibility(day, LogicalValueType.DATETIME).status is CompatibilityStatus.COMPATIBLE
+    )
+    assert (
+        check_compatibility(day, LogicalValueType.TIME).status is CompatibilityStatus.INCOMPATIBLE
+    )
+
+
+def test_datetime_text_not_compatible_with_date() -> None:
+    stamp = _nv("2026-01-01 12:00:00")
+    assert (
+        check_compatibility(stamp, LogicalValueType.DATE).status is CompatibilityStatus.INCOMPATIBLE
+    )
+    assert (
+        check_compatibility(stamp, LogicalValueType.DATETIME).status
+        is CompatibilityStatus.COMPATIBLE
+    )
+
+
+def test_physical_datetime_incompatible_with_time_column() -> None:
+    item = _nv("2026-01-01T12:00:00", kind=CellValueKind.DATETIME)
+    assert (
+        check_compatibility(item, LogicalValueType.TIME).status is CompatibilityStatus.INCOMPATIBLE
+    )
+    assert (
+        check_compatibility(item, LogicalValueType.DATETIME).status
+        is CompatibilityStatus.COMPATIBLE
+    )

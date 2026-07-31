@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-PROFILER_VERSION = "2C.2"
+PROFILER_VERSION = "2C.3"
 PROFILING_SCHEMA_VERSION = 1
 
 
