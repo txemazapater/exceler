@@ -250,6 +250,39 @@ def build_rel_numeric_customer_id_fk(_seed: int) -> Workbook:
     return wb
 
 
+def build_rel_matching_measures_no_relation(_seed: int) -> Workbook:
+    """Identical unique measure domains must not invent PK/FK either direction."""
+    wb = new_workbook(sheet_title="WarehouseA")
+    ws = wb.active
+    assert ws is not None
+    write_matrix(
+        ws,
+        [
+            ["Qty", "Note"],
+            [10, "a"],
+            [20, "b"],
+            [30, "c"],
+            [40, "d"],
+        ],
+    )
+    bold_header(ws, 1, 2)
+
+    other = wb.create_sheet("WarehouseB")
+    write_matrix(
+        other,
+        [
+            ["Amount", "Note"],
+            [10, "w"],
+            [20, "x"],
+            [30, "y"],
+            [40, "z"],
+        ],
+    )
+    for cell in ("A1", "B1"):
+        other[cell].font = Font(bold=True)
+    return wb
+
+
 def build_rel_pk_ranking(_seed: int) -> Workbook:
     """Code + unique free-text names: code must rank first among accepted PKs."""
     wb = new_workbook(sheet_title="People")
@@ -346,7 +379,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                             {
                                 "column_index": 3,
                                 "accepted": False,
-                                "rejection_reason": "numeric_without_structural_evidence",
+                                "rejection_reason": "insufficient_independent_identifier_evidence",
                             }
                         ],
                     }
@@ -462,7 +495,7 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                                 "accepted": False,
                                 "key_kind": "primary",
                                 "key_kind_not": "surrogate",
-                                "rejection_reason": "numeric_without_structural_evidence",
+                                "rejection_reason": "insufficient_independent_identifier_evidence",
                             }
                         ],
                     }
@@ -473,10 +506,10 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
     ScenarioSpec(
         scenario_id="rel_numeric_customer_id_fk",
         category="relationships",
-        description="Numeric CustomerId accepted via Orders FK reference",
+        description="Numeric CustomerId accepted with independent Id evidence + FK",
         relative_workbook="workbooks/relationships/rel_numeric_customer_id_fk.xlsx",
         generator_name="relationship_scenarios.build_rel_numeric_customer_id_fk",
-        intentions=["Numeric PK with FK-parent structural evidence"],
+        intentions=["Numeric PK with independent identity evidence"],
         features=["relationships", "numeric_identifier", "foreign_key"],
         expected_skeleton={
             "inspection": {"workbook": {"worksheet_count": 2}},
@@ -493,7 +526,17 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                                 "minimum_score": 0.45,
                             }
                         ],
-                    }
+                    },
+                    {
+                        "name": "Orders",
+                        "primary_keys": [
+                            {
+                                "column_index": 3,
+                                "accepted": False,
+                                "rejection_reason": "insufficient_independent_identifier_evidence",
+                            }
+                        ],
+                    },
                 ],
                 "foreign_keys": [
                     {
@@ -504,6 +547,61 @@ RELATIONSHIP_SPECS: list[ScenarioSpec] = [
                         "accepted": True,
                         "minimum_inclusion": 0.99,
                     }
+                ],
+            },
+        },
+    ),
+    ScenarioSpec(
+        scenario_id="rel_matching_measures_no_relation",
+        category="relationships",
+        description="Matching Qty/Amount domains invent neither PK nor FK",
+        relative_workbook="workbooks/relationships/rel_matching_measures_no_relation.xlsx",
+        generator_name="relationship_scenarios.build_rel_matching_measures_no_relation",
+        intentions=["Break circular measure coincidence"],
+        features=["relationships", "false_fk", "false_pk"],
+        expected_skeleton={
+            "inspection": {"workbook": {"worksheet_count": 2}},
+            "relationships": {
+                "sheets": [
+                    {
+                        "name": "WarehouseA",
+                        "accepted_primary_keys_max": 0,
+                        "primary_keys": [
+                            {
+                                "column_index": 1,
+                                "accepted": False,
+                                "rejection_reason": "insufficient_independent_identifier_evidence",
+                            }
+                        ],
+                    },
+                    {
+                        "name": "WarehouseB",
+                        "accepted_primary_keys_max": 0,
+                        "primary_keys": [
+                            {
+                                "column_index": 1,
+                                "accepted": False,
+                                "rejection_reason": "insufficient_independent_identifier_evidence",
+                            }
+                        ],
+                    },
+                ],
+                "foreign_keys_accepted_max": 0,
+                "foreign_keys": [
+                    {
+                        "from_sheet": "WarehouseA",
+                        "from_column_index": 1,
+                        "to_sheet": "WarehouseB",
+                        "to_column_index": 1,
+                        "accepted": False,
+                    },
+                    {
+                        "from_sheet": "WarehouseB",
+                        "from_column_index": 1,
+                        "to_sheet": "WarehouseA",
+                        "to_column_index": 1,
+                        "accepted": False,
+                    },
                 ],
             },
         },
@@ -553,5 +651,8 @@ BUILDERS = {
         build_rel_integer_unique_not_surrogate
     ),
     "relationship_scenarios.build_rel_numeric_customer_id_fk": build_rel_numeric_customer_id_fk,
+    "relationship_scenarios.build_rel_matching_measures_no_relation": (
+        build_rel_matching_measures_no_relation
+    ),
     "relationship_scenarios.build_rel_pk_ranking": build_rel_pk_ranking,
 }

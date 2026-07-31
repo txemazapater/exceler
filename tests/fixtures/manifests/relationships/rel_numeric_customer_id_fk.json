@@ -1,11 +1,11 @@
 {
   "scenario_id": "rel_numeric_customer_id_fk",
-  "description": "Numeric CustomerId accepted via Orders FK reference",
+  "description": "Numeric CustomerId accepted with independent Id evidence + FK",
   "workbook": "workbooks/relationships/rel_numeric_customer_id_fk.xlsx",
   "generator": "relationship_scenarios.build_rel_numeric_customer_id_fk",
   "seed": 20260730,
   "intentions": [
-    "Numeric PK with FK-parent structural evidence"
+    "Numeric PK with independent identity evidence"
   ],
   "features": [
     "relationships",

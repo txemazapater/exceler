@@ -6,6 +6,8 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Fase 2D.4: evidencia independiente vs soporte relacional; rechazo de medidas
+  coincidentes (`rel_matching_measures_no_relation`); sin circularidad FK↔PK.
 - Fase 2D.3: evidencia estructural para PKs numéricas (`fk_parent_reference`);
   escenario `rel_numeric_customer_id_fk`; Qty único accidental sigue rechazado.
 - Fase 2D.2: calibración de confianza vs peso máximo, aceptación/rechazo explícito,
@@ -20,6 +22,8 @@ Formato inspirado en [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Relationship engine **2D.4**: FK destination requires independent identifier evidence;
+  relationship support cannot alone accept numeric PKs.
 - Relationship engine **2D.3**: FK discovery before PK scoring; numeric acceptance
   gated on structural FK-parent evidence.
 - Relationship engine **2D.2**: score/accepted separados; grafo solo con candidatos accepted.

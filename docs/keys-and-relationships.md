@@ -22,7 +22,7 @@ Ejecuta inspect → regions → profile → relationships en una sola lectura de
 - Dominio: `exceler.domain.relationships`
 - Implementación: `DeterministicRelationshipAnalyzer`
 - `relationship_schema_version` = **1**
-- `relationship_engine_version` = **2D.3**
+- `relationship_engine_version` = **2D.4**
 - Conserva versiones de inspector / detector / profiler / regions / profiling
 
 Triple hash: `inspection.file.content_hash == regions.workbook_hash == profiling.workbook_hash`
@@ -54,8 +54,11 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 3. Candidatos rechazados pueden emitirse marcados (`accepted=false`) para inspección.
 4. `INTEGER` + unicidad **no** implica `SURROGATE`; ese kind queda reservado a evidencia más fuerte.
 5. Tipos `TEXT`/`BOOLEAN`/… penalizados se rechazan como PK aunque sean únicos.
-6. `INTEGER`/`NUMBER`/`DECIMAL` únicos se rechazan **salvo** evidencia estructural adicional
-   (p. ej. ser padre de un FK accepted → `fk_parent_reference`); tampoco se etiquetan `SURROGATE`.
+6. `INTEGER`/`NUMBER`/`DECIMAL` requieren evidencia de identidad **independiente**
+   (tipo preferido, análisis 2C rico, o encabezado controlado tipo `*Id`/`*Code`);
+   el soporte FK (`has_relationship_support`) solo refuerza, no crea la aceptación (2D.4).
+7. Destinos FK sin evidencia independiente y pares simétricos únicos quedan rechazados
+   (`insufficient_independent_identifier_evidence` / `ambiguous_relationship_direction`).
 
 ## Decisiones
 
@@ -71,8 +74,8 @@ Composites: **pares** solamente (triples detrás de opción, default off).
 `rel_simple_primary_key`, `rel_duplicate_identifier`, `rel_composite_key`,
 `rel_customers_orders`, `rel_invoice_header_lines`, `rel_orphan_and_partial`,
 `rel_bridge_table`, `rel_integer_unique_not_surrogate`, `rel_numeric_customer_id_fk`,
-`rel_pk_ranking` — expectativas parciales en `expectations.relationships`
-(incluye negativos, ranking y numéricos con evidencia FK).
+`rel_matching_measures_no_relation`, `rel_pk_ranking` — expectativas parciales en
+`expectations.relationships` (incluye negativos, ranking y anti-circularidad 2D.4).
 
 ## Fuera de alcance
 

@@ -5,6 +5,10 @@ from __future__ import annotations
 from collections import Counter
 
 from exceler.application.relationships.evidence import confidence_from_evidence
+from exceler.application.relationships.identifier_signals import (
+    has_independent_identifier_evidence,
+    has_relationship_support,
+)
 from exceler.application.relationships.value_index import ColumnValueSet
 from exceler.domain.profiling.enums import LogicalValueType
 from exceler.domain.relationships.enums import Exactness, KeyKind
@@ -80,7 +84,11 @@ def _score_pk(
     non_null_ratio = 1.0 - null_ratio
     logical = col.profile.logical_type_inference.selected_type
     identifier = col.profile.identifier_analysis
-    is_fk_parent = col.ref.column_id in referenced_column_ids
+    independent = has_independent_identifier_evidence(col)
+    relationship_support = has_relationship_support(
+        col.ref.column_id,
+        referenced_column_ids=referenced_column_ids,
+    )
 
     evidence: list[RelationshipEvidenceItem] = []
     warnings = list(col.warnings)
@@ -150,26 +158,57 @@ def _score_pk(
     if col.content_count < 1:
         rejection_reasons.append("no_content_values")
 
-    # Numeric uniqueness alone is insufficient; FK-parent reference is structural evidence (2D.3).
+    # 2D.4: numeric PK needs independent identity evidence; FK support only reinforces.
     if logical in _NUMERIC_TYPES:
-        if is_fk_parent:
+        if independent:
             evidence.append(
                 RelationshipEvidenceItem(
-                    "fk_parent_reference",
-                    options.weight_fk_parent_reference,
-                    "column is referenced by an accepted foreign key",
-                    {"column_id": col.ref.column_id},
+                    "independent_identifier_evidence",
+                    options.weight_logical_type,
+                    "independent identifier evidence present",
+                    {
+                        "has_independent_identifier_evidence": True,
+                        "has_relationship_support": relationship_support,
+                    },
                 )
             )
+            if relationship_support:
+                evidence.append(
+                    RelationshipEvidenceItem(
+                        "fk_parent_reference",
+                        options.weight_fk_parent_reference,
+                        "relationship support reinforces independently evidenced key",
+                        {
+                            "has_independent_identifier_evidence": True,
+                            "has_relationship_support": True,
+                        },
+                    )
+                )
         else:
-            rejection_reasons.append("numeric_without_structural_evidence")
+            rejection_reasons.append("insufficient_independent_identifier_evidence")
             evidence.append(
                 RelationshipEvidenceItem(
-                    "numeric_without_structural_evidence",
+                    "insufficient_independent_identifier_evidence",
                     -0.15,
                     "numeric uniqueness alone is not accepted as primary key",
+                    {
+                        "has_independent_identifier_evidence": False,
+                        "has_relationship_support": relationship_support,
+                    },
                 )
             )
+            if relationship_support:
+                evidence.append(
+                    RelationshipEvidenceItem(
+                        "relationship_support_insufficient",
+                        0.0,
+                        "incoming FK cannot alone accept a numeric primary key",
+                        {
+                            "has_independent_identifier_evidence": False,
+                            "has_relationship_support": True,
+                        },
+                    )
+                )
 
     penalty = options.truncation_penalty if col.exactness is Exactness.TRUNCATED else 0.0
     score = confidence_from_evidence(
@@ -183,7 +222,7 @@ def _score_pk(
     accepted = not rejection_reasons
     confidence = score
 
-    # INTEGER + unique alone never implies SURROGATE (even with FK-parent evidence).
+    # INTEGER + unique alone never implies SURROGATE.
     key_kind = KeyKind.PRIMARY
     if logical in {LogicalValueType.CODE, LogicalValueType.IDENTIFIER, LogicalValueType.UUID}:
         key_kind = KeyKind.NATURAL

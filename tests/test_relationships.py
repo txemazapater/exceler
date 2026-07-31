@@ -39,6 +39,7 @@ REL_SCENARIO_IDS = {
     "rel_bridge_table",
     "rel_integer_unique_not_surrogate",
     "rel_numeric_customer_id_fk",
+    "rel_matching_measures_no_relation",
     "rel_pk_ranking",
 }
 
@@ -149,7 +150,25 @@ def test_integer_unique_not_surrogate() -> None:
     assert pk.key_kind.value == "primary"
     assert pk.key_kind.value != "surrogate"
     assert pk.accepted is False
-    assert "numeric_without_structural_evidence" in pk.rejection_reasons
+    assert "insufficient_independent_identifier_evidence" in pk.rejection_reasons
+
+
+def test_incoming_fk_alone_does_not_accept_numeric_pk() -> None:
+    from exceler.application.relationships.identifier_signals import (
+        has_independent_identifier_evidence,
+    )
+    from exceler.application.relationships.value_index import build_column_value_sets
+
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_matching_measures_no_relation")
+    )
+    inspection, regions, profiling, result = _run(path)
+    columns = build_column_value_sets(inspection, regions, profiling, RelationshipOptions())
+    qty = next(col for col in columns if col.ref.effective_name == "Qty")
+    assert has_independent_identifier_evidence(qty) is False
+    assert not any(fk.accepted for fk in result.foreign_keys)
+    for sheet in result.sheets:
+        assert not any(pk.accepted for pk in sheet.primary_keys)
 
 
 def test_numeric_customer_id_accepted_via_fk_parent() -> None:
@@ -162,14 +181,110 @@ def test_numeric_customer_id_accepted_via_fk_parent() -> None:
     assert pk.accepted is True
     assert pk.key_kind.value == "primary"
     assert pk.key_kind.value != "surrogate"
-    assert any(item.code == "fk_parent_reference" for item in pk.evidence)
+    assert any(item.code == "independent_identifier_evidence" for item in pk.evidence)
     fk = next(
         item
         for item in result.foreign_keys
-        if item.from_column.sheet_name == "Orders" and item.to_column.sheet_name == "Customers"
+        if item.from_column.sheet_name == "Orders"
+        and item.to_column.sheet_name == "Customers"
+        and item.accepted
     )
-    assert fk.accepted is True
     assert fk.inclusion_ratio >= 0.99
+    reverse = [
+        item
+        for item in result.foreign_keys
+        if item.from_column.sheet_name == "Customers"
+        and item.to_column.sheet_name == "Orders"
+        and item.accepted
+    ]
+    assert reverse == []
+    amount = next(
+        item
+        for sheet in result.sheets
+        if sheet.sheet_name == "Orders"
+        for item in sheet.primary_keys
+        if item.column.column_index == 3
+    )
+    assert amount.accepted is False
+
+
+def test_matching_measures_reject_both_fk_directions() -> None:
+    from exceler.domain.relationships.enums import GraphEdgeKind
+
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_matching_measures_no_relation")
+    )
+    _i, _r, _p, result = _run(path)
+    pairs = {
+        (fk.from_column.sheet_name, fk.to_column.sheet_name, fk.accepted)
+        for fk in result.foreign_keys
+        if {fk.from_column.sheet_name, fk.to_column.sheet_name} == {"WarehouseA", "WarehouseB"}
+    }
+    assert ("WarehouseA", "WarehouseB", True) not in pairs
+    assert ("WarehouseB", "WarehouseA", True) not in pairs
+    for fk in result.foreign_keys:
+        if {fk.from_column.sheet_name, fk.to_column.sheet_name} == {"WarehouseA", "WarehouseB"}:
+            assert fk.accepted is False
+            assert (
+                "insufficient_independent_identifier_evidence" in fk.rejection_reasons
+                or "ambiguous_relationship_direction" in fk.rejection_reasons
+            )
+    rel_edges = [
+        edge
+        for edge in result.graph.edges
+        if edge.kind in {GraphEdgeKind.CANDIDATE_FOREIGN_KEY, GraphEdgeKind.CANDIDATE_RELATIONSHIP}
+    ]
+    assert rel_edges == []
+
+
+def test_relationship_support_reinforces_but_does_not_create_acceptance() -> None:
+    from exceler.application.relationships.keys import discover_primary_keys
+    from exceler.application.relationships.value_index import build_column_value_sets
+
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_numeric_customer_id_fk")
+    )
+    inspection, regions, profiling, _ = _run(path)
+    columns = build_column_value_sets(inspection, regions, profiling, RelationshipOptions())
+    customer_id = next(
+        col for col in columns if col.ref.sheet_name == "Customers" and col.ref.column_index == 1
+    )
+    without = discover_primary_keys(columns, options=RelationshipOptions())
+    pk_without = next(pk for pk in without if pk.column.column_id == customer_id.ref.column_id)
+    assert pk_without.accepted is True
+    with_support = discover_primary_keys(
+        columns,
+        options=RelationshipOptions(),
+        referenced_column_ids=frozenset({customer_id.ref.column_id}),
+    )
+    pk_with = next(pk for pk in with_support if pk.column.column_id == customer_id.ref.column_id)
+    assert pk_with.accepted is True
+    assert pk_with.score >= pk_without.score
+    assert any(item.code == "fk_parent_reference" for item in pk_with.evidence)
+
+    path_m = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_matching_measures_no_relation")
+    )
+    inspection_m, regions_m, profiling_m, _ = _run(path_m)
+    cols_m = build_column_value_sets(inspection_m, regions_m, profiling_m, RelationshipOptions())
+    qty = next(col for col in cols_m if col.ref.effective_name == "Qty")
+    fake = discover_primary_keys(
+        cols_m,
+        options=RelationshipOptions(),
+        referenced_column_ids=frozenset({qty.ref.column_id}),
+    )
+    qty_pk = next(pk for pk in fake if pk.column.column_id == qty.ref.column_id)
+    assert qty_pk.accepted is False
+    assert "insufficient_independent_identifier_evidence" in qty_pk.rejection_reasons
+
+
+def test_analysis_order_deterministic_for_measures() -> None:
+    path = workbook_path(
+        next(s for s in ALL_SPECS if s.scenario_id == "rel_matching_measures_no_relation")
+    )
+    a = relationships_to_dict(_run(path)[3])
+    b = relationships_to_dict(_run(path)[3])
+    assert a == b
 
 
 def test_pk_ranking_prefers_code_over_text() -> None:

@@ -80,6 +80,16 @@ def compare_relationship_expectations(
                 n,
             )
 
+    if "foreign_keys_accepted_max" in expected:
+        n = len([fk for fk in result.foreign_keys if fk.accepted])
+        if n > expected["foreign_keys_accepted_max"]:
+            raise ExpectationMismatchError(
+                scenario_id,
+                "expectations.relationships.foreign_keys_accepted_max",
+                f"<={expected['foreign_keys_accepted_max']}",
+                n,
+            )
+
     for idx, sheet_exp in enumerate(expected.get("sheets") or []):
         path = f"expectations.relationships.sheets[{idx}]"
         name = sheet_exp.get("name")

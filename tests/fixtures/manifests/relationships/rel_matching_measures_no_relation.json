@@ -1,0 +1,16 @@
+{
+  "scenario_id": "rel_matching_measures_no_relation",
+  "description": "Matching Qty/Amount domains invent neither PK nor FK",
+  "workbook": "workbooks/relationships/rel_matching_measures_no_relation.xlsx",
+  "generator": "relationship_scenarios.build_rel_matching_measures_no_relation",
+  "seed": 20260730,
+  "intentions": [
+    "Break circular measure coincidence"
+  ],
+  "features": [
+    "relationships",
+    "false_fk",
+    "false_pk"
+  ],
+  "versioned": true
+}

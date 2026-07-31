@@ -20,7 +20,7 @@
               "accepted": false,
               "key_kind": "primary",
               "key_kind_not": "surrogate",
-              "rejection_reason": "numeric_without_structural_evidence"
+              "rejection_reason": "insufficient_independent_identifier_evidence"
             }
           ]
         }

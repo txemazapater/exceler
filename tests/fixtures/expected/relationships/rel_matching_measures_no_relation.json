@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "scenario_id": "rel_matching_measures_no_relation",
+  "workbook": "workbooks/relationships/rel_matching_measures_no_relation.xlsx",
+  "notes": "Skeleton for future Discovery Engine expectations. Not produced by analysis.",
+  "expectations": {
+    "inspection": {
+      "workbook": {
+        "worksheet_count": 2
+      }
+    },
+    "relationships": {
+      "sheets": [
+        {
+          "name": "WarehouseA",
+          "accepted_primary_keys_max": 0,
+          "primary_keys": [
+            {
+              "column_index": 1,
+              "accepted": false,
+              "rejection_reason": "insufficient_independent_identifier_evidence"
+            }
+          ]
+        },
+        {
+          "name": "WarehouseB",
+          "accepted_primary_keys_max": 0,
+          "primary_keys": [
+            {
+              "column_index": 1,
+              "accepted": false,
+              "rejection_reason": "insufficient_independent_identifier_evidence"
+            }
+          ]
+        }
+      ],
+      "foreign_keys_accepted_max": 0,
+      "foreign_keys": [
+        {
+          "from_sheet": "WarehouseA",
+          "from_column_index": 1,
+          "to_sheet": "WarehouseB",
+          "to_column_index": 1,
+          "accepted": false
+        },
+        {
+          "from_sheet": "WarehouseB",
+          "from_column_index": 1,
+          "to_sheet": "WarehouseA",
+          "to_column_index": 1,
+          "accepted": false
+        }
+      ]
+    }
+  }
+}

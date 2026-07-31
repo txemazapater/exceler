@@ -22,6 +22,16 @@
               "minimum_score": 0.45
             }
           ]
+        },
+        {
+          "name": "Orders",
+          "primary_keys": [
+            {
+              "column_index": 3,
+              "accepted": false,
+              "rejection_reason": "insufficient_independent_identifier_evidence"
+            }
+          ]
         }
       ],
       "foreign_keys": [

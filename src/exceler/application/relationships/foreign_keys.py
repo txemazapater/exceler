@@ -9,6 +9,9 @@ from exceler.application.relationships.domain_compat import (
     logical_types_compatible,
 )
 from exceler.application.relationships.evidence import confidence_from_evidence
+from exceler.application.relationships.identifier_signals import (
+    has_independent_identifier_evidence,
+)
 from exceler.application.relationships.value_index import ColumnValueSet
 from exceler.domain.relationships.enums import Exactness, RelationshipCardinality
 from exceler.domain.relationships.models import (
@@ -117,9 +120,15 @@ def _score_fk(
     coverage = len(child_values & parent_values) / max(len(parent_values), 1)
     orphan_ratio = len(orphans) / max(len(child_values), 1)
     parent_unique = len(parent.distinct) / max(parent.content_count, 1)
+    child_unique = len(child.distinct) / max(child.content_count, 1)
 
     cardinality = _infer_cardinality(child, parent)
     truncated = child.exactness is Exactness.TRUNCATED or parent.exactness is Exactness.TRUNCATED
+    parent_independent = has_independent_identifier_evidence(parent)
+    child_independent = has_independent_identifier_evidence(child)
+    reverse_inclusion = (
+        len(parent_values & child_values) / max(len(parent_values), 1) if parent_values else 0.0
+    )
 
     evidence = [
         RelationshipEvidenceItem(
@@ -154,10 +163,57 @@ def _score_fk(
             )
         )
 
+    # 2D.4: destination must be an independently evidenced identifier.
+    if not parent_independent:
+        rejection_reasons.append("insufficient_independent_identifier_evidence")
+        evidence.append(
+            RelationshipEvidenceItem(
+                "insufficient_independent_identifier_evidence",
+                -0.2,
+                "destination lacks independent identifier evidence",
+                {
+                    "has_independent_identifier_evidence": False,
+                    "has_relationship_support": False,
+                },
+            )
+        )
+    else:
+        evidence.append(
+            RelationshipEvidenceItem(
+                "parent_independent_identifier",
+                0.1,
+                "destination has independent identifier evidence",
+                {"has_independent_identifier_evidence": True},
+            )
+        )
+
+    # Symmetric unique domains with mutual inclusion and no clear orientation.
+    if (
+        parent_unique >= 0.98
+        and child_unique >= 0.98
+        and inclusion >= 0.99
+        and reverse_inclusion >= 0.99
+    ):
+        if not (parent_independent and not child_independent):
+            rejection_reasons.append("ambiguous_relationship_direction")
+            evidence.append(
+                RelationshipEvidenceItem(
+                    "ambiguous_relationship_direction",
+                    -0.25,
+                    "both sides unique with mutual inclusion; direction unresolved",
+                    {
+                        "child_unique": child_unique,
+                        "parent_unique": parent_unique,
+                        "reverse_inclusion": reverse_inclusion,
+                    },
+                )
+            )
+
     penalty = options.truncation_penalty if truncated else 0.0
+    # Keep FK max weight stable (parent_independent bonus is small additive signal).
     score = confidence_from_evidence(
         evidence,
-        max_positive_weight=options.max_fk_positive_weight,
+        max_positive_weight=options.max_fk_positive_weight + 0.1,
         penalty=penalty,
     )
     if score < options.min_fk_score:
@@ -178,7 +234,7 @@ def _score_fk(
         cardinality=cardinality,
         exactness=Exactness.TRUNCATED if truncated else Exactness.EXACT,
         evidence=tuple(evidence),
-        rejection_reasons=tuple(rejection_reasons),
+        rejection_reasons=tuple(dict.fromkeys(rejection_reasons)),
         warnings=tuple(dict.fromkeys([*child.warnings, *parent.warnings])),
     )
 

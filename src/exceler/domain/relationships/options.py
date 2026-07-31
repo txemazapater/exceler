@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-RELATIONSHIP_ENGINE_VERSION = "2D.3"
+RELATIONSHIP_ENGINE_VERSION = "2D.4"
 RELATIONSHIP_SCHEMA_VERSION = 1
 
 
